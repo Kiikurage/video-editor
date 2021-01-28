@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
+    "moduleResolution": "Node",
+    "target": "ES6",
+    "jsx": "react",
+    "outDir": "build"
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./src/**/*.tsx"
+  ]
+}

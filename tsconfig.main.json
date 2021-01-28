@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
+    "moduleResolution": "Node",
+    "module": "CommonJS",
+    "target": "ES6",
+    "outDir": "build"
+  },
+  "include": [
+    "./src/**/*.ts"
+  ]
+}

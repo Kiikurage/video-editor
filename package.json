@@ -1,0 +1,102 @@
+{
+  "name": "video-editor",
+  "version": "0.0.1",
+  "description": "Project Template with Rect & TypeScript",
+  "scripts": {
+    "start": "parallelshell \"npm run start:tsc\" \"npm run start:webpack\" \"npm run start:electron\"",
+    "start:electron": "electron .",
+    "start:tsc": "tsc -p ./tsconfig.main.json -w",
+    "start:webpack": "webpack-cli bundle --watch --mode=development",
+    "build": "rm -rf ./build && npm run build:tsc && npm run build:webpack",
+    "build:tsc": "tsc -p ./tsconfig.main.json",
+    "build:webpack": "webpack-cli bundle",
+    "test": "jest",
+    "lint": "lint-staged"
+  },
+  "author": {
+    "name": "Yuichiro Kikura",
+    "email": "y.kikura@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github:Kiikurage/video-editor"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/preset-env": "^7.12.11",
+    "@babel/preset-react": "^7.12.10",
+    "@babel/preset-typescript": "^7.12.7",
+    "@ffmpeg-installer/ffmpeg": "^1.0.20",
+    "@testing-library/react-hooks": "^5.0.3",
+    "@types/ffmpeg": "^1.0.3",
+    "@types/jest": "^26.0.20",
+    "@types/node": "^12.19.15",
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "@types/react-router": "^5.1.10",
+    "@types/react-router-dom": "^5.1.7",
+    "@types/styled-components": "^5.1.7",
+    "@types/tmp": "^0.2.0",
+    "@typescript-eslint/eslint-plugin": "^4.14.1",
+    "@typescript-eslint/parser": "^4.14.1",
+    "babel-loader": "^8.2.2",
+    "electron": "^11.2.1",
+    "eslint": "^7.18.0",
+    "eslint-config-prettier": "^7.2.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-prettier": "^3.3.1",
+    "eslint-plugin-react": "^7.22.0",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "ffmpeg": "0.0.4",
+    "fork-ts-checker-webpack-plugin": "^6.0.8",
+    "html-webpack-plugin": "^5.0.0-beta.4",
+    "husky": "^4.3.8",
+    "jest": "^26.6.3",
+    "lint-staged": "^10.5.3",
+    "parallelshell": "^3.0.1",
+    "polished": "^4.0.5",
+    "prettier": "^2.2.1",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "react-router": "^5.2.0",
+    "react-router-dom": "^5.2.0",
+    "react-svg-loader": "^3.0.3",
+    "react-test-renderer": "^17.0.1",
+    "styled-components": "^5.2.1",
+    "swr": "^0.3.11",
+    "typescript": "^4.1.3",
+    "webpack": "^5.11.1",
+    "webpack-cli": "^4.3.1",
+    "webpack-dev-server": "^3.11.1"
+  },
+  "main": "build/main.js",
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint && npm test"
+    }
+  },
+  "lint-staged": {
+    "*.js": "eslint --fix --max-warnings=0",
+    "*.jsx": "eslint --fix --max-warnings=0",
+    "*.ts": "eslint --fix --max-warnings=0",
+    "*.tsx": "eslint --fix --max-warnings=0",
+    "*.json": "prettier"
+  },
+  "babel": {
+    "presets": [
+      [
+        "@babel/preset-env",
+        {
+          "targets": {
+            "node": "current"
+          }
+        }
+      ],
+      "@babel/preset-react",
+      "@babel/preset-typescript"
+    ]
+  },
+  "dependencies": {
+    "tmp": "^0.2.1"
+  }
+}
