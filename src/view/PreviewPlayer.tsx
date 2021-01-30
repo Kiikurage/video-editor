@@ -107,6 +107,8 @@ export function PreviewPlayer(props: Props): React.ReactElement {
                 if (videoElement.paused) {
                     if (!previewController.paused) {
                         void videoElement.play().catch(() => void 0);
+                    } else {
+                        videoElement.currentTime = expectedVideoCurrentTimeInMS / 1000;
                     }
                 } else {
                     const lagInMS = currentPreviewTimeInMS - (videoCurrentTimeInMS + video.startInMS);

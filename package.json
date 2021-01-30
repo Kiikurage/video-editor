@@ -101,6 +101,8 @@
   },
   "dependencies": {
     "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "pixi.js": "^5.3.7",
+    "react-pixi-fiber": "^0.14.2",
     "react-quick-pinch-zoom": "^4.0.2",
     "tmp": "^0.2.1"
   }

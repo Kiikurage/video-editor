@@ -1,6 +1,8 @@
-import { rgba } from 'polished';
+import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { Stage } from 'react-pixi-fiber';
+import QuickPinchZoom from 'react-quick-pinch-zoom';
 import styled from 'styled-components';
 import { BaseObject } from '../model/BaseObject';
 import { CaptionObject } from '../model/CaptionObject';
@@ -8,7 +10,13 @@ import { Project } from '../model/Project';
 import { PreviewController } from '../service/PreviewController';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
-import QuickPinchZoom from 'react-quick-pinch-zoom';
+import { CurrentTimeIndicator } from './pixi/TimeLine/CurrentTimeIndicator';
+import { Divider } from './pixi/TimeLine/Divider';
+import { MouseTimeIndicator } from './pixi/TimeLine/MouseTimeIndicator';
+import { ObjectView } from './pixi/TimeLine/ObjectView';
+
+PIXI.settings.RENDER_OPTIONS.autoDensity = true;
+PIXI.settings.RENDER_OPTIONS.resolution = devicePixelRatio;
 
 const Base = styled.div`
     display: flex;
@@ -20,85 +28,6 @@ const Base = styled.div`
     position: relative;
     background: #fcfcfc;
     overflow: auto auto;
-`;
-
-const Layer = styled.div`
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-`;
-
-const DividersLayer = styled(Layer)`
-    pointer-events: none;
-`;
-
-const Divider = styled.div`
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: #e0e0e0;
-`;
-
-const DividerTimeLabel = styled.div`
-    display: block;
-    position: absolute;
-    right: 0;
-    top: 0;
-    padding: 0 4px;
-    font-size: 12px;
-    line-height: 24px;
-    font-family: monospace;
-    color: #808080;
-`;
-
-const MouseTimeIndicator = styled.div`
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 0;
-    border-left: 1px solid #4d90fe;
-    border-right: 1px solid #4d90fe;
-`;
-
-const CurrentTimeIndicator = styled.div`
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 0;
-    border-left: 1px solid #000;
-`;
-
-const ObjectLayer = styled(Layer)`
-    cursor: text;
-    padding: 32px 0;
-
-    ${MouseTimeIndicator} {
-        display: none;
-    }
-
-    &:hover {
-        ${MouseTimeIndicator} {
-            display: block;
-        }
-    }
-`;
-
-const ObjectView = styled.div<{ selected: boolean }>`
-    position: relative;
-    height: 20px;
-    background: ${rgba('#4d90fe', 0.7)};
-    border: 1px solid ${(props) => (props.selected ? '#f00' : '#4d90fe')};
-    color: #fff;
-    padding: 0 4px;
-    line-height: 20px;
-    font-size: 10px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    box-sizing: border-box;
-    cursor: pointer;
 `;
 
 interface Props {
@@ -113,7 +42,6 @@ export function TimeLine(props: Props): React.ReactElement {
 
     const durationInMSForVisibleAreaRef = useRef(Math.max(previewController.durationInMS, 1));
     const dividerDurationInMS = computeBestDividerDurationInMS(durationInMSForVisibleAreaRef.current);
-    const dividerLeftPositionPercent = (100 * dividerDurationInMS) / durationInMSForVisibleAreaRef.current;
 
     const mouseXRef = useRef(0);
     const baseRef = useRef<HTMLDivElement | null>(null);
@@ -146,7 +74,7 @@ export function TimeLine(props: Props): React.ReactElement {
         if (!base) return;
 
         const { left: baseLeft, width: baseWidth } = base.getBoundingClientRect();
-        mouseXRef.current = (100 * (ev.clientX - baseLeft)) / baseWidth;
+        mouseXRef.current = (ev.clientX - baseLeft) / baseWidth;
         forceUpdate();
     });
 
@@ -158,57 +86,80 @@ export function TimeLine(props: Props): React.ReactElement {
         previewController.currentTimeInMS = (durationInMSForVisibleAreaRef.current * (ev.clientX - baseLeft)) / baseWidth;
     });
 
-    const onObjectClick = useCallbackRef((ev: React.MouseEvent, object: BaseObject) => {
+    const onObjectClick = useCallbackRef((object: BaseObject) => {
         onObjectSelect(object);
     });
 
-    const currentTimeIndicatorLeft = (100 * previewController.currentTimeInMS) / durationInMSForVisibleAreaRef.current;
+    const currentTimeIndicatorLeft = previewController.currentTimeInMS / durationInMSForVisibleAreaRef.current;
+
+    const dividerLeftPositionPercent = dividerDurationInMS / durationInMSForVisibleAreaRef.current;
+    const { height: baseHeight, width: baseWidth } = baseRef.current?.getBoundingClientRect() ?? { height: 100, width: 100 };
+
+    const pixiStageOption = useMemo(() => {
+        return { backgroundColor: 0xffffff, width: baseWidth, height: baseHeight };
+    }, [baseHeight, baseWidth]);
 
     return (
         <QuickPinchZoom onUpdate={onPinchZoomUpdate} maxZoom={50} minZoom={0.1} zoomOutFactor={0}>
-            <Base ref={(e) => (baseRef.current = e)}>
-                <DividersLayer>
-                    <Divider style={{ left: `${dividerLeftPositionPercent * 1}%` }}>
-                        <DividerTimeLabel>{formatTime(dividerDurationInMS * 1)}</DividerTimeLabel>
-                    </Divider>
-                    <Divider style={{ left: `${dividerLeftPositionPercent * 2}%` }}>
-                        <DividerTimeLabel>{formatTime(dividerDurationInMS * 2)}</DividerTimeLabel>
-                    </Divider>
-                    <Divider style={{ left: `${dividerLeftPositionPercent * 3}%` }}>
-                        <DividerTimeLabel>{formatTime(dividerDurationInMS * 3)}</DividerTimeLabel>
-                    </Divider>
-                    <Divider style={{ left: `${dividerLeftPositionPercent * 4}%` }}>
-                        <DividerTimeLabel>{formatTime(dividerDurationInMS * 4)}</DividerTimeLabel>
-                    </Divider>
-                    <Divider style={{ left: `${dividerLeftPositionPercent * 5}%` }}>
-                        <DividerTimeLabel>{formatTime(dividerDurationInMS * 5)}</DividerTimeLabel>
-                    </Divider>
-                    <Divider style={{ left: `${dividerLeftPositionPercent * 6}%` }}>
-                        <DividerTimeLabel>{formatTime(dividerDurationInMS * 6)}</DividerTimeLabel>
-                    </Divider>
-                    <Divider style={{ left: `${dividerLeftPositionPercent * 7}%` }}>
-                        <DividerTimeLabel>{formatTime(dividerDurationInMS * 7)}</DividerTimeLabel>
-                    </Divider>
-                </DividersLayer>
-                <ObjectLayer onMouseMove={onObjectLayerMouseMove} onClick={onObjectLayerClick}>
-                    <CurrentTimeIndicator style={{ left: `${currentTimeIndicatorLeft}%` }} />
-                    <MouseTimeIndicator style={{ left: `${mouseXRef.current}%` }} />
-                    {project.objects.map((object) => {
+            <Base ref={(e) => (baseRef.current = e)} onMouseMove={onObjectLayerMouseMove} onClick={onObjectLayerClick}>
+                <Stage options={pixiStageOption}>
+                    <Divider
+                        x={baseWidth * dividerLeftPositionPercent * 1}
+                        height={baseHeight}
+                        label={formatTime(dividerDurationInMS * 1)}
+                    />
+                    <Divider
+                        x={baseWidth * dividerLeftPositionPercent * 2}
+                        height={baseHeight}
+                        label={formatTime(dividerDurationInMS * 2)}
+                    />
+                    <Divider
+                        x={baseWidth * dividerLeftPositionPercent * 3}
+                        height={baseHeight}
+                        label={formatTime(dividerDurationInMS * 3)}
+                    />
+                    <Divider
+                        x={baseWidth * dividerLeftPositionPercent * 4}
+                        height={baseHeight}
+                        label={formatTime(dividerDurationInMS * 4)}
+                    />
+                    <Divider
+                        x={baseWidth * dividerLeftPositionPercent * 5}
+                        height={baseHeight}
+                        label={formatTime(dividerDurationInMS * 5)}
+                    />
+                    <Divider
+                        x={baseWidth * dividerLeftPositionPercent * 6}
+                        height={baseHeight}
+                        label={formatTime(dividerDurationInMS * 6)}
+                    />
+                    <Divider
+                        x={baseWidth * dividerLeftPositionPercent * 7}
+                        height={baseHeight}
+                        label={formatTime(dividerDurationInMS * 7)}
+                    />
+
+                    {project.objects.map((object, i) => {
                         const isSelected = object === selectedObject;
-                        const left = `${(100 * object.startInMS) / durationInMSForVisibleAreaRef.current}%`;
-                        const width = `${(100 * (object.endInMS - object.startInMS)) / durationInMSForVisibleAreaRef.current}%`;
+                        const left = (baseWidth * object.startInMS) / durationInMSForVisibleAreaRef.current;
+                        const width = (baseWidth * (object.endInMS - object.startInMS)) / durationInMSForVisibleAreaRef.current;
                         return (
                             <ObjectView
-                                selected={isSelected}
                                 key={object.id}
-                                style={{ left: left, width: width }}
-                                onClick={(ev: React.MouseEvent) => onObjectClick(ev, object)}
-                            >
-                                {CaptionObject.isCaption(object) ? object.text : `[${object.type}]`}
-                            </ObjectView>
+                                isSelected={isSelected}
+                                text={CaptionObject.isCaption(object) ? object.text : `[${object.type}]`}
+                                x={left}
+                                y={32 + 20 * i}
+                                width={width}
+                                height={20}
+                                onClick={() => onObjectClick(object)}
+                            />
                         );
                     })}
-                </ObjectLayer>
+
+                    <CurrentTimeIndicator x={baseWidth * currentTimeIndicatorLeft} height={baseHeight} />
+                    <MouseTimeIndicator x={baseWidth * mouseXRef.current} height={baseHeight} />
+                </Stage>
             </Base>
         </QuickPinchZoom>
     );
@@ -234,24 +185,10 @@ const PREDEFINED_DIVIDER_DURATIONS = [
     1 * 60 * 60 * 1000,
 ];
 
-function computeBestDividerDurationInMS(durationInMSForVisibleArea: number) {
+function computeBestDividerDurationInMS(durationInMSForVisibleArea: number): number {
     // 画面内にdividerが7本, 8セクション分表示されるようなscaleが最適であるとする
     return (
         PREDEFINED_DIVIDER_DURATIONS.find((duration) => duration * 8 > durationInMSForVisibleArea) ??
         PREDEFINED_DIVIDER_DURATIONS[PREDEFINED_DIVIDER_DURATIONS.length - 1]
     );
 }
-
-`
-/Users/kikurage/workspace/video-editor/node_modules/@ffmpeg-installer/darwin-x64/ffmpeg 
--i /Users/kikurage/workspace/video-editor/src/static/video.mp4 
--i /var/folders/k8/l5jj42kx15b1zvn4qqtfdttr0000gn/T/tmp-7312-wftYIyJ5bXO3/caption-1.png 
--i /var/folders/k8/l5jj42kx15b1zvn4qqtfdttr0000gn/T/tmp-7312-wftYIyJ5bXO3/caption-2.png 
--filter_complex "
-    [v][1]overlay=enable='between(t,5.000,8.000)'[v]; 
-    [v][2]overlay=enable='between(t,10.000,15.000)'
-"
--c:v h264_videotoolbox
--c:a copy
-/var/folders/k8/l5jj42kx15b1zvn4qqtfdttr0000gn/T/tmp-7312-wftYIyJ5bXO3/output.mp4
-`;
