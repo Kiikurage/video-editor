@@ -96,7 +96,7 @@ export function AppShell(props: Props): React.ReactElement {
         onObjectSelect,
         // onObjectAdd,
         // onObjectChange,
-        // onObjectRemove,
+        onObjectRemove,
         onVideoExportButtonClick,
     } = props;
 
@@ -150,7 +150,7 @@ export function AppShell(props: Props): React.ReactElement {
                 </CaptionListArea>
 
                 <PropertyArea>
-                    <PropertyView object={selectedObject} />
+                    <PropertyView object={selectedObject} onObjectRemove={onObjectRemove} />
                 </PropertyArea>
             </Base>
         </DropArea>

@@ -95,6 +95,10 @@ export function App(): React.ReactElement {
     };
 
     const onObjectRemove = (object: BaseObject) => {
+        if (object === selectedObject) {
+            setSelectedObject(null);
+        }
+
         const i = project.objects.indexOf(object);
         if (i === -1) return;
 
