@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { BaseObject } from '../model/BaseObject';
 import { CaptionObject } from '../model/CaptionObject';
 import { Project } from '../model/Project';
-import { VideoController } from '../service/VideoController';
+import { PreviewController } from '../service/PreviewController';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
 import QuickPinchZoom from 'react-quick-pinch-zoom';
@@ -102,16 +102,16 @@ const ObjectView = styled.div<{ selected: boolean }>`
 `;
 
 interface Props {
-    videoController: VideoController;
+    previewController: PreviewController;
     project: Project;
     selectedObject: BaseObject | null;
     onObjectSelect: (object: BaseObject) => void;
 }
 
 export function TimeLine(props: Props): React.ReactElement {
-    const { videoController, project, selectedObject, onObjectSelect } = props;
+    const { previewController, project, selectedObject, onObjectSelect } = props;
 
-    const durationInMSForVisibleAreaRef = useRef(Math.max(videoController.durationInMS, 1));
+    const durationInMSForVisibleAreaRef = useRef(Math.max(previewController.durationInMS, 1));
     const dividerDurationInMS = computeBestDividerDurationInMS(durationInMSForVisibleAreaRef.current);
     const dividerLeftPositionPercent = (100 * dividerDurationInMS) / durationInMSForVisibleAreaRef.current;
 
@@ -124,20 +124,20 @@ export function TimeLine(props: Props): React.ReactElement {
     });
 
     useEffect(() => {
-        durationInMSForVisibleAreaRef.current = Math.max(videoController.durationInMS, 1);
+        durationInMSForVisibleAreaRef.current = Math.max(previewController.durationInMS, 1);
         forceUpdate();
-    }, [forceUpdate, videoController.durationInMS]);
+    }, [forceUpdate, previewController.durationInMS]);
 
     useEffect(() => {
-        videoController.addEventListener('seek', onVideoControllerSeek);
+        previewController.addEventListener('seek', onVideoControllerSeek);
         return () => {
-            videoController.removeEventListener('seek', onVideoControllerSeek);
+            previewController.removeEventListener('seek', onVideoControllerSeek);
         };
-    }, [onVideoControllerSeek, videoController]);
+    }, [onVideoControllerSeek, previewController]);
 
     const onPinchZoomUpdate = useCallbackRef((data: { x: number; y: number; scale: number }) => {
         const scale = data.scale;
-        durationInMSForVisibleAreaRef.current = Math.max(videoController.durationInMS, 1) / scale;
+        durationInMSForVisibleAreaRef.current = Math.max(previewController.durationInMS, 1) / scale;
         forceUpdate();
     });
 
@@ -155,14 +155,14 @@ export function TimeLine(props: Props): React.ReactElement {
         if (!base) return;
 
         const { left: baseLeft, width: baseWidth } = base.getBoundingClientRect();
-        videoController.currentTimeInMS = (durationInMSForVisibleAreaRef.current * (ev.clientX - baseLeft)) / baseWidth;
+        previewController.currentTimeInMS = (durationInMSForVisibleAreaRef.current * (ev.clientX - baseLeft)) / baseWidth;
     });
 
     const onObjectClick = useCallbackRef((ev: React.MouseEvent, object: BaseObject) => {
         onObjectSelect(object);
     });
 
-    const currentTimeIndicatorLeft = (100 * videoController.currentTimeInMS) / durationInMSForVisibleAreaRef.current;
+    const currentTimeIndicatorLeft = (100 * previewController.currentTimeInMS) / durationInMSForVisibleAreaRef.current;
 
     return (
         <QuickPinchZoom onUpdate={onPinchZoomUpdate} maxZoom={50} minZoom={0.1} zoomOutFactor={0}>

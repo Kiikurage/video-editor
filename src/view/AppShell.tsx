@@ -3,11 +3,11 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { BaseObject } from '../model/BaseObject';
 import { Project } from '../model/Project';
-import { VideoController } from '../service/VideoController';
+import { PreviewController } from '../service/PreviewController';
 import { DropArea } from './DropArea';
 import { PropertyView } from './PropertyView';
 import { TimeLine } from './TimeLine';
-import { VideoPlayer } from './VideoPlayer';
+import { PreviewPlayer } from './PreviewPlayer';
 
 const Base = styled.div`
     background: #fafafa;
@@ -77,7 +77,7 @@ const PropertyArea = styled.div`
 `;
 
 interface Props {
-    videoController: VideoController;
+    previewController: PreviewController;
     project: Project;
     selectedObject: BaseObject | null;
     onVideoOpen: (inputVideoPath: string) => void;
@@ -90,7 +90,7 @@ interface Props {
 
 export function AppShell(props: Props): React.ReactElement {
     const {
-        videoController,
+        previewController,
         project,
         selectedObject,
         onObjectSelect,
@@ -116,11 +116,11 @@ export function AppShell(props: Props): React.ReactElement {
     };
 
     const onPlayButtonClick = () => {
-        videoController.play();
+        previewController.play();
     };
 
     const onPauseButtonClick = () => {
-        videoController.pause();
+        previewController.pause();
     };
 
     return (
@@ -134,7 +134,7 @@ export function AppShell(props: Props): React.ReactElement {
                     <button onClick={onVideoExportButtonClick}>動画出力</button>
                 </AppHeader>
                 <VideoPlayerArea>
-                    <VideoPlayer project={project} videoController={videoController} />
+                    <PreviewPlayer project={project} previewController={previewController} />
                 </VideoPlayerArea>
                 <MiddleToolbarArea>
                     <button onClick={onPlayButtonClick}>再生</button>
@@ -142,7 +142,7 @@ export function AppShell(props: Props): React.ReactElement {
                 </MiddleToolbarArea>
                 <CaptionListArea>
                     <TimeLine
-                        videoController={videoController}
+                        previewController={previewController}
                         project={project}
                         selectedObject={selectedObject}
                         onObjectSelect={onObjectSelect}
