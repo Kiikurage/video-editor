@@ -200,7 +200,7 @@ export function TimeLine(props: Props): React.ReactElement {
                         return (
                             <ObjectView
                                 selected={isSelected}
-                                key={[object.startInMS, object.endInMS].join(',')}
+                                key={object.id}
                                 style={{ left: left, width: width }}
                                 onClick={(ev: React.MouseEvent) => onObjectClick(ev, object)}
                             >
@@ -241,3 +241,17 @@ function computeBestDividerDurationInMS(durationInMSForVisibleArea: number) {
         PREDEFINED_DIVIDER_DURATIONS[PREDEFINED_DIVIDER_DURATIONS.length - 1]
     );
 }
+
+`
+/Users/kikurage/workspace/video-editor/node_modules/@ffmpeg-installer/darwin-x64/ffmpeg 
+-i /Users/kikurage/workspace/video-editor/src/static/video.mp4 
+-i /var/folders/k8/l5jj42kx15b1zvn4qqtfdttr0000gn/T/tmp-7312-wftYIyJ5bXO3/caption-1.png 
+-i /var/folders/k8/l5jj42kx15b1zvn4qqtfdttr0000gn/T/tmp-7312-wftYIyJ5bXO3/caption-2.png 
+-filter_complex "
+    [v][1]overlay=enable='between(t,5.000,8.000)'[v]; 
+    [v][2]overlay=enable='between(t,10.000,15.000)'
+"
+-c:v h264_videotoolbox
+-c:a copy
+/var/folders/k8/l5jj42kx15b1zvn4qqtfdttr0000gn/T/tmp-7312-wftYIyJ5bXO3/output.mp4
+`;

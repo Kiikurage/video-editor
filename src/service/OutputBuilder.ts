@@ -8,6 +8,7 @@ import { assert } from '../lib/util';
 import { CaptionObject } from '../model/CaptionObject';
 import { IPCMessages } from '../model/IPCMessages';
 import { Project } from '../model/Project';
+import { VideoObject } from '../model/VideoObject';
 
 const LOG_EVENT = new Event('log');
 
@@ -18,7 +19,6 @@ interface OutputBuilderEvents {
 }
 
 export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
-    private inputVideoPath = '';
     private outputVideoPath = '';
     private project: Project | null = null;
 
@@ -28,7 +28,7 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
         return this._log;
     }
 
-    static buildFFMpegCommand(inputVideoPath: string, captionImageList: ReadonlyArray<CaptionImage>, outputVideoPath: string): string {
+    static buildFFMpegCommand(assets: Asset[], outputVideoPath: string): string {
         console.log('build start');
         const command: string[] = [];
 
@@ -36,25 +36,23 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
         console.log(`FFMPEG path=${ffmpeg.path} version=${ffmpeg.version}`);
 
         command.push(ffmpeg.path);
-        command.push('-ss 00:00:00 -to 00:00:20'); // TODO: Debug only
+        // command.push('-ss 00:00:00 -to 00:00:20'); // TODO: Debug only
 
-        command.push(`-i ${inputVideoPath}`);
-
-        for (const captionImage of captionImageList) {
-            command.push(`-i ${captionImage.path}`);
+        for (const asset of assets) {
+            command.push(`-i ${asset.path}`);
         }
 
-        if (captionImageList.length > 0) {
+        if (assets.length >= 2) {
             const filterComplexExpr: string[] = [];
 
-            for (let i = 0; i < captionImageList.length; i++) {
-                const captionImage = captionImageList[i];
+            for (const asset of assets) {
+                if (asset.id === 0) continue;
 
-                const filterInput1 = i === 0 ? '[0]' : '[v]';
-                const filterInput2 = `[${i + 1}]`;
-                const startTimeInSecond = (captionImage.startInMS / 1000).toFixed(3);
-                const endTimeInSecond = (captionImage.endInMS / 1000).toFixed(3);
-                const filterOutput = i === captionImageList.length - 1 ? '' : '[v]';
+                const filterInput1 = asset.id === 1 ? '[0]' : '[v]';
+                const filterInput2 = `[${asset.id}]`;
+                const startTimeInSecond = (asset.startInMS / 1000).toFixed(3);
+                const endTimeInSecond = (asset.endInMS / 1000).toFixed(3);
+                const filterOutput = asset.id === assets.length - 1 ? '' : '[v]';
 
                 filterComplexExpr.push(
                     `${filterInput1}${filterInput2}overlay=enable='between(t,${startTimeInSecond},${endTimeInSecond})'${filterOutput}`
@@ -70,11 +68,6 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
         return command.join(' ');
     }
 
-    setInputVideoPath(inputVideoPath: string): this {
-        this.inputVideoPath = inputVideoPath;
-        return this;
-    }
-
     setOutputVideoPath(outputVideoPath: string): this {
         this.outputVideoPath = outputVideoPath;
         return this;
@@ -86,7 +79,6 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
     }
 
     async build(): Promise<void> {
-        assert(this.inputVideoPath !== '', 'Input path must be specified!');
         assert(this.project !== null, 'Project must be specified');
         assert(this.outputVideoPath !== '', 'Output path must be specified!');
 
@@ -94,7 +86,7 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
 
         console.time('OutputBuilder.build()');
 
-        const { name: workspacePath, removeCallback: cleanUpWorkspace } = tmp.dirSync({
+        const { name: workspacePath, removeCallback: _cleanUpWorkspace } = tmp.dirSync({
             unsafeCleanup: true,
         });
 
@@ -108,48 +100,40 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
         }
         await fs.symlink(workspacePath, './tmp');
 
-        // 入力動画をコピー
-        const inputVideoPath = path.join(workspacePath, './input.mp4');
-        this.addLog(`Copy input video`);
-        this.addLog(`  - src: ${path.resolve(this.inputVideoPath)}`);
-        this.addLog(`  - dst: ${inputVideoPath}`);
-        await fs.copyFile(this.inputVideoPath, inputVideoPath);
-
-        // 字幕画像を生成
-        const canvas = document.createElement('canvas');
-        canvas.width = 1920;
-        canvas.height = 1080;
-        const ctx = canvas.getContext('2d');
-        assert(ctx !== null, 'Failed to initialize canvas context');
-
-        const captionImageList: CaptionImage[] = [];
+        const assets: Asset[] = [];
         for (let i = 0; i < this.project.objects.length; i++) {
-            this.addLog(`Prepare caption image: ${i}`);
+            this.addLog(`Create asset from object: ${i}`);
             const object = this.project.objects[i];
-            assert(CaptionObject.isCaption(object), 'Currently, only CaptionObject is supported');
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            renderCaption(ctx, object);
+            if (CaptionObject.isCaption(object)) {
+                const blob = await renderCaption(this.project, object);
+                assert(blob !== null, 'Failed to get image from canvas');
 
-            const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve));
-            assert(blob !== null, 'Failed to get image from canvas');
+                const captionImagePath = path.resolve(workspacePath, `./caption-${i}.png`);
+                this.addLog(`  - output path: ${captionImagePath}`);
 
-            const captionImagePath = path.resolve(workspacePath, `./caption-${i}.png`);
-            this.addLog(`  - output path: ${captionImagePath}`);
+                await fs.writeFile(captionImagePath, new Uint8Array(await blob.arrayBuffer()));
 
-            await fs.writeFile(captionImagePath, new Uint8Array(await blob.arrayBuffer()));
-
-            captionImageList.push({
-                path: captionImagePath,
-                startInMS: object.startInMS,
-                endInMS: object.endInMS,
-            });
+                assets.push({
+                    id: assets.length,
+                    path: captionImagePath,
+                    startInMS: object.startInMS,
+                    endInMS: object.endInMS,
+                });
+            } else if (VideoObject.isVideo(object)) {
+                assets.push({
+                    id: assets.length,
+                    path: object.srcFilePath,
+                    startInMS: object.startInMS,
+                    endInMS: object.endInMS,
+                });
+            }
         }
 
         // ffmpeg読んで合成
         this.addLog(`Build encode command`);
         const outputVideoPath = path.join(workspacePath, './output.mp4');
-        const command = OutputBuilder.buildFFMpegCommand(inputVideoPath, captionImageList, outputVideoPath);
+        const command = OutputBuilder.buildFFMpegCommand(assets, outputVideoPath);
         this.addLog(`  - command: ${command}`);
 
         this.addLog(`Encode video`);
@@ -161,8 +145,8 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
         await fs.copyFile(outputVideoPath, this.outputVideoPath);
 
         // クリーンアップ
-        this.addLog(`Clean up workspace`);
-        cleanUpWorkspace();
+        // this.addLog(`Clean up workspace`);
+        // cleanUpWorkspace();
 
         this.addLog(`Done`);
         console.timeEnd('OutputBuilder.build()');
@@ -174,13 +158,23 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
     }
 }
 
-interface CaptionImage {
+interface Asset {
+    id: number;
     path: string;
     startInMS: number;
     endInMS: number;
 }
 
-function renderCaption(ctx: CanvasRenderingContext2D, caption: CaptionObject) {
+function renderCaption(project: Project, caption: CaptionObject): Promise<Blob | null> {
+    const canvas = document.createElement('canvas');
+    canvas.width = project.viewport.width;
+    canvas.height = project.viewport.height;
+
+    const ctx = canvas.getContext('2d');
+    assert(ctx !== null, 'Failed to initialize canvas context');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     const width = ctx.canvas.width;
     const height = ctx.canvas.height;
 
@@ -191,4 +185,6 @@ function renderCaption(ctx: CanvasRenderingContext2D, caption: CaptionObject) {
     ctx.lineWidth = 4;
     ctx.fillText(caption.text, width / 2, height - 100, width - 200);
     ctx.strokeText(caption.text, width / 2, height - 100, width - 200);
+
+    return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve));
 }

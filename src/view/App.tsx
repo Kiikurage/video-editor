@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as React from 'react';
 import { useRef, useState } from 'react';
-import { assert } from '../lib/util';
+import { UUID } from '../lib/UUID';
 import { BaseObject } from '../model/BaseObject';
 import { CaptionObject } from '../model/CaptionObject';
 import { Project } from '../model/Project';
@@ -31,18 +31,21 @@ export function App(): React.ReactElement {
         },
         objects: [
             {
+                id: UUID(),
                 type: VideoObject.type,
                 startInMS: 0,
                 endInMS: 4 * 60 * 1000,
                 srcFilePath: path.resolve(__dirname, '../src/static/video.mp4'),
             } as VideoObject,
             {
+                id: UUID(),
                 type: CaptionObject.type,
                 startInMS: 5000,
                 endInMS: 8000,
                 text: '最初の字幕',
             } as CaptionObject,
             {
+                id: UUID(),
                 type: CaptionObject.type,
                 startInMS: 10000,
                 endInMS: 15000,
@@ -97,12 +100,7 @@ export function App(): React.ReactElement {
     };
 
     const onVideoExportButtonClick = async () => {
-        assert(project.inputVideoPath !== undefined, 'Input video is not loaded');
-
-        const outputBuilder = new OutputBuilder()
-            .setInputVideoPath(project.inputVideoPath)
-            .setProject(project)
-            .setOutputVideoPath('./output.mp4');
+        const outputBuilder = new OutputBuilder().setProject(project).setOutputVideoPath('./output.mp4');
 
         outputBuilder.addEventListener('log', () => {
             console.log(outputBuilder.log);
