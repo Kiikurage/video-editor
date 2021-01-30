@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { Caption } from '../model/Caption';
+import { assert } from '../lib/util';
+import { CaptionObject } from '../model/CaptionObject';
 import { Project } from '../model/Project';
 import { VideoController } from '../service/VideoController';
 import { useCallbackRef } from './hooks/useCallbackRef';
@@ -32,7 +33,7 @@ interface Props {
     project: Project;
 }
 
-function renderCaption(ctx: CanvasRenderingContext2D, caption: Caption) {
+function renderCaption(ctx: CanvasRenderingContext2D, caption: CaptionObject) {
     const width = ctx.canvas.width;
     const height = ctx.canvas.height;
 
@@ -54,12 +55,13 @@ export function VideoPlayer(props: Props): React.ReactElement {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
         const currentVideoTimeInMS = videoController.currentTimeInMS;
-        const activeCaption = project.captions.find(
+        const activeObject = project.objects.find(
             (caption) => caption.startInMS <= currentVideoTimeInMS && currentVideoTimeInMS < caption.endInMS
         );
 
-        if (activeCaption) {
-            renderCaption(ctx, activeCaption);
+        if (activeObject != null) {
+            assert(CaptionObject.isCaption(activeObject), 'Currently, only CaptionObject is supported');
+            renderCaption(ctx, activeObject);
         }
     });
 
@@ -73,7 +75,7 @@ export function VideoPlayer(props: Props): React.ReactElement {
 
     useEffect(() => {
         rerenderCanvasContents();
-    }, [project.captions, rerenderCanvasContents]);
+    }, [project.objects, rerenderCanvasContents]);
 
     const onVideoLoadedMetadata = () => {
         const canvas = canvasRef.current;

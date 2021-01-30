@@ -1,9 +1,9 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { Caption } from '../model/Caption';
+import { BaseObject } from '../model/BaseObject';
 
 interface Props {
-    node: Caption | null;
+    object: BaseObject | null;
 }
 
 const Base = styled.div``;
@@ -18,24 +18,24 @@ const AttributeName = styled.div`
 `;
 
 export function PropertyView(props: Props): React.ReactElement {
-    const { node } = props;
+    const { object } = props;
 
     return (
         <Base>
-            {node !== null && (
+            {object !== null && (
                 <>
                     <AttributeRow>
                         <AttributeName>開始</AttributeName>
-                        <input type="number" min={0} defaultValue={node.startInMS} />
+                        <input type="number" min={0} defaultValue={object.startInMS} />
                     </AttributeRow>
                     <AttributeRow>
                         <AttributeName>終了</AttributeName>
-                        <input type="number" min={0} defaultValue={node.endInMS} />
+                        <input type="number" min={0} defaultValue={object.endInMS} />
                     </AttributeRow>
-                    <AttributeRow>
-                        <AttributeName>内容</AttributeName>
-                        <textarea>{node.text}</textarea>
-                    </AttributeRow>
+                    {/*<AttributeRow>*/}
+                    {/*    <AttributeName>内容</AttributeName>*/}
+                    {/*    <textarea>{object.text}</textarea>*/}
+                    {/*</AttributeRow>*/}
                 </>
             )}
         </Base>

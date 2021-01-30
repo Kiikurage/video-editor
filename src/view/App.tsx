@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as React from 'react';
 import { useRef, useState } from 'react';
 import { assert } from '../lib/util';
-import { Caption } from '../model/Caption';
+import { BaseObject } from '../model/BaseObject';
 import { Project } from '../model/Project';
 import { OutputBuilder } from '../service/OutputBuilder';
 import { VideoController } from '../service/VideoController';
@@ -23,62 +23,58 @@ export function App(): React.ReactElement {
     const [project, setProject] = useState<Project>(() => ({
         inputVideoPath: path.resolve(__dirname, '../src/static/video.mp4'),
         // inputVideoPath: undefined,
-        captions: [
+        objects: [
             {
+                type: 'CAPTION',
                 startInMS: 5000,
                 endInMS: 8000,
                 text: '最初の字幕',
             },
             {
+                type: 'CAPTION',
                 startInMS: 10000,
                 endInMS: 15000,
                 text: '2番目の字幕',
             },
         ],
     }));
-    const [focusedNode, setFocusedNode] = useState<Caption | null>(null);
+    const [selectedObject, setSelectedObject] = useState<BaseObject | null>(null);
 
-    const onCaptionFocus = (caption: Caption) => {
-        setFocusedNode(caption);
+    const onObjectSelect = (object: BaseObject) => {
+        setSelectedObject(object);
     };
 
-    const setCaptionList = (newCaptionList: Caption[]) => {
+    const setObjects = (newObjects: BaseObject[]) => {
         setProject((prevState) => {
             return {
                 ...prevState,
-                captions: newCaptionList,
+                objects: newObjects,
             };
         });
     };
-    const onCaptionChange = (oldValue: Caption, newValue: Caption) => {
-        const i = project.captions.indexOf(oldValue);
-        if (i === -1) return;
 
-        const newCaptionList = project.captions.slice(0);
-        newCaptionList.splice(i, 1, newValue);
-
-        setCaptionList(newCaptionList);
+    const onObjectAdd = (object: BaseObject) => {
+        setObjects([...project.objects, object]);
     };
 
-    const onAddCaptionButtonClick = () => {
-        setCaptionList([
-            ...project.captions,
-            {
-                text: '字幕',
-                startInMS: videoController.currentTimeInMS,
-                endInMS: videoController.currentTimeInMS + 5000,
-            },
-        ]);
-    };
-
-    const onCaptionRemoveButtonClick = (caption: Caption) => {
-        const i = project.captions.indexOf(caption);
+    const onObjectChange = (oldValue: BaseObject, newValue: BaseObject) => {
+        const i = project.objects.indexOf(oldValue);
         if (i === -1) return;
 
-        const newCaptionList = project.captions.slice(0);
+        const newObjects = project.objects.slice(0);
+        newObjects.splice(i, 1, newValue);
+
+        setObjects(newObjects);
+    };
+
+    const onObjectRemove = (object: BaseObject) => {
+        const i = project.objects.indexOf(object);
+        if (i === -1) return;
+
+        const newCaptionList = project.objects.slice(0);
         newCaptionList.splice(i, 1);
 
-        setCaptionList(newCaptionList);
+        setObjects(newCaptionList);
     };
 
     const onVideoOpenButtonClick = (inputVideoPath: string) => {
@@ -93,7 +89,7 @@ export function App(): React.ReactElement {
 
         const outputBuilder = new OutputBuilder()
             .setInputVideoPath(project.inputVideoPath)
-            .setCaptionList(project.captions)
+            .setProject(project)
             .setOutputVideoPath('./output.mp4');
 
         outputBuilder.addEventListener('log', () => {
@@ -114,11 +110,11 @@ export function App(): React.ReactElement {
     return (
         <AppShell
             project={project}
-            focusedNode={focusedNode}
-            onCaptionChange={onCaptionChange}
-            onCaptionFocus={onCaptionFocus}
-            onAddCaptionButtonClick={onAddCaptionButtonClick}
-            onCaptionRemoveButtonClick={onCaptionRemoveButtonClick}
+            selectedObject={selectedObject}
+            onObjectSelect={onObjectSelect}
+            onObjectAdd={onObjectAdd}
+            onObjectChange={onObjectChange}
+            onObjectRemove={onObjectRemove}
             onVideoOpen={onVideoOpenButtonClick}
             onVideoExportButtonClick={onVideoExportButtonClick}
             videoController={videoController}

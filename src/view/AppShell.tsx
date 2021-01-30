@@ -1,6 +1,7 @@
+import { useRef } from 'react';
 import * as React from 'react';
 import styled from 'styled-components';
-import { Caption } from '../model/Caption';
+import { BaseObject } from '../model/BaseObject';
 import { Project } from '../model/Project';
 import { VideoController } from '../service/VideoController';
 import { DropArea } from './DropArea';
@@ -78,38 +79,37 @@ const PropertyArea = styled.div`
 interface Props {
     videoController: VideoController;
     project: Project;
-    focusedNode: Caption | null;
-    onCaptionFocus: (caption: Caption) => void;
+    selectedObject: BaseObject | null;
     onVideoOpen: (inputVideoPath: string) => void;
+    onObjectSelect: (object: BaseObject) => void;
+    onObjectAdd: (object: BaseObject) => void;
+    onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
+    onObjectRemove: (object: BaseObject) => void;
     onVideoExportButtonClick: () => void;
-    onCaptionChange: (oldValue: Caption, newValue: Caption) => void;
-    onAddCaptionButtonClick: () => void;
-    onCaptionRemoveButtonClick: (caption: Caption) => void;
 }
 
 export function AppShell(props: Props): React.ReactElement {
     const {
         videoController,
         project,
-        focusedNode,
-        onCaptionFocus,
-        // onVideoExportButtonClick,
-        // onCaptionFocus,
-        // onCaptionChange,
-        // onCaptionRemoveButtonClick,
-        // onAddCaptionButtonClick,
+        selectedObject,
+        onObjectSelect,
+        // onObjectAdd,
+        // onObjectChange,
+        // onObjectRemove,
+        onVideoExportButtonClick,
     } = props;
 
-    // const inputVideoFileInputRef = useRef<HTMLInputElement | null>(null);
+    const inputVideoFileInputRef = useRef<HTMLInputElement | null>(null);
 
-    // const onVideoOpenButtonClick = () => {
-    //     const fileInput = inputVideoFileInputRef.current;
-    //     if (fileInput === null || !fileInput.files || fileInput.files.length === 0) return;
-    //
-    //     const file = fileInput.files[0];
-    //
-    //     props.onVideoOpen(file.path);
-    // };
+    const onVideoOpenButtonClick = () => {
+        const fileInput = inputVideoFileInputRef.current;
+        if (fileInput === null || !fileInput.files || fileInput.files.length === 0) return;
+
+        const file = fileInput.files[0];
+
+        props.onVideoOpen(file.path);
+    };
 
     const onFileDrop = (file: File) => {
         props.onVideoOpen(file.path);
@@ -127,11 +127,11 @@ export function AppShell(props: Props): React.ReactElement {
         <DropArea onFileDrop={onFileDrop}>
             <Base>
                 <AppHeader>
-                    {/*<div>*/}
-                    {/*    <input type="file" accept=".mp4" ref={(e) => (inputVideoFileInputRef.current = e)} />*/}
-                    {/*    <button onClick={onVideoOpenButtonClick}>動画を開く</button>*/}
-                    {/*</div>*/}
-                    {/*<button onClick={onVideoExportButtonClick}>動画出力</button>*/}
+                    <div>
+                        <input type="file" accept=".mp4" ref={(e) => (inputVideoFileInputRef.current = e)} />
+                        <button onClick={onVideoOpenButtonClick}>動画を開く</button>
+                    </div>
+                    <button onClick={onVideoExportButtonClick}>動画出力</button>
                 </AppHeader>
                 <VideoPlayerArea>
                     <VideoPlayer project={project} videoController={videoController} />
@@ -144,22 +144,13 @@ export function AppShell(props: Props): React.ReactElement {
                     <TimeLine
                         videoController={videoController}
                         project={project}
-                        focusedNode={focusedNode}
-                        onCaptionFocus={onCaptionFocus}
+                        selectedObject={selectedObject}
+                        onObjectSelect={onObjectSelect}
                     />
-                    {/*<CaptionListView*/}
-                    {/*    videoController={videoController}*/}
-                    {/*    project={project}*/}
-                    {/*    currentVideoTimeInMS={videoController.currentTimeInMS}*/}
-                    {/*    onCaptionFocus={onCaptionFocus}*/}
-                    {/*    onCaptionChange={onCaptionChange}*/}
-                    {/*    onAddCaptionButtonClick={onAddCaptionButtonClick}*/}
-                    {/*    onCaptionRemoveButtonClick={onCaptionRemoveButtonClick}*/}
-                    {/*/>*/}
                 </CaptionListArea>
 
                 <PropertyArea>
-                    <PropertyView node={focusedNode} />
+                    <PropertyView object={selectedObject} />
                 </PropertyArea>
             </Base>
         </DropArea>

@@ -5,8 +5,9 @@ import * as path from 'path';
 import * as tmp from 'tmp';
 import { promisify } from 'util';
 import { assert } from '../lib/util';
-import { Caption } from '../model/Caption';
+import { CaptionObject } from '../model/CaptionObject';
 import { IPCMessages } from '../model/IPCMessages';
+import { Project } from '../model/Project';
 
 const LOG_EVENT = new Event('log');
 
@@ -19,7 +20,7 @@ interface OutputBuilderEvents {
 export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
     private inputVideoPath = '';
     private outputVideoPath = '';
-    private captionList: readonly Caption[] = [];
+    private project: Project | null = null;
 
     private _log = '';
 
@@ -79,13 +80,14 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
         return this;
     }
 
-    setCaptionList(captionList: readonly Caption[]): this {
-        this.captionList = captionList;
+    setProject(project: Project): this {
+        this.project = project;
         return this;
     }
 
     async build(): Promise<void> {
         assert(this.inputVideoPath !== '', 'Input path must be specified!');
+        assert(this.project !== null, 'Project must be specified');
         assert(this.outputVideoPath !== '', 'Output path must be specified!');
 
         this._log = '';
@@ -121,12 +123,13 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
         assert(ctx !== null, 'Failed to initialize canvas context');
 
         const captionImageList: CaptionImage[] = [];
-        for (let i = 0; i < this.captionList.length; i++) {
+        for (let i = 0; i < this.project.objects.length; i++) {
             this.addLog(`Prepare caption image: ${i}`);
-            const caption = this.captionList[i];
+            const object = this.project.objects[i];
+            assert(CaptionObject.isCaption(object), 'Currently, only CaptionObject is supported');
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            renderCaption(ctx, caption);
+            renderCaption(ctx, object);
 
             const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve));
             assert(blob !== null, 'Failed to get image from canvas');
@@ -138,8 +141,8 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
 
             captionImageList.push({
                 path: captionImagePath,
-                startInMS: caption.startInMS,
-                endInMS: caption.endInMS,
+                startInMS: object.startInMS,
+                endInMS: object.endInMS,
             });
         }
 
@@ -177,7 +180,7 @@ interface CaptionImage {
     endInMS: number;
 }
 
-function renderCaption(ctx: CanvasRenderingContext2D, caption: Caption) {
+function renderCaption(ctx: CanvasRenderingContext2D, caption: CaptionObject) {
     const width = ctx.canvas.width;
     const height = ctx.canvas.height;
 

@@ -1,6 +1,6 @@
-import { Caption } from './Caption';
+import { BaseObject } from './BaseObject';
 
 export interface Project {
     inputVideoPath?: string;
-    captions: Caption[];
+    objects: BaseObject[];
 }

@@ -2,7 +2,8 @@ import { rgba } from 'polished';
 import * as React from 'react';
 import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
-import { Caption } from '../model/Caption';
+import { BaseObject } from '../model/BaseObject';
+import { CaptionObject } from '../model/CaptionObject';
 import { Project } from '../model/Project';
 import { VideoController } from '../service/VideoController';
 import { useCallbackRef } from './hooks/useCallbackRef';
@@ -70,7 +71,7 @@ const CurrentTimeIndicator = styled.div`
     border-left: 1px solid #000;
 `;
 
-const NodeLayer = styled(Layer)`
+const ObjectLayer = styled(Layer)`
     cursor: text;
     padding: 32px 0;
 
@@ -85,11 +86,11 @@ const NodeLayer = styled(Layer)`
     }
 `;
 
-const CaptionNode = styled.div<{ focused: boolean }>`
+const ObjectView = styled.div<{ selected: boolean }>`
     position: relative;
     height: 20px;
     background: ${rgba('#4d90fe', 0.7)};
-    border: 1px solid ${(props) => (props.focused ? '#f00' : '#4d90fe')};
+    border: 1px solid ${(props) => (props.selected ? '#f00' : '#4d90fe')};
     color: #fff;
     padding: 0 4px;
     line-height: 20px;
@@ -103,12 +104,12 @@ const CaptionNode = styled.div<{ focused: boolean }>`
 interface Props {
     videoController: VideoController;
     project: Project;
-    focusedNode: Caption | null;
-    onCaptionFocus: (caption: Caption) => void;
+    selectedObject: BaseObject | null;
+    onObjectSelect: (object: BaseObject) => void;
 }
 
 export function TimeLine(props: Props): React.ReactElement {
-    const { videoController, project, focusedNode, onCaptionFocus } = props;
+    const { videoController, project, selectedObject, onObjectSelect } = props;
 
     const durationInMSForVisibleAreaRef = useRef(Math.max(videoController.durationInMS, 1));
     const dividerDurationInMS = computeBestDividerDurationInMS(durationInMSForVisibleAreaRef.current);
@@ -140,7 +141,7 @@ export function TimeLine(props: Props): React.ReactElement {
         forceUpdate();
     });
 
-    const onNodeLayerMouseMove = useCallbackRef((ev: React.MouseEvent) => {
+    const onObjectLayerMouseMove = useCallbackRef((ev: React.MouseEvent) => {
         const base = baseRef.current;
         if (!base) return;
 
@@ -149,7 +150,7 @@ export function TimeLine(props: Props): React.ReactElement {
         forceUpdate();
     });
 
-    const onNodeLayerClick = useCallbackRef((ev: React.MouseEvent) => {
+    const onObjectLayerClick = useCallbackRef((ev: React.MouseEvent) => {
         const base = baseRef.current;
         if (!base) return;
 
@@ -157,8 +158,8 @@ export function TimeLine(props: Props): React.ReactElement {
         videoController.currentTimeInMS = (durationInMSForVisibleAreaRef.current * (ev.clientX - baseLeft)) / baseWidth;
     });
 
-    const onCaptionNodeClick = useCallbackRef((ev: React.MouseEvent, caption: Caption) => {
-        onCaptionFocus(caption);
+    const onObjectClick = useCallbackRef((ev: React.MouseEvent, object: BaseObject) => {
+        onObjectSelect(object);
     });
 
     const currentTimeIndicatorLeft = (100 * videoController.currentTimeInMS) / durationInMSForVisibleAreaRef.current;
@@ -189,25 +190,25 @@ export function TimeLine(props: Props): React.ReactElement {
                         <DividerTimeLabel>{formatTime(dividerDurationInMS * 7)}</DividerTimeLabel>
                     </Divider>
                 </DividersLayer>
-                <NodeLayer onMouseMove={onNodeLayerMouseMove} onClick={onNodeLayerClick}>
+                <ObjectLayer onMouseMove={onObjectLayerMouseMove} onClick={onObjectLayerClick}>
                     <CurrentTimeIndicator style={{ left: `${currentTimeIndicatorLeft}%` }} />
                     <MouseTimeIndicator style={{ left: `${mouseXRef.current}%` }} />
-                    {project.captions.map((caption) => {
-                        const isFocused = caption === focusedNode;
-                        const left = `${(100 * caption.startInMS) / durationInMSForVisibleAreaRef.current}%`;
-                        const width = `${(100 * (caption.endInMS - caption.startInMS)) / durationInMSForVisibleAreaRef.current}%`;
+                    {project.objects.map((object) => {
+                        const isSelected = object === selectedObject;
+                        const left = `${(100 * object.startInMS) / durationInMSForVisibleAreaRef.current}%`;
+                        const width = `${(100 * (object.endInMS - object.startInMS)) / durationInMSForVisibleAreaRef.current}%`;
                         return (
-                            <CaptionNode
-                                focused={isFocused}
-                                key={[caption.startInMS, caption.endInMS].join(',')}
+                            <ObjectView
+                                selected={isSelected}
+                                key={[object.startInMS, object.endInMS].join(',')}
                                 style={{ left: left, width: width }}
-                                onClick={(ev: React.MouseEvent) => onCaptionNodeClick(ev, caption)}
+                                onClick={(ev: React.MouseEvent) => onObjectClick(ev, object)}
                             >
-                                {caption.text}
-                            </CaptionNode>
+                                {CaptionObject.isCaption(object) ? object.text : `[${object.type}]`}
+                            </ObjectView>
                         );
                     })}
-                </NodeLayer>
+                </ObjectLayer>
             </Base>
         </QuickPinchZoom>
     );
