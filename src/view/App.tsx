@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { UUID } from '../lib/UUID';
 import { BaseObject } from '../model/BaseObject';
 import { CaptionObject } from '../model/CaptionObject';
+import { ImageObject } from '../model/ImageObject';
 import { Project } from '../model/Project';
 import { VideoObject } from '../model/VideoObject';
 import { OutputBuilder } from '../service/OutputBuilder';
@@ -37,6 +38,17 @@ export function App(): React.ReactElement {
                 endInMS: 4 * 60 * 1000,
                 srcFilePath: path.resolve(__dirname, '../src/static/video.mp4'),
             } as VideoObject,
+            {
+                id: UUID(),
+                type: ImageObject.type,
+                startInMS: 3000,
+                endInMS: 20000,
+                x: 100,
+                y: 100,
+                width: 400,
+                height: 400,
+                srcFilePath: path.resolve(__dirname, '../src/static/image.png'),
+            } as ImageObject,
             {
                 id: UUID(),
                 type: CaptionObject.type,

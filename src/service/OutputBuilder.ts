@@ -6,6 +6,7 @@ import * as tmp from 'tmp';
 import { promisify } from 'util';
 import { assert } from '../lib/util';
 import { CaptionObject } from '../model/CaptionObject';
+import { ImageObject } from '../model/ImageObject';
 import { IPCMessages } from '../model/IPCMessages';
 import { Project } from '../model/Project';
 import { VideoObject } from '../model/VideoObject';
@@ -36,7 +37,7 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
         console.log(`FFMPEG path=${ffmpeg.path} version=${ffmpeg.version}`);
 
         command.push(ffmpeg.path);
-        // command.push('-ss 00:00:00 -to 00:00:20'); // TODO: Debug only
+        command.push('-ss 00:00:00 -to 00:00:20'); // TODO: Debug only
 
         for (const asset of assets) {
             command.push(`-i ${asset.path}`);
@@ -50,12 +51,20 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
 
                 const filterInput1 = asset.id === 1 ? '[0]' : '[v]';
                 const filterInput2 = `[${asset.id}]`;
+                const filterInput2Resized = `[${asset.id}_resized]`;
                 const startTimeInSecond = (asset.startInMS / 1000).toFixed(3);
                 const endTimeInSecond = (asset.endInMS / 1000).toFixed(3);
                 const filterOutput = asset.id === assets.length - 1 ? '' : '[v]';
 
+                filterComplexExpr.push([filterInput2, `scale=${asset.width}x${asset.height}`, filterInput2Resized].join(''));
                 filterComplexExpr.push(
-                    `${filterInput1}${filterInput2}overlay=enable='between(t,${startTimeInSecond},${endTimeInSecond})'${filterOutput}`
+                    [
+                        filterInput1,
+                        filterInput2Resized,
+                        'overlay=',
+                        [`x=${asset.x}`, `y=${asset.y}`, `enable='between(t,${startTimeInSecond},${endTimeInSecond})'`].join(':'),
+                        filterOutput,
+                    ].join('')
                 );
             }
             command.push(`-filter_complex "${filterComplexExpr.join('; ')}"`);
@@ -119,6 +128,10 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
                     path: captionImagePath,
                     startInMS: object.startInMS,
                     endInMS: object.endInMS,
+                    x: 0,
+                    y: 0,
+                    width: this.project.viewport.width,
+                    height: this.project.viewport.height,
                 });
             } else if (VideoObject.isVideo(object)) {
                 assets.push({
@@ -126,7 +139,24 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
                     path: object.srcFilePath,
                     startInMS: object.startInMS,
                     endInMS: object.endInMS,
+                    x: 0,
+                    y: 0,
+                    width: this.project.viewport.width,
+                    height: this.project.viewport.height,
                 });
+            } else if (ImageObject.isImage(object)) {
+                assets.push({
+                    id: assets.length,
+                    path: object.srcFilePath,
+                    startInMS: object.startInMS,
+                    endInMS: object.endInMS,
+                    x: object.x,
+                    y: object.y,
+                    width: object.width,
+                    height: object.height,
+                });
+            } else {
+                assert(false, `Unsupported object type: ${object.type}`);
             }
         }
 
@@ -163,6 +193,10 @@ interface Asset {
     path: string;
     startInMS: number;
     endInMS: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
 }
 
 function renderCaption(project: Project, caption: CaptionObject): Promise<Blob | null> {

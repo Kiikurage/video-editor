@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { assert } from '../lib/util';
 import { CaptionObject } from '../model/CaptionObject';
+import { ImageObject } from '../model/ImageObject';
 import { Project } from '../model/Project';
 import { VideoObject } from '../model/VideoObject';
 import { PreviewController } from '../service/PreviewController';
@@ -47,6 +48,31 @@ function renderCaption(ctx: CanvasRenderingContext2D, caption: CaptionObject) {
     ctx.strokeText(caption.text, width / 2, height - 100, width - 200);
 }
 
+function renderImage(ctx: CanvasRenderingContext2D, image: ImageObject) {
+    if (image._imageDataCache === undefined) {
+        image._imageDataCache = 'loading';
+        const imageElement = new Image();
+
+        void (async () => {
+            await new Promise((r) => {
+                imageElement.onload = r;
+                imageElement.src = image.srcFilePath;
+            });
+
+            image._imageDataCache = imageElement;
+            // TODO: 非同期に読み込んでいるので初回読み込み時は画像が表示されない
+        })();
+
+        return;
+    }
+
+    if (image._imageDataCache === 'loading') {
+        return;
+    }
+
+    ctx.drawImage(image._imageDataCache, image.x, image.y, image.width, image.height);
+}
+
 export function PreviewPlayer(props: Props): React.ReactElement {
     const { previewController, project } = props;
 
@@ -85,13 +111,20 @@ export function PreviewPlayer(props: Props): React.ReactElement {
             (caption) => caption.startInMS <= currentVideoTimeInMS && currentVideoTimeInMS < caption.endInMS
         );
 
+        // console.log(activeObjects);
+
         for (const object of activeObjects) {
             if (VideoObject.isVideo(object)) {
                 continue;
             }
 
-            assert(CaptionObject.isCaption(object), 'Currently, only CaptionObject is supported');
-            renderCaption(ctx, object);
+            if (ImageObject.isImage(object)) {
+                renderImage(ctx, object);
+            } else if (CaptionObject.isCaption(object)) {
+                renderCaption(ctx, object);
+            } else {
+                assert(false, `Unsupported object type: ${object.type}`);
+            }
         }
     });
 
