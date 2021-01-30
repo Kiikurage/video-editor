@@ -2,6 +2,7 @@ import { rgba } from 'polished';
 import * as React from 'react';
 import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import { Caption } from '../model/Caption';
 import { Project } from '../model/Project';
 import { VideoController } from '../service/VideoController';
 import { useCallbackRef } from './hooks/useCallbackRef';
@@ -84,13 +85,30 @@ const NodeLayer = styled(Layer)`
     }
 `;
 
+const CaptionNode = styled.div<{ focused: boolean }>`
+    position: relative;
+    height: 20px;
+    background: ${rgba('#4d90fe', 0.7)};
+    border: 1px solid ${(props) => (props.focused ? '#f00' : '#4d90fe')};
+    color: #fff;
+    padding: 0 4px;
+    line-height: 20px;
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+    cursor: pointer;
+`;
+
 interface Props {
     videoController: VideoController;
     project: Project;
+    focusedNode: Caption | null;
+    onCaptionFocus: (caption: Caption) => void;
 }
 
 export function TimeLine(props: Props): React.ReactElement {
-    const { videoController, project } = props;
+    const { videoController, project, focusedNode, onCaptionFocus } = props;
 
     const durationInMSForVisibleAreaRef = useRef(Math.max(videoController.durationInMS, 1));
     const dividerDurationInMS = computeBestDividerDurationInMS(durationInMSForVisibleAreaRef.current);
@@ -139,6 +157,10 @@ export function TimeLine(props: Props): React.ReactElement {
         videoController.currentTimeInMS = (durationInMSForVisibleAreaRef.current * (ev.clientX - baseLeft)) / baseWidth;
     });
 
+    const onCaptionNodeClick = useCallbackRef((ev: React.MouseEvent, caption: Caption) => {
+        onCaptionFocus(caption);
+    });
+
     const currentTimeIndicatorLeft = (100 * videoController.currentTimeInMS) / durationInMSForVisibleAreaRef.current;
 
     return (
@@ -171,10 +193,16 @@ export function TimeLine(props: Props): React.ReactElement {
                     <CurrentTimeIndicator style={{ left: `${currentTimeIndicatorLeft}%` }} />
                     <MouseTimeIndicator style={{ left: `${mouseXRef.current}%` }} />
                     {project.captions.map((caption) => {
+                        const isFocused = caption === focusedNode;
                         const left = `${(100 * caption.startInMS) / durationInMSForVisibleAreaRef.current}%`;
                         const width = `${(100 * (caption.endInMS - caption.startInMS)) / durationInMSForVisibleAreaRef.current}%`;
                         return (
-                            <CaptionNode key={[caption.startInMS, caption.endInMS].join(',')} style={{ left: left, width: width }}>
+                            <CaptionNode
+                                focused={isFocused}
+                                key={[caption.startInMS, caption.endInMS].join(',')}
+                                style={{ left: left, width: width }}
+                                onClick={(ev: React.MouseEvent) => onCaptionNodeClick(ev, caption)}
+                            >
                                 {caption.text}
                             </CaptionNode>
                         );
@@ -184,20 +212,6 @@ export function TimeLine(props: Props): React.ReactElement {
         </QuickPinchZoom>
     );
 }
-
-const CaptionNode = styled.div`
-    position: relative;
-    height: 20px;
-    background: ${rgba('#4d90fe', 0.7)};
-    border: 1px solid #4d90fe;
-    color: #fff;
-    padding: 0 4px;
-    line-height: 20px;
-    font-size: 10px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    box-sizing: border-box;
-`;
 
 function formatTime(timeInMS: number): string {
     const hour = Math.floor(timeInMS / 1000 / 60 / 60);

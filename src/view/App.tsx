@@ -36,9 +36,10 @@ export function App(): React.ReactElement {
             },
         ],
     }));
+    const [focusedNode, setFocusedNode] = useState<Caption | null>(null);
 
     const onCaptionFocus = (caption: Caption) => {
-        videoController.currentTimeInMS = caption.startInMS;
+        setFocusedNode(caption);
     };
 
     const setCaptionList = (newCaptionList: Caption[]) => {
@@ -113,6 +114,7 @@ export function App(): React.ReactElement {
     return (
         <AppShell
             project={project}
+            focusedNode={focusedNode}
             onCaptionChange={onCaptionChange}
             onCaptionFocus={onCaptionFocus}
             onAddCaptionButtonClick={onAddCaptionButtonClick}

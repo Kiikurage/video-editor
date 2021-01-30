@@ -4,6 +4,7 @@ import { Caption } from '../model/Caption';
 import { Project } from '../model/Project';
 import { VideoController } from '../service/VideoController';
 import { DropArea } from './DropArea';
+import { PropertyView } from './PropertyView';
 import { TimeLine } from './TimeLine';
 import { VideoPlayer } from './VideoPlayer';
 
@@ -77,9 +78,10 @@ const PropertyArea = styled.div`
 interface Props {
     videoController: VideoController;
     project: Project;
+    focusedNode: Caption | null;
+    onCaptionFocus: (caption: Caption) => void;
     onVideoOpen: (inputVideoPath: string) => void;
     onVideoExportButtonClick: () => void;
-    onCaptionFocus: (caption: Caption) => void;
     onCaptionChange: (oldValue: Caption, newValue: Caption) => void;
     onAddCaptionButtonClick: () => void;
     onCaptionRemoveButtonClick: (caption: Caption) => void;
@@ -89,6 +91,8 @@ export function AppShell(props: Props): React.ReactElement {
     const {
         videoController,
         project,
+        focusedNode,
+        onCaptionFocus,
         // onVideoExportButtonClick,
         // onCaptionFocus,
         // onCaptionChange,
@@ -137,7 +141,12 @@ export function AppShell(props: Props): React.ReactElement {
                     <button onClick={onPauseButtonClick}>停止</button>
                 </MiddleToolbarArea>
                 <CaptionListArea>
-                    <TimeLine videoController={videoController} project={project} />
+                    <TimeLine
+                        videoController={videoController}
+                        project={project}
+                        focusedNode={focusedNode}
+                        onCaptionFocus={onCaptionFocus}
+                    />
                     {/*<CaptionListView*/}
                     {/*    videoController={videoController}*/}
                     {/*    project={project}*/}
@@ -149,7 +158,9 @@ export function AppShell(props: Props): React.ReactElement {
                     {/*/>*/}
                 </CaptionListArea>
 
-                <PropertyArea></PropertyArea>
+                <PropertyArea>
+                    <PropertyView node={focusedNode} />
+                </PropertyArea>
             </Base>
         </DropArea>
     );
