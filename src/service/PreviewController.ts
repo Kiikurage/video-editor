@@ -27,6 +27,10 @@ export class PreviewController extends EventTarget implements PreviewControllerE
         this.dispatchEvent(SEEK_EVENT);
     };
 
+    get paused(): boolean {
+        return this.timer.paused;
+    }
+
     get durationInMS(): number {
         return this.timer.durationInMS;
     }

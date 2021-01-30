@@ -68,6 +68,10 @@ export class Timer extends EventTarget implements TimerEvents {
         }
     }
 
+    get paused(): boolean {
+        return !this.isStarted;
+    }
+
     get currentTimeInMS(): number {
         if (this.isStarted) {
             const elapsedTime = Date.now() - this.startedAtInMS;

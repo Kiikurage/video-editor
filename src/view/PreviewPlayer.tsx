@@ -9,15 +9,27 @@ import { VideoObject } from '../model/VideoObject';
 import { PreviewController } from '../service/PreviewController';
 import { useCallbackRef } from './hooks/useCallbackRef';
 
+const MAX_ACCEPTABLE_VIDEO_LAG_IN_MS = 50;
+const SEEK_DELAY_IN_MS = 1000;
+
 const Base = styled.div`
     position: relative;
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+`;
+
+const ContentBase = styled.div`
+    position: relative;
+    background: #fff;
+    box-shadow: rgba(50, 50, 93, 0.25) 0 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
 `;
 
 const Video = styled.video`
-    width: auto;
-    height: auto;
+    position: absolute;
     max-width: 100%;
     max-height: 100%;
 `;
@@ -77,17 +89,39 @@ export function PreviewPlayer(props: Props): React.ReactElement {
     const { previewController, project } = props;
 
     const syncVideoPosition = useCallbackRef(() => {
-        const video = videoRef.current;
-        if (!video) return;
+        const currentPreviewTimeInMS = previewController.currentTimeInMS;
 
-        if (!video.paused) {
-            const videoCurrentTimeInMS = video.currentTime * 1000;
-            const lag = Math.abs(videoCurrentTimeInMS - previewController.currentTimeInMS);
+        const videos = project.objects.filter((object) => VideoObject.isVideo(object)) as VideoObject[];
+        for (const video of videos) {
+            const videoElement = videoRef.current.get(video.id);
+            if (videoElement === undefined || videoElement === null) {
+                continue;
+            }
 
-            if (lag < 100) return;
+            const isActive = video.startInMS <= currentPreviewTimeInMS && currentPreviewTimeInMS < video.endInMS;
+
+            if (isActive) {
+                videoElement.style.display = 'block';
+                const expectedVideoCurrentTimeInMS = currentPreviewTimeInMS - video.startInMS;
+                const videoCurrentTimeInMS = videoElement.currentTime * 1000;
+                if (videoElement.paused) {
+                    if (!previewController.paused) {
+                        void videoElement.play().catch(() => void 0);
+                    }
+                } else {
+                    const lagInMS = currentPreviewTimeInMS - (videoCurrentTimeInMS + video.startInMS);
+                    if (lagInMS > MAX_ACCEPTABLE_VIDEO_LAG_IN_MS || lagInMS < -MAX_ACCEPTABLE_VIDEO_LAG_IN_MS - SEEK_DELAY_IN_MS) {
+                        videoElement.currentTime = (expectedVideoCurrentTimeInMS + SEEK_DELAY_IN_MS) / 1000;
+                    } else if (lagInMS < -MAX_ACCEPTABLE_VIDEO_LAG_IN_MS) {
+                        videoElement.pause();
+                    }
+                }
+            } else {
+                videoElement.style.display = 'none';
+                videoElement.pause();
+                videoElement.currentTime = 0;
+            }
         }
-
-        video.currentTime = previewController.currentTimeInMS / 1000;
     });
 
     const rerenderCanvasContents = useCallbackRef(() => {
@@ -111,8 +145,6 @@ export function PreviewPlayer(props: Props): React.ReactElement {
             (caption) => caption.startInMS <= currentVideoTimeInMS && currentVideoTimeInMS < caption.endInMS
         );
 
-        // console.log(activeObjects);
-
         for (const object of activeObjects) {
             if (VideoObject.isVideo(object)) {
                 continue;
@@ -132,42 +164,50 @@ export function PreviewPlayer(props: Props): React.ReactElement {
         syncVideoPosition();
         rerenderCanvasContents();
     });
-    const onPreviewControllerPlay = useCallbackRef(() => {
-        const video = videoRef.current;
-        if (!video) return;
-
-        void video.play();
-    });
     const onPreviewControllerPause = useCallbackRef(() => {
-        const video = videoRef.current;
-        if (!video) return;
+        const currentPreviewTimeInMS = previewController.currentTimeInMS;
+        const videos = project.objects.filter((object) => VideoObject.isVideo(object)) as VideoObject[];
+        for (const video of videos) {
+            const videoElement = videoRef.current.get(video.id);
+            if (videoElement === undefined || videoElement === null) {
+                continue;
+            }
 
-        video.pause();
+            const isActive = video.startInMS <= currentPreviewTimeInMS && currentPreviewTimeInMS < video.endInMS;
+            if (isActive) {
+                videoElement.pause();
+            }
+        }
     });
 
     useEffect(() => {
         previewController.addEventListener('seek', onPreviewControllerSeek);
-        previewController.addEventListener('play', onPreviewControllerPlay);
         previewController.addEventListener('pause', onPreviewControllerPause);
 
         return () => {
             previewController.removeEventListener('seek', onPreviewControllerSeek);
-            previewController.removeEventListener('play', onPreviewControllerPlay);
             previewController.removeEventListener('pause', onPreviewControllerPause);
         };
-    }, [onPreviewControllerPause, onPreviewControllerPlay, onPreviewControllerSeek, previewController]);
+    }, [onPreviewControllerPause, onPreviewControllerSeek, previewController]);
 
-    const videoRef = useRef<HTMLVideoElement | null>(null);
+    const videoRef = useRef<Map<string, HTMLVideoElement | null>>(new Map());
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     useEffect(() => {
         rerenderCanvasContents();
     }, [project.objects, rerenderCanvasContents]);
 
+    const contentBaseWidth = 640;
+    const contentBaseHeight = 360;
+
     return (
         <Base>
-            <Video ref={(e) => (videoRef.current = e)} src={project.inputVideoPath} />
-            <Canvas ref={(e) => (canvasRef.current = e)} />
+            <ContentBase style={{ width: contentBaseWidth, height: contentBaseHeight }}>
+                {(project.objects.filter((object) => VideoObject.isVideo(object)) as VideoObject[]).map((video) => (
+                    <Video key={video.id} src={video.srcFilePath} ref={(e) => videoRef.current.set(video.id, e)} preload="auto" />
+                ))}
+                <Canvas ref={(e) => (canvasRef.current = e)} />
+            </ContentBase>
         </Base>
     );
 }

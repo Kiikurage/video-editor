@@ -21,9 +21,9 @@ const Base = styled.div`
     display: grid;
     grid-template:
         'header header' auto
-        'previewArea propertyArea' 300px
+        'previewArea propertyArea' 500px
         'middleToolBarArea propertyArea' auto
-        'captionListArea propertyArea' 1fr / auto 300px;
+        'timeLineArea propertyArea' 1fr / auto 300px;
 `;
 
 const AppHeader = styled.header`
@@ -33,7 +33,7 @@ const AppHeader = styled.header`
     justify-content: space-between;
     min-height: 32px;
     box-sizing: border-box;
-    background: #e8e8e8;
+    background: #fff;
     border-bottom: 1px solid #c0c0c0;
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.05);
     z-index: 1;
@@ -48,7 +48,8 @@ const VideoPlayerArea = styled.div`
     position: relative;
     flex: 0 auto;
     gap: 16px;
-    background: #000;
+    background: #e0e0e0;
+    padding: 16px;
     border-bottom: 1px solid #c0c0c0;
 `;
 
@@ -64,8 +65,8 @@ const MiddleToolbarArea = styled.div`
     min-height: 32px;
 `;
 
-const CaptionListArea = styled.div`
-    grid-area: captionListArea;
+const TimeLineArea = styled.div`
+    grid-area: timeLineArea;
     position: relative;
     flex: 1 1 0;
     overflow-y: auto;
@@ -76,6 +77,9 @@ const CaptionListArea = styled.div`
 const PropertyArea = styled.div`
     grid-area: propertyArea;
     border-left: 1px solid #c0c0c0;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+    background: #fff;
+    z-index: 1;
 `;
 
 interface Props {
@@ -163,14 +167,14 @@ export function AppShell(props: Props): React.ReactElement {
                     <button onClick={onPlayButtonClick}>再生</button>
                     <button onClick={onPauseButtonClick}>停止</button>
                 </MiddleToolbarArea>
-                <CaptionListArea>
+                <TimeLineArea>
                     <TimeLine
                         previewController={previewController}
                         project={project}
                         selectedObject={selectedObject}
                         onObjectSelect={onObjectSelect}
                     />
-                </CaptionListArea>
+                </TimeLineArea>
 
                 <PropertyArea>
                     <PropertyView object={selectedObject} onObjectChange={onObjectChange} onObjectRemove={onObjectRemove} />
