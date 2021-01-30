@@ -1,8 +1,10 @@
-import { useRef } from 'react';
 import * as React from 'react';
 import styled from 'styled-components';
+import { UUID } from '../lib/UUID';
 import { BaseObject } from '../model/BaseObject';
+import { ImageObject } from '../model/ImageObject';
 import { Project } from '../model/Project';
+import { VideoObject } from '../model/VideoObject';
 import { PreviewController } from '../service/PreviewController';
 import { DropArea } from './DropArea';
 import { PropertyView } from './PropertyView';
@@ -94,25 +96,46 @@ export function AppShell(props: Props): React.ReactElement {
         project,
         selectedObject,
         onObjectSelect,
-        // onObjectAdd,
+        onObjectAdd,
         // onObjectChange,
         onObjectRemove,
         onVideoExportButtonClick,
     } = props;
 
-    const inputVideoFileInputRef = useRef<HTMLInputElement | null>(null);
-
-    const onVideoOpenButtonClick = () => {
-        const fileInput = inputVideoFileInputRef.current;
-        if (fileInput === null || !fileInput.files || fileInput.files.length === 0) return;
-
-        const file = fileInput.files[0];
-
-        props.onVideoOpen(file.path);
-    };
-
     const onFileDrop = (file: File) => {
-        props.onVideoOpen(file.path);
+        let newObject: BaseObject;
+        const fileType = file.type.split('/');
+
+        switch (fileType[0]) {
+            case 'video':
+                newObject = {
+                    type: 'VIDEO',
+                    id: UUID(),
+                    srcFilePath: file.path,
+                    startInMS: previewController.currentTimeInMS,
+                    endInMS: previewController.currentTimeInMS + 10000,
+                } as VideoObject;
+                break;
+
+            case 'image':
+                newObject = {
+                    type: 'IMAGE',
+                    id: UUID(),
+                    srcFilePath: file.path,
+                    startInMS: previewController.currentTimeInMS,
+                    endInMS: previewController.currentTimeInMS + 10000,
+                    x: 0,
+                    y: 0,
+                    width: 400,
+                    height: 400,
+                } as ImageObject;
+                break;
+
+            default:
+                return;
+        }
+
+        onObjectAdd(newObject);
     };
 
     const onPlayButtonClick = () => {
@@ -127,10 +150,6 @@ export function AppShell(props: Props): React.ReactElement {
         <DropArea onFileDrop={onFileDrop}>
             <Base>
                 <AppHeader>
-                    <div>
-                        <input type="file" accept=".mp4" ref={(e) => (inputVideoFileInputRef.current = e)} />
-                        <button onClick={onVideoOpenButtonClick}>動画を開く</button>
-                    </div>
                     <button onClick={onVideoExportButtonClick}>動画出力</button>
                 </AppHeader>
                 <VideoPlayerArea>

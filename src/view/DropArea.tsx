@@ -82,7 +82,7 @@ export function DropArea(props: React.PropsWithChildren<Props>): React.ReactElem
             onDrop={onDrop}
             ref={(e) => (baseRef.current = e)}
         >
-            <Overlay active={isActive}>ドロップ: 動画を読み込む</Overlay>
+            <Overlay active={isActive}>ドロップ: 素材を追加</Overlay>
             {children}
         </Base>
     );
