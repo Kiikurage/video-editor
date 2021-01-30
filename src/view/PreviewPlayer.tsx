@@ -16,6 +16,8 @@ const Base = styled.div`
     position: relative;
     width: 100%;
     height: 100%;
+    background: #e0e0e0;
+    padding: 16px;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -183,12 +185,12 @@ export function PreviewPlayer(props: Props): React.ReactElement {
     });
 
     useEffect(() => {
-        previewController.addEventListener('seek', onPreviewControllerSeek);
-        previewController.addEventListener('pause', onPreviewControllerPause);
+        previewController.on('seek', onPreviewControllerSeek);
+        previewController.on('pause', onPreviewControllerPause);
 
         return () => {
-            previewController.removeEventListener('seek', onPreviewControllerSeek);
-            previewController.removeEventListener('pause', onPreviewControllerPause);
+            previewController.off('seek', onPreviewControllerSeek);
+            previewController.off('pause', onPreviewControllerPause);
         };
     }, [onPreviewControllerPause, onPreviewControllerSeek, previewController]);
 

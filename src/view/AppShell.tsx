@@ -7,9 +7,10 @@ import { Project } from '../model/Project';
 import { VideoObject } from '../model/VideoObject';
 import { PreviewController } from '../service/PreviewController';
 import { DropArea } from './DropArea';
+import { MiddleToolBar } from './MiddleToolBar';
+import { PreviewPlayer } from './PreviewPlayer';
 import { PropertyView } from './PropertyView';
 import { TimeLine } from './TimeLine';
-import { PreviewPlayer } from './PreviewPlayer';
 
 const Base = styled.div`
     background: #fafafa;
@@ -39,47 +40,29 @@ const AppHeader = styled.header`
     z-index: 1;
 `;
 
-const VideoPlayerArea = styled.div`
+const PreviewArea = styled.div`
     grid-area: previewArea;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    position: relative;
-    flex: 0 auto;
-    gap: 16px;
-    background: #e0e0e0;
-    padding: 16px;
-    border-bottom: 1px solid #c0c0c0;
 `;
 
 const MiddleToolbarArea = styled.div`
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    background: #f0f0f0;
-    border-bottom: 1px solid #c0c0c0;
-    padding: 4px 32px;
-    min-height: 32px;
+    grid-area: middleToolBarArea;
+    position: relative;
 `;
 
 const TimeLineArea = styled.div`
     grid-area: timeLineArea;
     position: relative;
     flex: 1 1 0;
+    overflow-x: auto;
     overflow-y: auto;
-    max-height: 100%;
-    background: #fff;
 `;
 
 const PropertyArea = styled.div`
     grid-area: propertyArea;
-    border-left: 1px solid #c0c0c0;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
-    background: #fff;
-    z-index: 1;
 `;
 
 interface Props {
@@ -160,12 +143,11 @@ export function AppShell(props: Props): React.ReactElement {
                 <AppHeader>
                     <button onClick={onVideoExportButtonClick}>動画出力</button>
                 </AppHeader>
-                <VideoPlayerArea>
+                <PreviewArea>
                     <PreviewPlayer project={project} previewController={previewController} />
-                </VideoPlayerArea>
+                </PreviewArea>
                 <MiddleToolbarArea>
-                    <button onClick={onPlayButtonClick}>再生</button>
-                    <button onClick={onPauseButtonClick}>停止</button>
+                    <MiddleToolBar onPlayButtonClick={onPlayButtonClick} onPauseButtonClick={onPauseButtonClick} />
                 </MiddleToolbarArea>
                 <TimeLineArea>
                     <TimeLine

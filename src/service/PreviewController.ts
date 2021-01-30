@@ -1,30 +1,25 @@
 import { Timer } from './Timer';
-
-const PLAY_EVENT = new Event('play');
-const PAUSE_EVENT = new Event('pause');
-const SEEK_EVENT = new Event('seek');
+import { EventEmitter } from 'events';
 
 interface PreviewControllerEvents {
-    addEventListener(type: 'play', listener: () => void): void;
-    addEventListener(type: 'pause', listener: () => void): void;
-    addEventListener(type: 'seek', listener: () => void): void;
+    on(type: 'pause', listener: () => void): void;
+    on(type: 'seek', listener: () => void): void;
 
-    removeEventListener(type: 'play', listener: () => void): void;
-    removeEventListener(type: 'pause', listener: () => void): void;
-    removeEventListener(type: 'seek', listener: () => void): void;
+    off(type: 'pause', listener: () => void): void;
+    off(type: 'seek', listener: () => void): void;
 }
 
-export class PreviewController extends EventTarget implements PreviewControllerEvents {
+export class PreviewController extends EventEmitter implements PreviewControllerEvents {
     private readonly timer: Timer = new Timer();
 
     constructor() {
         super();
 
-        this.timer.addEventListener('seek', this.onTimerSeek);
+        this.timer.on('seek', this.onTimerSeek);
     }
 
     private onTimerSeek = () => {
-        this.dispatchEvent(SEEK_EVENT);
+        this.emit('seek');
     };
 
     get paused(): boolean {
@@ -44,12 +39,11 @@ export class PreviewController extends EventTarget implements PreviewControllerE
     }
 
     play(): void {
-        void this.timer.start();
-        this.dispatchEvent(PLAY_EVENT);
+        this.timer.start();
     }
 
     pause(): void {
         this.timer.stop();
-        this.dispatchEvent(PAUSE_EVENT);
+        this.emit('pause');
     }
 }

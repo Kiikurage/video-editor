@@ -57,9 +57,10 @@ export function TimeLine(props: Props): React.ReactElement {
     }, [forceUpdate, previewController.durationInMS]);
 
     useEffect(() => {
-        previewController.addEventListener('seek', onVideoControllerSeek);
+        previewController.on('seek', onVideoControllerSeek);
+
         return () => {
-            previewController.removeEventListener('seek', onVideoControllerSeek);
+            previewController.off('seek', onVideoControllerSeek);
         };
     }, [onVideoControllerSeek, previewController]);
 

@@ -1,5 +1,6 @@
 import * as childProcess from 'child_process';
 import { ipcRenderer } from 'electron';
+import { EventEmitter } from 'events';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as tmp from 'tmp';
@@ -11,15 +12,13 @@ import { IPCMessages } from '../model/IPCMessages';
 import { Project } from '../model/Project';
 import { VideoObject } from '../model/VideoObject';
 
-const LOG_EVENT = new Event('log');
-
 interface OutputBuilderEvents {
-    addEventListener(type: 'log', callback: () => void): void;
+    on(type: 'log', callback: () => void): void;
 
-    removeEventListener(type: 'log', callback: () => void): void;
+    off(type: 'log', callback: () => void): void;
 }
 
-export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
+export class OutputBuilder extends EventEmitter implements OutputBuilderEvents {
     private outputVideoPath = '';
     private project: Project | null = null;
 
@@ -184,7 +183,7 @@ export class OutputBuilder extends EventTarget implements OutputBuilderEvents {
 
     private addLog(newLogLine: string): void {
         this._log += newLogLine + '\n';
-        this.dispatchEvent(LOG_EVENT);
+        this.emit('log');
     }
 }
 

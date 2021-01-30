@@ -134,7 +134,7 @@ export function App(): React.ReactElement {
     const onVideoExportButtonClick = async () => {
         const outputBuilder = new OutputBuilder().setProject(project).setOutputVideoPath('./output.mp4');
 
-        outputBuilder.addEventListener('log', () => {
+        outputBuilder.on('log', () => {
             console.log(outputBuilder.log);
         });
 

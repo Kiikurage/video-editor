@@ -1,12 +1,12 @@
-const SEEK_EVENT = new Event('seek');
+import { EventEmitter } from 'events';
 
 interface TimerEvents {
-    addEventListener(type: 'seek', listener: () => void): void;
+    on(type: 'seek', listener: () => void): void;
 
-    removeEventListener(type: 'seek', listener: () => void): void;
+    off(type: 'seek', listener: () => void): void;
 }
 
-export class Timer extends EventTarget implements TimerEvents {
+export class Timer extends EventEmitter implements TimerEvents {
     public durationInMS: number = 60 * 1000;
 
     private isStarted = false;
@@ -15,25 +15,18 @@ export class Timer extends EventTarget implements TimerEvents {
     private lastPausedPositionInMS = 0;
 
     private mainLoopTimerId: number | null = null;
-    private mainLoop = () => {
-        if (!this.isStarted) return;
 
-        this.dispatchEvent(SEEK_EVENT);
-        if (this.currentTimeInMS === this.durationInMS) {
-            this.stop();
-            return;
+    get paused(): boolean {
+        return !this.isStarted;
+    }
+
+    get currentTimeInMS(): number {
+        if (this.isStarted) {
+            const elapsedTime = Date.now() - this.startedAtInMS;
+            return Math.min(Math.max(0, this.startedFromInMS + elapsedTime), this.durationInMS);
+        } else {
+            return this.lastPausedPositionInMS;
         }
-
-        this.mainLoopTimerId = requestAnimationFrame(this.mainLoop);
-    };
-
-    private runMainLoop() {
-        if (this.mainLoopTimerId !== null) {
-            cancelAnimationFrame(this.mainLoopTimerId);
-            this.mainLoopTimerId = null;
-        }
-
-        this.mainLoopTimerId = requestAnimationFrame(this.mainLoop);
     }
 
     start(): void {
@@ -64,20 +57,28 @@ export class Timer extends EventTarget implements TimerEvents {
             if (this.lastPausedPositionInMS === timeInMS) return;
 
             this.lastPausedPositionInMS = timeInMS;
-            this.dispatchEvent(SEEK_EVENT);
+            this.emit('seek');
         }
     }
 
-    get paused(): boolean {
-        return !this.isStarted;
-    }
+    private mainLoop = () => {
+        if (!this.isStarted) return;
 
-    get currentTimeInMS(): number {
-        if (this.isStarted) {
-            const elapsedTime = Date.now() - this.startedAtInMS;
-            return Math.min(Math.max(0, this.startedFromInMS + elapsedTime), this.durationInMS);
-        } else {
-            return this.lastPausedPositionInMS;
+        this.emit('seek');
+        if (this.currentTimeInMS === this.durationInMS) {
+            this.stop();
+            return;
         }
+
+        this.mainLoopTimerId = requestAnimationFrame(this.mainLoop);
+    };
+
+    private runMainLoop() {
+        if (this.mainLoopTimerId !== null) {
+            cancelAnimationFrame(this.mainLoopTimerId);
+            this.mainLoopTimerId = null;
+        }
+
+        this.mainLoopTimerId = requestAnimationFrame(this.mainLoop);
     }
 }
