@@ -63,6 +63,7 @@ const Footer = styled.footer`
     align-items: center;
     justify-content: center;
     padding: 16px 24px;
+    border-top: 1px solid #c0c0c0;
 `;
 
 const DeleteButton = styled.button`
@@ -77,16 +78,53 @@ const DeleteButton = styled.button`
 
 interface Props {
     object: BaseObject | null;
+    onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
     onObjectRemove: (object: BaseObject) => void;
 }
 
 export function PropertyView(props: Props): React.ReactElement {
-    const { object } = props;
+    const { object, onObjectChange } = props;
 
     const onObjectRemove = useCallbackRef(() => {
         if (object !== null) {
             props.onObjectRemove(object);
         }
+    });
+
+    const onStartInMSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        if (object === null) return;
+        const value = Number(ev.target.value);
+        onObjectChange(object, { ...object, startInMS: value });
+    });
+    const onEndInMSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        if (object === null) return;
+        const value = Number(ev.target.value);
+        onObjectChange(object, { ...object, endInMS: value });
+    });
+    const onXChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        if (object === null) return;
+        const value = Number(ev.target.value);
+        onObjectChange(object, { ...object, x: value });
+    });
+    const onYChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        if (object === null) return;
+        const value = Number(ev.target.value);
+        onObjectChange(object, { ...object, y: value });
+    });
+    const onWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        if (object === null) return;
+        const value = Number(ev.target.value);
+        onObjectChange(object, { ...object, width: value });
+    });
+    const onHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        if (object === null) return;
+        const value = Number(ev.target.value);
+        onObjectChange(object, { ...object, height: value });
+    });
+    const onCaptionTextChange = useCallbackRef((ev: React.ChangeEvent<HTMLTextAreaElement>) => {
+        if (object === null) return;
+        const value = ev.target.value;
+        onObjectChange(object, { ...object, text: value } as CaptionObject);
     });
 
     return (
@@ -102,11 +140,27 @@ export function PropertyView(props: Props): React.ReactElement {
                             <PropertyGroupName>一般</PropertyGroupName>
                             <PropertyRow>
                                 <PropertyName>開始</PropertyName>
-                                <input type="number" min={0} value={object.startInMS} />
+                                <input type="number" min={0} value={object.startInMS} onChange={onStartInMSChange} />
                             </PropertyRow>
                             <PropertyRow>
                                 <PropertyName>終了</PropertyName>
-                                <input type="number" min={0} value={object.endInMS} />
+                                <input type="number" min={0} value={object.endInMS} onChange={onEndInMSChange} />
+                            </PropertyRow>
+                            <PropertyRow>
+                                <PropertyName>X</PropertyName>
+                                <input type="number" min={0} value={object.x} onChange={onXChange} />
+                            </PropertyRow>
+                            <PropertyRow>
+                                <PropertyName>Y</PropertyName>
+                                <input type="number" min={0} value={object.y} onChange={onYChange} />
+                            </PropertyRow>
+                            <PropertyRow>
+                                <PropertyName>Width</PropertyName>
+                                <input type="number" min={0} value={object.width} onChange={onWidthChange} />
+                            </PropertyRow>
+                            <PropertyRow>
+                                <PropertyName>Height</PropertyName>
+                                <input type="number" min={0} value={object.height} onChange={onHeightChange} />
                             </PropertyRow>
                         </PropertyGroup>
 
@@ -115,7 +169,7 @@ export function PropertyView(props: Props): React.ReactElement {
                                 <PropertyGroupName>字幕</PropertyGroupName>
                                 <PropertyRow>
                                     <PropertyName>内容</PropertyName>
-                                    <textarea value={object.text} />
+                                    <textarea value={object.text} onChange={onCaptionTextChange} />
                                 </PropertyRow>
                             </PropertyGroup>
                         )}

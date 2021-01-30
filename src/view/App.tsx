@@ -37,6 +37,10 @@ export function App(): React.ReactElement {
                 startInMS: 0,
                 endInMS: 4 * 60 * 1000,
                 srcFilePath: path.resolve(__dirname, '../src/static/video.mp4'),
+                x: 0,
+                y: 0,
+                width: 1920,
+                height: 1080,
             } as VideoObject,
             {
                 id: UUID(),
@@ -55,6 +59,10 @@ export function App(): React.ReactElement {
                 startInMS: 5000,
                 endInMS: 8000,
                 text: '最初の字幕',
+                x: 0,
+                y: 0,
+                width: 1920,
+                height: 1080,
             } as CaptionObject,
             {
                 id: UUID(),
@@ -62,6 +70,10 @@ export function App(): React.ReactElement {
                 startInMS: 10000,
                 endInMS: 15000,
                 text: '2番目の字幕',
+                x: 0,
+                y: 0,
+                width: 1920,
+                height: 1080,
             } as CaptionObject,
         ],
     }));
@@ -85,6 +97,10 @@ export function App(): React.ReactElement {
     };
 
     const onObjectChange = (oldValue: BaseObject, newValue: BaseObject) => {
+        if (oldValue === selectedObject) {
+            setSelectedObject(newValue);
+        }
+
         const i = project.objects.indexOf(oldValue);
         if (i === -1) return;
 

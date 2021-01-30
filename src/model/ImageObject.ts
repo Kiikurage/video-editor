@@ -11,10 +11,6 @@ export const ImageObject = {
 
 export interface ImageObject extends BaseObject {
     type: typeof ImageObject.type;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
     srcFilePath: string;
     _imageDataCache?: HTMLImageElement | 'loading';
 }

@@ -97,7 +97,7 @@ export function AppShell(props: Props): React.ReactElement {
         selectedObject,
         onObjectSelect,
         onObjectAdd,
-        // onObjectChange,
+        onObjectChange,
         onObjectRemove,
         onVideoExportButtonClick,
     } = props;
@@ -114,6 +114,10 @@ export function AppShell(props: Props): React.ReactElement {
                     srcFilePath: file.path,
                     startInMS: previewController.currentTimeInMS,
                     endInMS: previewController.currentTimeInMS + 10000,
+                    x: 0,
+                    y: 0,
+                    width: 400,
+                    height: 400,
                 } as VideoObject;
                 break;
 
@@ -169,7 +173,7 @@ export function AppShell(props: Props): React.ReactElement {
                 </CaptionListArea>
 
                 <PropertyArea>
-                    <PropertyView object={selectedObject} onObjectRemove={onObjectRemove} />
+                    <PropertyView object={selectedObject} onObjectChange={onObjectChange} onObjectRemove={onObjectRemove} />
                 </PropertyArea>
             </Base>
         </DropArea>
