@@ -35,6 +35,11 @@ export class VideoController extends EventTarget implements VideoControllerEvent
         return this.video?.videoHeight ?? 0;
     }
 
+    get durationInMS(): number {
+        const duration = (this.video?.duration ?? 0) * 1000;
+        return isNaN(duration) ? 0 : duration;
+    }
+
     setVideo(video: HTMLVideoElement | null): void {
         this.cleanUpEventHandlers();
         this._video = video;

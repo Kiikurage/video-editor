@@ -8,11 +8,15 @@ import { useCallbackRef } from './hooks/useCallbackRef';
 
 const Base = styled.div`
     position: relative;
+    max-width: 100%;
+    max-height: 100%;
 `;
 
 const Video = styled.video`
-    width: 100%;
+    width: auto;
     height: auto;
+    max-width: 100%;
+    max-height: 100%;
 `;
 
 const Canvas = styled.canvas`
@@ -86,7 +90,6 @@ export function VideoPlayer(props: Props): React.ReactElement {
                 ref={(e) => videoController.setVideo(e)}
                 height={240}
                 src={project.inputVideoPath}
-                controls
                 onLoadedMetadata={onVideoLoadedMetadata}
             />
             <Canvas ref={(e) => (canvasRef.current = e)} />

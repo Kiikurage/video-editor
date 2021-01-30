@@ -5,8 +5,9 @@ import { Caption } from '../model/Caption';
 import { Project } from '../model/Project';
 import { VideoController } from '../service/VideoController';
 import { CaptionListItemView } from './CaptionListItemView';
-import { useForceUpdate } from './hooks/useForceUpdate';
+import { useCallbackRef } from './hooks/useCallbackRef';
 import { useSortedArray } from './hooks/useSortedArray';
+import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
 
 const Base = styled.ul`
     list-style: none;
@@ -28,7 +29,7 @@ interface Props {
 }
 
 export function CaptionListView(props: Props): React.ReactElement {
-    const forceUpdate = useForceUpdate();
+    const forceUpdate = useThrottledForceUpdate();
 
     const {
         videoController,
@@ -44,11 +45,16 @@ export function CaptionListView(props: Props): React.ReactElement {
         return caption1.startInMS < caption2.startInMS ? -1 : caption1.startInMS === caption2.startInMS ? 0 : +1;
     });
 
+    const onVideoControllerSeek = useCallbackRef(() => {
+        forceUpdate();
+    });
+
     useEffect(() => {
-        videoController.addEventListener('seek', () => {
-            forceUpdate();
-        });
-    }, [forceUpdate, videoController]);
+        videoController.addEventListener('seek', onVideoControllerSeek);
+        return () => {
+            videoController.removeEventListener('seek', onVideoControllerSeek);
+        };
+    }, [onVideoControllerSeek, videoController]);
 
     return (
         <Base>

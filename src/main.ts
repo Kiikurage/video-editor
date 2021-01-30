@@ -15,9 +15,13 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: true,
         },
+        width: 1280,
+        height: 760,
+        show: false,
         // titleBarStyle: 'hiddenInset'
     });
 
+    win.once('ready-to-show', () => win.show());
     void win.loadFile(path.resolve(__dirname, './index.html'));
 }
 

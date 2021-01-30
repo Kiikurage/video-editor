@@ -94,9 +94,14 @@
       ],
       "@babel/preset-react",
       "@babel/preset-typescript"
+    ],
+    "plugins": [
+      "@babel/plugin-proposal-class-properties"
     ]
   },
   "dependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "react-quick-pinch-zoom": "^4.0.2",
     "tmp": "^0.2.1"
   }
 }
