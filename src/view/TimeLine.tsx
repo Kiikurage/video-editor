@@ -34,11 +34,12 @@ interface Props {
     previewController: PreviewController;
     project: Project;
     selectedObject: BaseObject | null;
+    onObjectUpdate: (oldValue: BaseObject, newValue: BaseObject) => void;
     onObjectSelect: (object: BaseObject) => void;
 }
 
 export function TimeLine(props: Props): React.ReactElement {
-    const { previewController, project, selectedObject, onObjectSelect } = props;
+    const { previewController, project, selectedObject, onObjectSelect, onObjectUpdate } = props;
 
     const durationInMSForVisibleAreaRef = useRef(Math.max(previewController.durationInMS, 1));
     const dividerDurationInMS = computeBestDividerDurationInMS(durationInMSForVisibleAreaRef.current);
@@ -154,6 +155,14 @@ export function TimeLine(props: Props): React.ReactElement {
                                 width={width}
                                 height={20}
                                 onClick={() => onObjectClick(object)}
+                                onDragEnd={(newX) => {
+                                    const newStartInMS = (durationInMSForVisibleAreaRef.current * newX) / baseWidth;
+                                    onObjectUpdate(object, {
+                                        ...object,
+                                        startInMS: newStartInMS,
+                                        endInMS: object.endInMS + newStartInMS - object.startInMS,
+                                    });
+                                }}
                             />
                         );
                     })}

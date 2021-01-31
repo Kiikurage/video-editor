@@ -24,7 +24,7 @@ const Base = styled.div`
         'header header' auto
         'previewArea propertyArea' 500px
         'middleToolBarArea propertyArea' auto
-        'timeLineArea propertyArea' 1fr / auto 300px;
+        'timeLineArea propertyArea' 1fr / minmax(0, 1fr) 300px;
 `;
 
 const AppHeader = styled.header`
@@ -155,6 +155,7 @@ export function AppShell(props: Props): React.ReactElement {
                         project={project}
                         selectedObject={selectedObject}
                         onObjectSelect={onObjectSelect}
+                        onObjectUpdate={onObjectChange}
                     />
                 </TimeLineArea>
 

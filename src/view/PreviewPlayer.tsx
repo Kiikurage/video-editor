@@ -22,6 +22,8 @@ const Base = styled.div`
     flex-direction: row;
     align-items: center;
     justify-content: center;
+    overflow-x: auto;
+    overflow-y: auto;
 `;
 
 const ContentBase = styled.div`

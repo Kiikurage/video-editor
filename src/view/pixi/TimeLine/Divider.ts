@@ -30,7 +30,7 @@ export const Divider = CustomPIXIComponent(
             base.moveTo(x, 0);
             base.lineTo(x, height);
 
-            const textNode = base.getChildAt(0) as PIXI.Text;
+            const textNode = base.getChildByName('text') as PIXI.Text;
             textNode.text = label;
             textNode.x = x - (textNode.width + 4);
             textNode.y = 4;

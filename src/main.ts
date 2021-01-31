@@ -20,12 +20,9 @@ function createWindow() {
         show: false,
         // titleBarStyle: 'hiddenInset'
     });
-
     win.once('ready-to-show', () => win.show());
     void win.loadFile(path.resolve(__dirname, './index.html'));
 }
-
-void app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
@@ -37,4 +34,8 @@ app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
         createWindow();
     }
+});
+
+void app.whenReady().then(() => {
+    createWindow();
 });
