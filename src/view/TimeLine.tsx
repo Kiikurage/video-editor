@@ -153,14 +153,15 @@ export function TimeLine(props: Props): React.ReactElement {
                                 x={left}
                                 y={32 + 20 * i}
                                 width={width}
-                                height={20}
+                                height={22}
                                 onClick={() => onObjectClick(object)}
-                                onDragEnd={(newX) => {
+                                onMoveAndResize={(newX, newWidth) => {
                                     const newStartInMS = (durationInMSForVisibleAreaRef.current * newX) / baseWidth;
+                                    const newEndInMS = newStartInMS + (durationInMSForVisibleAreaRef.current * newWidth) / baseWidth;
                                     onObjectUpdate(object, {
                                         ...object,
                                         startInMS: newStartInMS,
-                                        endInMS: object.endInMS + newStartInMS - object.startInMS,
+                                        endInMS: newEndInMS,
                                     });
                                 }}
                             />
