@@ -70,7 +70,7 @@ interface Props {
     project: Project;
     selectedObject: BaseObject | null;
     onVideoOpen: (inputVideoPath: string) => void;
-    onObjectSelect: (object: BaseObject) => void;
+    onObjectSelect: (object: BaseObject | null) => void;
     onObjectAdd: (object: BaseObject) => void;
     onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
     onObjectRemove: (object: BaseObject) => void;
@@ -144,7 +144,12 @@ export function AppShell(props: Props): React.ReactElement {
                     <button onClick={onVideoExportButtonClick}>動画出力</button>
                 </AppHeader>
                 <PreviewArea>
-                    <PreviewPlayer project={project} previewController={previewController} />
+                    <PreviewPlayer
+                        project={project}
+                        selectedObject={selectedObject}
+                        previewController={previewController}
+                        onObjectSelect={onObjectSelect}
+                    />
                 </PreviewArea>
                 <MiddleToolbarArea>
                     <MiddleToolBar onPlayButtonClick={onPlayButtonClick} onPauseButtonClick={onPauseButtonClick} />

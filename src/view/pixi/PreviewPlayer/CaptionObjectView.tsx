@@ -5,6 +5,7 @@ import { CaptionObject } from '../../../model/CaptionObject';
 
 interface Props {
     caption: CaptionObject;
+    selected: boolean;
 }
 
 interface InnerProps {

@@ -79,7 +79,7 @@ export function App(): React.ReactElement {
     }));
     const [selectedObject, setSelectedObject] = useState<BaseObject | null>(null);
 
-    const onObjectSelect = (object: BaseObject) => {
+    const onObjectSelect = (object: BaseObject | null) => {
         setSelectedObject(object);
     };
 

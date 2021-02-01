@@ -9,6 +9,7 @@ import { useCallbackRef } from '../../hooks/useCallbackRef';
 interface Props {
     video: VideoObject;
     previewController: PreviewController;
+    selected: boolean;
 }
 
 interface InnerProps {

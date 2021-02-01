@@ -10,6 +10,7 @@ import { VideoObject } from '../model/VideoObject';
 import { PreviewController } from '../service/PreviewController';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
+import { Background } from './pixi/PreviewPlayer/Background';
 import { CaptionObjectView } from './pixi/PreviewPlayer/CaptionObjectView';
 import { ImageObjectView } from './pixi/PreviewPlayer/ImageObjectView';
 import { VideoObjectView } from './pixi/PreviewPlayer/VideoObjectView';
@@ -46,10 +47,12 @@ const ContentBase = styled.div`
 interface Props {
     previewController: PreviewController;
     project: Project;
+    selectedObject: BaseObject | null;
+    onObjectSelect: (newObject: BaseObject | null) => void;
 }
 
 export function PreviewPlayer(props: Props): React.ReactElement {
-    const { previewController, project } = props;
+    const { previewController, project, selectedObject, onObjectSelect } = props;
 
     const forceUpdate = useThrottledForceUpdate();
     const onPreviewControllerSeek = useCallbackRef(() => {
@@ -80,15 +83,31 @@ export function PreviewPlayer(props: Props): React.ReactElement {
     const activeObjects = project.objects.filter((object) => object.startInMS <= currentTimeInMS && currentTimeInMS < object.endInMS);
 
     function renderObjectView(object: BaseObject): React.ReactNode {
+        const isSelected = selectedObject === object;
+
         switch (object.type) {
             case VideoObject.type:
-                return <VideoObjectView key={object.id} video={object as VideoObject} previewController={previewController} />;
+                return (
+                    <VideoObjectView
+                        key={object.id}
+                        video={object as VideoObject}
+                        previewController={previewController}
+                        selected={isSelected}
+                    />
+                );
 
             case CaptionObject.type:
-                return <CaptionObjectView key={object.id} caption={object as CaptionObject} />;
+                return <CaptionObjectView key={object.id} caption={object as CaptionObject} selected={isSelected} />;
 
             case ImageObject.type:
-                return <ImageObjectView key={object.id} image={object as ImageObject} />;
+                return (
+                    <ImageObjectView
+                        key={object.id}
+                        image={object as ImageObject}
+                        selected={isSelected}
+                        onSelect={() => onObjectSelect(object)}
+                    />
+                );
 
             default:
                 console.warn(`Unknown object type: ${object.type}`);
@@ -96,10 +115,25 @@ export function PreviewPlayer(props: Props): React.ReactElement {
         }
     }
 
+    const onBaseClick = useCallbackRef(() => {
+        onObjectSelect(null);
+    });
+
+    const onContentBaseClick = useCallbackRef((ev: React.MouseEvent) => {
+        ev.stopPropagation();
+    });
+
+    const onBackgroundClick = useCallbackRef(() => {
+        onObjectSelect(null);
+    });
+
     return (
-        <Base>
-            <ContentBase style={{ width: contentBaseWidth, height: contentBaseHeight }}>
-                <Stage options={pixiStageOption}>{activeObjects.map(renderObjectView)}</Stage>
+        <Base onClick={onBaseClick}>
+            <ContentBase style={{ width: contentBaseWidth, height: contentBaseHeight }} onClick={onContentBaseClick}>
+                <Stage options={pixiStageOption}>
+                    <Background width={project.viewport.width} height={project.viewport.height} onClick={onBackgroundClick} />
+                    {activeObjects.map(renderObjectView)}
+                </Stage>
             </ContentBase>
         </Base>
     );
