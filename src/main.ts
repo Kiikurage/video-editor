@@ -10,32 +10,24 @@ ipcMain.on(IPCMessages.GET_FFMPEG_INFO, (ev) => {
     };
 });
 
-function createWindow() {
-    const win = new BrowserWindow({
-        webPreferences: {
-            nodeIntegration: true,
-        },
-        width: 1280,
-        height: 760,
-        show: false,
-        // titleBarStyle: 'hiddenInset'
-    });
-    win.once('ready-to-show', () => win.show());
-    void win.loadFile(path.resolve(__dirname, './index.html'));
-}
-
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+    app.quit();
 });
 
-app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-    }
-});
+app.on('ready', () => {
+    void (async () => {
+        const win = new BrowserWindow({
+            webPreferences: {
+                nodeIntegration: true,
+            },
+            width: 1280,
+            height: 760,
+            show: false,
+            // titleBarStyle: 'hiddenInset'
+        });
 
-void app.whenReady().then(() => {
-    createWindow();
+        await win.loadFile(path.resolve(__dirname, './index.html'));
+
+        win.show();
+    })();
 });
