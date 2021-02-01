@@ -49,10 +49,11 @@ interface Props {
     project: Project;
     selectedObject: BaseObject | null;
     onObjectSelect: (newObject: BaseObject | null) => void;
+    onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
 }
 
 export function PreviewPlayer(props: Props): React.ReactElement {
-    const { previewController, project, selectedObject, onObjectSelect } = props;
+    const { previewController, project, selectedObject, onObjectSelect, onObjectChange } = props;
 
     const forceUpdate = useThrottledForceUpdate();
     const onPreviewControllerSeek = useCallbackRef(() => {
@@ -106,6 +107,7 @@ export function PreviewPlayer(props: Props): React.ReactElement {
                         image={object as ImageObject}
                         selected={isSelected}
                         onSelect={() => onObjectSelect(object)}
+                        onObjectChange={onObjectChange}
                     />
                 );
 

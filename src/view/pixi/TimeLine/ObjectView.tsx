@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useState } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
+import { useFormState } from '../../hooks/useFormState';
 import { attachPixiDragHandlers, detachPixiDragHandlers, PixiDragHandlers, usePixiDragHandlers } from '../../hooks/usePixiDragHandlers';
 
 interface Props {
@@ -136,11 +136,8 @@ const ObjectView = CustomPIXIComponent(
 );
 
 function ObjectViewWrapper(props: Props): React.ReactElement {
-    const [x, setX] = useState(props.x);
-    useEffect(() => setX(props.x), [props.x]);
-
-    const [width, setWidth] = useState(props.width);
-    useEffect(() => setWidth(props.width), [props.width]);
+    const [x, setX] = useFormState(props.x);
+    const [width, setWidth] = useFormState(props.width);
 
     const baseDragHandlers = usePixiDragHandlers((dx, _dy, type) => {
         const newX = props.x + dx;

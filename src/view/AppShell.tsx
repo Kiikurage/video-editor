@@ -149,6 +149,7 @@ export function AppShell(props: Props): React.ReactElement {
                         selectedObject={selectedObject}
                         previewController={previewController}
                         onObjectSelect={onObjectSelect}
+                        onObjectChange={onObjectChange}
                     />
                 </PreviewArea>
                 <MiddleToolbarArea>

@@ -2,13 +2,17 @@ import * as PIXI from 'pixi.js';
 import { useEffect, useState } from 'react';
 import * as React from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
+import { BaseObject } from '../../../model/BaseObject';
 import { ImageObject } from '../../../model/ImageObject';
 import { useCallbackRef } from '../../hooks/useCallbackRef';
+import { useFormState } from '../../hooks/useFormState';
+import { attachPixiDragHandlers, detachPixiDragHandlers, PixiDragHandlers, usePixiDragHandlers } from '../../hooks/usePixiDragHandlers';
 
 interface Props {
     image: ImageObject;
     selected: boolean;
     onSelect: () => void;
+    onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
 }
 
 interface InnerProps {
@@ -19,6 +23,7 @@ interface InnerProps {
     height: number;
     selected: boolean;
     onClick: (ev: PIXI.InteractionEvent) => void;
+    baseDragHandlers: PixiDragHandlers;
 }
 
 const ImageObjectView = CustomPIXIComponent(
@@ -40,7 +45,7 @@ const ImageObjectView = CustomPIXIComponent(
             return base;
         },
         customApplyProps(base: PIXI.Container, oldProps: InnerProps, newProps: InnerProps): void {
-            const { texture, x, y, width, height, selected, onClick } = newProps;
+            const { texture, x, y, width, height, selected, onClick, baseDragHandlers } = newProps;
 
             base.x = x;
             base.y = y;
@@ -48,6 +53,10 @@ const ImageObjectView = CustomPIXIComponent(
             base.height = height;
             base.off('mousedown', oldProps.onClick);
             base.on('mousedown', onClick);
+            if (oldProps.baseDragHandlers) {
+                detachPixiDragHandlers(base, oldProps.baseDragHandlers);
+            }
+            attachPixiDragHandlers(base, baseDragHandlers);
 
             const sprite = base.getChildByName('sprite') as PIXI.Sprite;
             sprite.x = 0;
@@ -73,7 +82,10 @@ const ImageObjectView = CustomPIXIComponent(
 );
 
 function ImageObjectViewWrapper(props: Props): React.ReactElement {
-    const { image, selected, onSelect } = props;
+    const { image, selected, onSelect, onObjectChange } = props;
+
+    const [x, setX] = useFormState(image.x);
+    const [y, setY] = useFormState(image.y);
 
     const [texture, setTexture] = useState(PIXI.Texture.EMPTY);
     useEffect(() => {
@@ -84,15 +96,29 @@ function ImageObjectViewWrapper(props: Props): React.ReactElement {
         onSelect();
     });
 
+    const baseDragHandlers = usePixiDragHandlers((dx, dy, type) => {
+        setX(image.x + dx);
+        setY(image.y + dy);
+
+        if (type === 'end') {
+            onObjectChange(image, {
+                ...image,
+                x: image.x + dx,
+                y: image.y + dy,
+            });
+        }
+    });
+
     return (
         <ImageObjectView
             texture={texture}
-            x={image.x}
-            y={image.y}
+            x={x}
+            y={y}
             width={image.width}
             height={image.height}
             selected={selected}
             onClick={onClick}
+            baseDragHandlers={baseDragHandlers}
         />
     );
 }
