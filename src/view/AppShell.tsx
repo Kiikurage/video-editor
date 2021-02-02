@@ -81,9 +81,7 @@ const TimeLineArea = styled.div`
     overflow-y: auto;
 `;
 
-const PropertyArea = styled.div`
-    grid-area: propertyArea;
-`;
+const PropertyArea = styled.div``;
 
 interface Props {
     previewController: PreviewController;
@@ -199,6 +197,7 @@ export function AppShell(props: Props): React.ReactElement {
                         </MainArea>
 
                         <Splitter onChange={(dx, _dy) => setMainAreaWidth(mainAreaWidth + dx)} />
+
                         <PropertyArea>
                             <PropertyView object={selectedObject} onObjectChange={onObjectChange} onObjectRemove={onObjectRemove} />
                         </PropertyArea>
