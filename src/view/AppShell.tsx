@@ -89,7 +89,6 @@ interface Props {
     previewController: PreviewController;
     project: Project;
     selectedObject: BaseObject | null;
-    onVideoOpen: (inputVideoPath: string) => void;
     onObjectSelect: (object: BaseObject | null) => void;
     onObjectAdd: (object: BaseObject) => void;
     onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;

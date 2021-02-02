@@ -1,6 +1,11 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useReducer, useRef } from 'react';
 import { useCallbackRef } from './useCallbackRef';
-import { useForceUpdate } from './useForceUpdate';
+
+function useForceUpdate(): () => void {
+    const [_, forceUpdate] = useReducer((x: number) => x + 1, 0);
+
+    return forceUpdate;
+}
 
 export function useThrottledForceUpdate(): () => void {
     const rerenderTimerIdRef = useRef<number | null>(null);

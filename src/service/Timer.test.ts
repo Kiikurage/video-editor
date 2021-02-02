@@ -1,12 +1,5 @@
+import { advanceDateNow, fixDateNow } from '../test/util';
 import { Timer } from './Timer';
-
-function fixDateNow(dateNowInMS: number): void {
-    Date.now = jest.fn(() => dateNowInMS);
-}
-
-function advanceDateNow(durationInMS: number): void {
-    fixDateNow(Date.now() + durationInMS);
-}
 
 it('Should return current time when timer is running', () => {
     const timer = new Timer();

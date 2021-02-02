@@ -24,8 +24,6 @@ export function App(): React.ReactElement {
     const videoController = usePreviewController();
 
     const [project, setProject] = useState<Project>(() => ({
-        inputVideoPath: path.resolve(__dirname, '../src/static/video.mp4'),
-        // inputVideoPath: undefined,
         viewport: {
             width: 1920,
             height: 1080,
@@ -124,13 +122,6 @@ export function App(): React.ReactElement {
         setObjects(newCaptionList);
     };
 
-    const onVideoOpenButtonClick = (inputVideoPath: string) => {
-        setProject((prevState) => ({
-            ...prevState,
-            inputVideoPath: inputVideoPath,
-        }));
-    };
-
     const onVideoExportButtonClick = async () => {
         const outputBuilder = new OutputBuilder().setProject(project).setOutputVideoPath('./output.mp4');
 
@@ -157,7 +148,6 @@ export function App(): React.ReactElement {
             onObjectAdd={onObjectAdd}
             onObjectChange={onObjectChange}
             onObjectRemove={onObjectRemove}
-            onVideoOpen={onVideoOpenButtonClick}
             onVideoExportButtonClick={onVideoExportButtonClick}
             previewController={videoController}
         />

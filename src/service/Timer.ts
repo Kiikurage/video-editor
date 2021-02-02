@@ -17,7 +17,7 @@ export class Timer extends EventEmitter implements TimerEvents {
     private mainLoopTimerId: number | null = null;
 
     get paused(): boolean {
-        return !this.isStarted;
+        return !this.isStarted || Date.now() - this.startedAtInMS > this.durationInMS;
     }
 
     get currentTimeInMS(): number {

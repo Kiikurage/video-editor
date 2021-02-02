@@ -30,6 +30,10 @@ export class PreviewController extends EventEmitter implements PreviewController
         return this.timer.durationInMS;
     }
 
+    set durationInMS(newValue: number) {
+        this.timer.durationInMS = newValue;
+    }
+
     get currentTimeInMS(): number {
         return this.timer.currentTimeInMS;
     }
