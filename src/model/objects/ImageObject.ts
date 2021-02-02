@@ -12,5 +12,4 @@ export const ImageObject = {
 export interface ImageObject extends BaseObject {
     type: typeof ImageObject.type;
     srcFilePath: string;
-    _imageDataCache?: HTMLImageElement | 'loading';
 }

@@ -2,11 +2,11 @@ import * as React from 'react';
 import { useEffect, useMemo } from 'react';
 import { Stage } from 'react-pixi-fiber';
 import styled from 'styled-components';
-import { BaseObject } from '../model/BaseObject';
-import { CaptionObject } from '../model/CaptionObject';
-import { ImageObject } from '../model/ImageObject';
+import { BaseObject } from '../model/objects/BaseObject';
+import { CaptionObject } from '../model/objects/CaptionObject';
+import { ImageObject } from '../model/objects/ImageObject';
 import { Project } from '../model/Project';
-import { VideoObject } from '../model/VideoObject';
+import { VideoObject } from '../model/objects/VideoObject';
 import { PreviewController } from '../service/PreviewController';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
@@ -94,11 +94,21 @@ export function PreviewPlayer(props: Props): React.ReactElement {
                         video={object as VideoObject}
                         previewController={previewController}
                         selected={isSelected}
+                        onSelect={() => onObjectSelect(object)}
+                        onObjectChange={onObjectChange}
                     />
                 );
 
             case CaptionObject.type:
-                return <CaptionObjectView key={object.id} caption={object as CaptionObject} selected={isSelected} />;
+                return (
+                    <CaptionObjectView
+                        key={object.id}
+                        caption={object as CaptionObject}
+                        selected={isSelected}
+                        onSelect={() => onObjectSelect(object)}
+                        onObjectChange={onObjectChange}
+                    />
+                );
 
             case ImageObject.type:
                 return (

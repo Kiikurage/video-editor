@@ -1,21 +1,22 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
-import { VideoObject } from '../../../model/VideoObject';
+import { VideoObject } from '../../../model/objects/VideoObject';
 import { PreviewController } from '../../../service/PreviewController';
 import { useCallbackRef } from '../../hooks/useCallbackRef';
+import { ResizeView } from './ResizeView';
 
 interface Props {
     video: VideoObject;
     previewController: PreviewController;
     selected: boolean;
+    onSelect: () => void;
+    onObjectChange: (oldValue: VideoObject, newValue: VideoObject) => void;
 }
 
 interface InnerProps {
     texture: PIXI.Texture;
-    x: number;
-    y: number;
     width: number;
     height: number;
 }
@@ -28,11 +29,11 @@ const VideoObjectView = CustomPIXIComponent(
             return base;
         },
         customApplyProps(base: PIXI.Sprite, oldProps: InnerProps, newProps: InnerProps): void {
-            const { texture, x, y, width, height } = newProps;
+            const { texture, width, height } = newProps;
 
             base.texture = texture;
-            base.x = x;
-            base.y = y;
+            base.x = 0;
+            base.y = 0;
             base.width = width;
             base.height = height;
         },
@@ -41,14 +42,13 @@ const VideoObjectView = CustomPIXIComponent(
 );
 
 function VideoObjectViewWrapper(props: Props): React.ReactElement {
-    const { video, previewController } = props;
-
-    const textureRef = useRef<PIXI.Texture>(PIXI.Texture.EMPTY);
+    const { video, previewController, selected, onObjectChange, onSelect } = props;
+    const [texture, setTexture] = useState(PIXI.Texture.EMPTY);
 
     const onPreviewControllerSeek = useCallbackRef(() => {
         const currentPreviewTimeInMS = previewController.currentTimeInMS;
 
-        const videoResource = textureRef.current.baseTexture.resource as PIXI.resources.VideoResource;
+        const videoResource = texture.baseTexture.resource as PIXI.resources.VideoResource;
         const videoElement = videoResource.source as HTMLVideoElement;
 
         const expectedVideoCurrentTimeInMS = currentPreviewTimeInMS - video.startInMS;
@@ -59,18 +59,18 @@ function VideoObjectViewWrapper(props: Props): React.ReactElement {
                 void videoElement.play().catch(() => void 0);
             } else {
                 videoElement.currentTime = expectedVideoCurrentTimeInMS / 1000;
-                textureRef.current.update();
+                texture.update();
             }
         } else {
             const lagInMS = currentPreviewTimeInMS - (videoCurrentTimeInMS + video.startInMS);
             if (Math.abs(lagInMS) > 200) {
-                videoElement.currentTime = expectedVideoCurrentTimeInMS / 1000;
+                videoElement.currentTime = (expectedVideoCurrentTimeInMS + lagInMS) / 1000;
             }
         }
     });
 
     const onPreviewControllerPause = useCallbackRef(() => {
-        const videoResource = textureRef.current.baseTexture.resource as PIXI.resources.VideoResource;
+        const videoResource = texture.baseTexture.resource as PIXI.resources.VideoResource;
         const videoElement = videoResource.source as HTMLVideoElement;
 
         videoElement.pause();
@@ -88,15 +88,16 @@ function VideoObjectViewWrapper(props: Props): React.ReactElement {
 
     useEffect(() => {
         return () => {
-            const videoResource = textureRef.current.baseTexture.resource as PIXI.resources.VideoResource;
+            const videoResource = texture.baseTexture.resource as PIXI.resources.VideoResource | null;
+            if (!videoResource) return;
             const videoElement = videoResource.source as HTMLVideoElement;
 
             videoElement.pause();
         };
-    }, []);
+    }, [texture.baseTexture.resource]);
 
     useEffect(() => {
-        textureRef.current = new PIXI.Texture(
+        const newTexture = new PIXI.Texture(
             new PIXI.BaseTexture(
                 new PIXI.resources.VideoResource(video.srcFilePath, {
                     autoLoad: true,
@@ -104,9 +105,18 @@ function VideoObjectViewWrapper(props: Props): React.ReactElement {
                 })
             )
         );
-    }, [video.srcFilePath]);
 
-    return <VideoObjectView texture={textureRef.current} x={video.x} y={video.y} width={video.width} height={video.height} />;
+        newTexture.baseTexture.once('loaded', () => {
+            setTexture(newTexture);
+            onPreviewControllerSeek();
+        });
+    }, [onPreviewControllerSeek, video.srcFilePath]);
+
+    return (
+        <ResizeView object={video} onObjectChange={onObjectChange} onSelect={onSelect} selected={selected}>
+            <VideoObjectView texture={texture} width={video.width} height={video.height} />
+        </ResizeView>
+    );
 }
 
 export { VideoObjectViewWrapper as VideoObjectView };

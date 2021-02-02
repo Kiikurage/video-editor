@@ -6,11 +6,11 @@ import * as path from 'path';
 import * as tmp from 'tmp';
 import { promisify } from 'util';
 import { assert } from '../lib/util';
-import { CaptionObject } from '../model/CaptionObject';
-import { ImageObject } from '../model/ImageObject';
+import { CaptionObject } from '../model/objects/CaptionObject';
+import { ImageObject } from '../model/objects/ImageObject';
 import { IPCMessages } from '../model/IPCMessages';
 import { Project } from '../model/Project';
-import { VideoObject } from '../model/VideoObject';
+import { VideoObject } from '../model/objects/VideoObject';
 
 interface OutputBuilderEvents {
     on(type: 'log', callback: () => void): void;

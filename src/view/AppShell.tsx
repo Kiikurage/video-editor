@@ -1,10 +1,10 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { UUID } from '../lib/UUID';
-import { BaseObject } from '../model/BaseObject';
-import { ImageObject } from '../model/ImageObject';
+import { BaseObject } from '../model/objects/BaseObject';
+import { ImageObject } from '../model/objects/ImageObject';
 import { Project } from '../model/Project';
-import { VideoObject } from '../model/VideoObject';
+import { VideoObject } from '../model/objects/VideoObject';
 import { PreviewController } from '../service/PreviewController';
 import { DropArea } from './DropArea';
 import { MiddleToolBar } from './MiddleToolBar';

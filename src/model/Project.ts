@@ -1,4 +1,4 @@
-import { BaseObject } from './BaseObject';
+import { BaseObject } from './objects/BaseObject';
 
 export interface Project {
     /**

@@ -1,8 +1,8 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { BaseObject } from '../model/BaseObject';
-import { CaptionObject } from '../model/CaptionObject';
-import { VideoObject } from '../model/VideoObject';
+import { BaseObject } from '../model/objects/BaseObject';
+import { CaptionObject } from '../model/objects/CaptionObject';
+import { VideoObject } from '../model/objects/VideoObject';
 import { useCallbackRef } from './hooks/useCallbackRef';
 
 const Base = styled.div`
