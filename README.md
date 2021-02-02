@@ -4,7 +4,7 @@
 
 Simple Video Editor for Windows / macOS / Linux
 
-![](./images/screenshot.png)
+![](https://github.com/Kiikurage/video-editor/blob/master/docs/images/screenshot.png)
 
 **This software is under development**
 
