@@ -44,6 +44,9 @@ export function DropArea(props: React.PropsWithChildren<Props>): React.ReactElem
     };
 
     const onDragEnter = (ev: React.DragEvent) => {
+        if ((ev.dataTransfer.items?.length ?? 0) === 0) {
+            return;
+        }
         if (ev.relatedTarget && baseRef.current?.contains(ev.relatedTarget as Node)) {
             return;
         }

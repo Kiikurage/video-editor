@@ -13,10 +13,8 @@ const Base = styled.div`
     flex-direction: column;
     align-items: stretch;
     justify-content: stretch;
-    border-left: 1px solid #e0e0e0;
-    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+    border-left: 1px solid #c0c0c0;
     background: #fff;
-    z-index: 1;
 `;
 
 const Body = styled.div`

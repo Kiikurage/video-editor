@@ -21,15 +21,19 @@ PIXI.settings.RENDER_OPTIONS.autoDensity = true;
 PIXI.settings.RENDER_OPTIONS.resolution = devicePixelRatio;
 
 const Base = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: stretch;
+    position: relative;
     width: 100%;
     height: 100%;
-    position: relative;
-    background: #fcfcfc;
+    background: #fff;
     overflow: auto auto;
+
+    > canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
 `;
 
 interface Props {
@@ -77,7 +81,9 @@ export function TimeLine(props: Props): React.ReactElement {
     }, [onVideoControllerSeek, previewController]);
 
     const onPinchZoomUpdate = useCallbackRef((data: { x: number; y: number; scale: number }) => {
-        setDurationInMSForVisibleArea(Math.max(previewController.durationInMS, 1) / data.scale ** 2);
+        const SCALE_FACTOR = 2;
+        const scale = (data.scale - 1) * SCALE_FACTOR + 1;
+        setDurationInMSForVisibleArea(Math.max(previewController.durationInMS, 1) / scale);
     });
 
     const onObjectLayerMouseMove = useCallbackRef((ev: React.MouseEvent) => {

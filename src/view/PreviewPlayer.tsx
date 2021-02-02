@@ -15,9 +15,6 @@ import { CaptionObjectView } from './pixi/PreviewPlayer/CaptionObjectView';
 import { ImageObjectView } from './pixi/PreviewPlayer/ImageObjectView';
 import { VideoObjectView } from './pixi/PreviewPlayer/VideoObjectView';
 
-// const MAX_ACCEPTABLE_VIDEO_LAG_IN_MS = 50;
-// const SEEK_DELAY_IN_MS = 1000;
-
 const Base = styled.div`
     position: relative;
     width: 100%;
@@ -30,6 +27,8 @@ const Base = styled.div`
     justify-content: center;
     overflow-x: auto;
     overflow-y: auto;
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
 `;
 
 const ContentBase = styled.div`
