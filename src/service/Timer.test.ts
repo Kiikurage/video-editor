@@ -1,44 +1,42 @@
 import { Timer } from './Timer';
 
-function sleep(timeInMS: number): Promise<void> {
-    return new Promise((r) => setTimeout(r, timeInMS));
+function fixDateNow(dateNowInMS: number): void {
+    Date.now = jest.fn(() => dateNowInMS);
 }
 
-const EPS = 1000 / 60;
+function advanceDateNow(durationInMS: number): void {
+    fixDateNow(Date.now() + durationInMS);
+}
 
-it('Should return current time when timer is running', async () => {
+it('Should return current time when timer is running', () => {
     const timer = new Timer();
 
+    fixDateNow(0);
     timer.start();
-    await sleep(1000);
-    const t1 = timer.currentTimeInMS;
-    await sleep(1000);
-    const t2 = timer.currentTimeInMS;
 
-    expect(t1).toBeGreaterThanOrEqual(1000 - EPS);
-    expect(t1).toBeLessThan(1000 + EPS);
+    advanceDateNow(1000);
+    expect(timer.currentTimeInMS).toBe(1000);
 
-    expect(t2).toBeGreaterThanOrEqual(2000 - EPS);
-    expect(t2).toBeLessThan(2000 + EPS);
+    advanceDateNow(1000);
+    expect(timer.currentTimeInMS).toBe(2000);
 });
 
-it('Should be stopped by stop()', async () => {
+it('Should be stopped by stop()', () => {
     const timer = new Timer();
 
+    fixDateNow(0);
     timer.start();
-    await sleep(1000);
+
+    advanceDateNow(1000);
     timer.stop();
-    const t1 = timer.currentTimeInMS;
-    await sleep(1000);
-    const t2 = timer.currentTimeInMS;
+    expect(timer.currentTimeInMS).toBe(1000);
 
-    expect(t1).toBeGreaterThanOrEqual(1000 - EPS);
-    expect(t1).toBeLessThan(1000 + EPS);
-
-    expect(t2).toBe(t1);
+    advanceDateNow(1000);
+    expect(timer.currentTimeInMS).toBe(1000);
 });
 
-it('Should be able to seek when timer is stopped', async () => {
+it('Should be able to seek when timer is stopped', () => {
+    fixDateNow(0);
     const timer = new Timer();
 
     timer.seek(3000);
@@ -46,30 +44,23 @@ it('Should be able to seek when timer is stopped', async () => {
     expect(t1).toBe(3000);
 
     timer.start();
-    await sleep(1000);
-    const t2 = timer.currentTimeInMS;
 
-    expect(t2).toBeGreaterThanOrEqual(4000 - EPS);
-    expect(t2).toBeLessThan(4000 + EPS);
+    advanceDateNow(1000);
+    expect(timer.currentTimeInMS).toBe(4000);
 });
 
-it('Should be able to seek when timer is running', async () => {
+it('Should be able to seek when timer is running', () => {
+    fixDateNow(0);
     const timer = new Timer();
 
     timer.start();
-    await sleep(1000);
-    const t1 = timer.currentTimeInMS;
+
+    advanceDateNow(1000);
+    expect(timer.currentTimeInMS).toBe(1000);
+
     timer.seek(3000);
-    const t2 = timer.currentTimeInMS;
-    await sleep(1000);
-    const t3 = timer.currentTimeInMS;
+    expect(timer.currentTimeInMS).toBe(3000);
 
-    expect(t1).toBeGreaterThanOrEqual(1000 - EPS);
-    expect(t1).toBeLessThan(1000 + EPS);
-
-    expect(t2).toBeGreaterThanOrEqual(3000 - EPS);
-    expect(t2).toBeLessThan(3000 + EPS);
-
-    expect(t3).toBeGreaterThanOrEqual(4000 - EPS);
-    expect(t3).toBeLessThan(4000 + EPS);
+    advanceDateNow(1000);
+    expect(timer.currentTimeInMS).toBe(4000);
 });

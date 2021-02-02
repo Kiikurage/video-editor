@@ -64,6 +64,7 @@
     "@types/node": "^12.19.15",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
+    "@types/resize-observer-browser": "^0.1.5",
     "@types/styled-components": "^5.1.7",
     "@types/tmp": "^0.2.0",
     "@typescript-eslint/eslint-plugin": "^4.14.1",

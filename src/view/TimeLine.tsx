@@ -1,14 +1,16 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Stage } from 'react-pixi-fiber';
 import QuickPinchZoom from 'react-quick-pinch-zoom';
 import styled from 'styled-components';
+import { range } from '../lib/range';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
 import { Project } from '../model/Project';
 import { PreviewController } from '../service/PreviewController';
 import { useCallbackRef } from './hooks/useCallbackRef';
+import { useFormState } from './hooks/useFormState';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
 import { CurrentTimeIndicator } from './pixi/TimeLine/CurrentTimeIndicator';
 import { Divider } from './pixi/TimeLine/Divider';
@@ -41,22 +43,31 @@ interface Props {
 export function TimeLine(props: Props): React.ReactElement {
     const { previewController, project, selectedObject, onObjectSelect, onObjectUpdate } = props;
 
-    const durationInMSForVisibleAreaRef = useRef(Math.max(previewController.durationInMS, 1));
-    const dividerDurationInMS = computeBestDividerDurationInMS(durationInMSForVisibleAreaRef.current);
-
-    const mouseXRef = useRef(0);
-    const baseRef = useRef<HTMLDivElement | null>(null);
+    const [durationInMSForVisibleArea, setDurationInMSForVisibleArea] = useFormState(Math.max(previewController.durationInMS, 1));
+    const [mouseX, setMouseX] = useState(0);
+    const [baseSize, setBaseSize] = useState({ width: 100, height: 100 });
     const forceUpdate = useThrottledForceUpdate();
+
+    const resizeObserverRef = useRef<ResizeObserver | null>(null);
+    const onBaseElementReferenceUpdate = useCallbackRef((base: HTMLDivElement | null) => {
+        if (resizeObserverRef.current) {
+            resizeObserverRef.current.disconnect();
+            resizeObserverRef.current = null;
+        }
+
+        if (base === null) return;
+
+        resizeObserverRef.current = new ResizeObserver((etntries) => {
+            etntries.forEach((entry) => {
+                setBaseSize({ width: entry.contentRect.width, height: entry.contentRect.height });
+            });
+        });
+        resizeObserverRef.current.observe(base);
+    });
 
     const onVideoControllerSeek = useCallbackRef(() => {
         forceUpdate();
     });
-
-    useEffect(() => {
-        durationInMSForVisibleAreaRef.current = Math.max(previewController.durationInMS, 1);
-        forceUpdate();
-    }, [forceUpdate, previewController.durationInMS]);
-
     useEffect(() => {
         previewController.on('seek', onVideoControllerSeek);
 
@@ -66,85 +77,48 @@ export function TimeLine(props: Props): React.ReactElement {
     }, [onVideoControllerSeek, previewController]);
 
     const onPinchZoomUpdate = useCallbackRef((data: { x: number; y: number; scale: number }) => {
-        const scale = data.scale;
-        durationInMSForVisibleAreaRef.current = Math.max(previewController.durationInMS, 1) / scale;
-        forceUpdate();
+        setDurationInMSForVisibleArea(Math.max(previewController.durationInMS, 1) / data.scale ** 2);
     });
 
     const onObjectLayerMouseMove = useCallbackRef((ev: React.MouseEvent) => {
-        const base = baseRef.current;
-        if (!base) return;
-
-        const { left: baseLeft, width: baseWidth } = base.getBoundingClientRect();
-        mouseXRef.current = (ev.clientX - baseLeft) / baseWidth;
-        forceUpdate();
+        setMouseX(ev.clientX);
     });
 
     const onObjectLayerClick = useCallbackRef((ev: React.MouseEvent) => {
-        const base = baseRef.current;
-        if (!base) return;
-
-        const { left: baseLeft, width: baseWidth } = base.getBoundingClientRect();
-        previewController.currentTimeInMS = (durationInMSForVisibleAreaRef.current * (ev.clientX - baseLeft)) / baseWidth;
+        previewController.currentTimeInMS = (durationInMSForVisibleArea * ev.clientX) / baseSize.width;
     });
 
     const onObjectClick = useCallbackRef((object: BaseObject) => {
         onObjectSelect(object);
     });
 
-    const currentTimeIndicatorLeft = previewController.currentTimeInMS / durationInMSForVisibleAreaRef.current;
-
-    const dividerLeftPositionPercent = dividerDurationInMS / durationInMSForVisibleAreaRef.current;
-    const { height: baseHeight, width: baseWidth } = baseRef.current?.getBoundingClientRect() ?? { height: 100, width: 100 };
-
     const pixiStageOption = useMemo(() => {
-        return { backgroundColor: 0xffffff, width: baseWidth, height: baseHeight };
-    }, [baseHeight, baseWidth]);
+        return { backgroundColor: 0xffffff, width: baseSize.width, height: baseSize.height };
+    }, [baseSize]);
+
+    const MINIMUM_DIVIDER_SPAN_IN_PX = 70;
+    const dividerDurationInMS =
+        PREDEFINED_DIVIDER_DURATIONS.find(
+            (duration) => (baseSize.width * duration) / durationInMSForVisibleArea > MINIMUM_DIVIDER_SPAN_IN_PX
+        ) ?? PREDEFINED_DIVIDER_DURATIONS[PREDEFINED_DIVIDER_DURATIONS.length - 1];
 
     return (
         <QuickPinchZoom onUpdate={onPinchZoomUpdate} maxZoom={50} minZoom={0.1} zoomOutFactor={0}>
-            <Base ref={(e) => (baseRef.current = e)} onMouseMove={onObjectLayerMouseMove} onClick={onObjectLayerClick}>
+            <Base ref={onBaseElementReferenceUpdate} onMouseMove={onObjectLayerMouseMove} onClick={onObjectLayerClick}>
                 <Stage options={pixiStageOption}>
-                    <Divider
-                        x={baseWidth * dividerLeftPositionPercent * 1}
-                        height={baseHeight}
-                        label={formatTime(dividerDurationInMS * 1)}
-                    />
-                    <Divider
-                        x={baseWidth * dividerLeftPositionPercent * 2}
-                        height={baseHeight}
-                        label={formatTime(dividerDurationInMS * 2)}
-                    />
-                    <Divider
-                        x={baseWidth * dividerLeftPositionPercent * 3}
-                        height={baseHeight}
-                        label={formatTime(dividerDurationInMS * 3)}
-                    />
-                    <Divider
-                        x={baseWidth * dividerLeftPositionPercent * 4}
-                        height={baseHeight}
-                        label={formatTime(dividerDurationInMS * 4)}
-                    />
-                    <Divider
-                        x={baseWidth * dividerLeftPositionPercent * 5}
-                        height={baseHeight}
-                        label={formatTime(dividerDurationInMS * 5)}
-                    />
-                    <Divider
-                        x={baseWidth * dividerLeftPositionPercent * 6}
-                        height={baseHeight}
-                        label={formatTime(dividerDurationInMS * 6)}
-                    />
-                    <Divider
-                        x={baseWidth * dividerLeftPositionPercent * 7}
-                        height={baseHeight}
-                        label={formatTime(dividerDurationInMS * 7)}
-                    />
+                    {range(Math.ceil(durationInMSForVisibleArea / dividerDurationInMS)).map((i) => (
+                        <Divider
+                            key={i}
+                            x={(baseSize.width * i * dividerDurationInMS) / durationInMSForVisibleArea}
+                            height={baseSize.height}
+                            label={formatTime(i * dividerDurationInMS)}
+                        />
+                    ))}
 
                     {project.objects.map((object, i) => {
                         const isSelected = object === selectedObject;
-                        const left = (baseWidth * object.startInMS) / durationInMSForVisibleAreaRef.current;
-                        const width = (baseWidth * (object.endInMS - object.startInMS)) / durationInMSForVisibleAreaRef.current;
+                        const left = (baseSize.width * object.startInMS) / durationInMSForVisibleArea;
+                        const width = (baseSize.width * (object.endInMS - object.startInMS)) / durationInMSForVisibleArea;
                         return (
                             <ObjectView
                                 key={object.id}
@@ -156,8 +130,8 @@ export function TimeLine(props: Props): React.ReactElement {
                                 height={22}
                                 onClick={() => onObjectClick(object)}
                                 onMoveAndResize={(newX, newWidth) => {
-                                    const newStartInMS = (durationInMSForVisibleAreaRef.current * newX) / baseWidth;
-                                    const newEndInMS = newStartInMS + (durationInMSForVisibleAreaRef.current * newWidth) / baseWidth;
+                                    const newStartInMS = (durationInMSForVisibleArea * newX) / baseSize.width;
+                                    const newEndInMS = newStartInMS + (durationInMSForVisibleArea * newWidth) / baseSize.width;
                                     onObjectUpdate(object, {
                                         ...object,
                                         startInMS: newStartInMS,
@@ -168,8 +142,11 @@ export function TimeLine(props: Props): React.ReactElement {
                         );
                     })}
 
-                    <CurrentTimeIndicator x={baseWidth * currentTimeIndicatorLeft} height={baseHeight} />
-                    <MouseTimeIndicator x={baseWidth * mouseXRef.current} height={baseHeight} />
+                    <CurrentTimeIndicator
+                        x={(baseSize.width * previewController.currentTimeInMS) / durationInMSForVisibleArea}
+                        height={baseSize.height}
+                    />
+                    <MouseTimeIndicator x={mouseX} height={baseSize.height} />
                 </Stage>
             </Base>
         </QuickPinchZoom>
@@ -195,11 +172,3 @@ const PREDEFINED_DIVIDER_DURATIONS = [
     30 * 60 * 1000,
     1 * 60 * 60 * 1000,
 ];
-
-function computeBestDividerDurationInMS(durationInMSForVisibleArea: number): number {
-    // 画面内にdividerが7本, 8セクション分表示されるようなscaleが最適であるとする
-    return (
-        PREDEFINED_DIVIDER_DURATIONS.find((duration) => duration * 8 > durationInMSForVisibleArea) ??
-        PREDEFINED_DIVIDER_DURATIONS[PREDEFINED_DIVIDER_DURATIONS.length - 1]
-    );
-}
