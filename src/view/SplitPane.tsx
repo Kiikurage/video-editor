@@ -3,6 +3,7 @@ import { useContext, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { noop } from '../lib/util';
 import { useCallbackRef } from './hooks/useCallbackRef';
+import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
 
 const Base = styled.div<{ direction: 'row' | 'column' }>`
     display: flex;
@@ -19,6 +20,7 @@ const SplitterBase = styled.div<{ active: boolean }>`
     justify-content: center;
     position: relative;
     z-index: 999999999;
+    will-change: transform;
 
     &:hover {
         ${SplitterInner} {
@@ -29,8 +31,8 @@ const SplitterBase = styled.div<{ active: boolean }>`
 
 const VerticalSplitter = styled(SplitterBase)`
     flex-direction: row;
-    width: 20px;
-    margin: 0 -10px;
+    width: 30px;
+    margin: 0 -15px;
     cursor: col-resize;
 
     ${SplitterInner} {
@@ -41,8 +43,8 @@ const VerticalSplitter = styled(SplitterBase)`
 
 const HorizontalSplitter = styled(SplitterBase)`
     flex-direction: column;
-    height: 20px;
-    margin: -10px 0;
+    height: 30px;
+    margin: -15px 0;
     cursor: row-resize;
 
     ${SplitterInner} {
@@ -57,55 +59,84 @@ export interface Props {
 
 const context = React.createContext<{
     direction: 'row' | 'column';
-    diff: { dx: number; dy: number };
-    onDragStart: (ev: React.DragEvent, onDropHandler: (dx: number, dy: number) => void) => void;
+    onMouseDown: (ev: React.MouseEvent, onSplitterMouseUpCallback: (dx: number, dy: number) => void) => void;
+    dx: number;
+    dy: number;
 }>(null as never);
 
 export function SplitPane(props: React.PropsWithChildren<Props>): React.ReactElement {
     const { children, direction } = props;
-    const dragStartXRef = useRef(-1);
-    const dragStartYRef = useRef(-1);
-    const [diff, setDiff] = useState<{ dx: number; dy: number }>({ dx: 0, dy: 0 });
-    const onDropHandlerRef = useRef<(dx: number, dy: number) => void>(noop);
+    const forceUpdate = useThrottledForceUpdate();
+    const dragPositionRef = useRef({
+        startX: 0,
+        startY: 0,
+        currentX: 0,
+        currentY: 0,
+    });
+    const isActiveRef = useRef(false);
+    const onSplitterMouseUpCallbackRef = useRef<(dx: number, dy: number) => void>(noop);
 
-    const onDragStart = useCallbackRef((ev: React.DragEvent, onDropHandler: (dx: number, dy: number) => void) => {
-        dragStartXRef.current = ev.clientX;
-        dragStartYRef.current = ev.clientY;
-        onDropHandlerRef.current = onDropHandler;
+    const onMouseDown = useCallbackRef((ev: React.MouseEvent, onSplitterMouseUpCallback: (dx: number, dy: number) => void) => {
+        if (isActiveRef.current) return;
 
-        ev.stopPropagation();
+        isActiveRef.current = true;
+        dragPositionRef.current.startX = ev.pageX;
+        dragPositionRef.current.startY = ev.pageY;
+        dragPositionRef.current.currentX = ev.pageX;
+        dragPositionRef.current.currentY = ev.pageY;
+        onSplitterMouseUpCallbackRef.current = onSplitterMouseUpCallback;
     });
 
-    const onDragOver = useCallbackRef((ev: React.DragEvent) => {
-        ev.stopPropagation();
-        ev.preventDefault();
+    const onMouseMove = useCallbackRef((ev: React.MouseEvent) => {
+        if (!isActiveRef.current) return;
 
-        setDiff({ dx: ev.clientX - dragStartXRef.current, dy: ev.clientY - dragStartYRef.current });
+        ev.preventDefault();
+        ev.stopPropagation();
+        dragPositionRef.current.currentX = ev.pageX;
+        dragPositionRef.current.currentY = ev.pageY;
+        forceUpdate();
     });
 
-    const onDrop = useCallbackRef((ev: React.DragEvent) => {
-        ev.stopPropagation();
-        ev.preventDefault();
+    const onMouseUp = useCallbackRef(() => {
+        if (!isActiveRef.current) return;
 
-        setDiff({ dx: 0, dy: 0 });
+        isActiveRef.current = false;
+        onSplitterMouseUpCallbackRef.current(
+            dragPositionRef.current.currentX - dragPositionRef.current.startX,
+            dragPositionRef.current.currentY - dragPositionRef.current.startY
+        );
+        onSplitterMouseUpCallbackRef.current = noop;
+        dragPositionRef.current.startX = 0;
+        dragPositionRef.current.startY = 0;
+        dragPositionRef.current.currentX = 0;
+        dragPositionRef.current.currentY = 0;
+    });
 
-        const dx = ev.clientX - dragStartXRef.current;
-        const dy = ev.clientY - dragStartYRef.current;
-        onDropHandlerRef.current(dx, dy);
+    const onMouseLeave = useCallbackRef(() => {
+        if (!isActiveRef.current) return;
+
+        isActiveRef.current = false;
+        onSplitterMouseUpCallbackRef.current(0, 0);
+        onSplitterMouseUpCallbackRef.current = noop;
+        dragPositionRef.current.startX = 0;
+        dragPositionRef.current.startY = 0;
+        dragPositionRef.current.currentX = 0;
+        dragPositionRef.current.currentY = 0;
     });
 
     return (
-        <context.Provider
-            value={{
-                direction: direction,
-                onDragStart: onDragStart,
-                diff: diff,
-            }}
-        >
-            <Base direction={direction} onDragOver={onDragOver} onDrop={onDrop}>
+        <Base direction={direction} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseLeave}>
+            <context.Provider
+                value={{
+                    direction: direction,
+                    onMouseDown: onMouseDown,
+                    dx: dragPositionRef.current.currentX - dragPositionRef.current.startX,
+                    dy: dragPositionRef.current.currentY - dragPositionRef.current.startY,
+                }}
+            >
                 {children}
-            </Base>
-        </context.Provider>
+            </context.Provider>
+        </Base>
     );
 }
 
@@ -113,28 +144,22 @@ interface SplitterProps {
     onChange: (dx: number, dy: number) => void;
 }
 
-const EMPTY_IMAGE = new Image();
-EMPTY_IMAGE.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
-
 export function Splitter(props: React.PropsWithChildren<SplitterProps>): React.ReactElement {
     const { onChange } = props;
-    const {
-        direction,
-        diff: { dx, dy },
-        onDragStart: splitPaneDragStartHandler,
-    } = useContext(context);
+    const { direction, onMouseDown: onContainerMouseDown, dx, dy } = useContext(context);
     const [isActive, setActive] = useState(false);
 
     const SplitterClass = direction === 'column' ? HorizontalSplitter : VerticalSplitter;
 
-    const onDragStart = useCallbackRef((ev: React.DragEvent) => {
-        ev.dataTransfer.setDragImage(EMPTY_IMAGE, 0, 0);
-
-        splitPaneDragStartHandler(ev, onChange);
+    const onMouseDown = useCallbackRef((ev: React.MouseEvent) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        onContainerMouseDown(ev, onMouseUp);
         setActive(true);
     });
 
-    const onDragEnd = useCallbackRef(() => {
+    const onMouseUp = useCallbackRef((dx, dy) => {
+        onChange(dx, dy);
         setActive(false);
     });
 
@@ -144,9 +169,7 @@ export function Splitter(props: React.PropsWithChildren<SplitterProps>): React.R
             style={{
                 transform: isActive ? (direction === 'row' ? `translateX(${dx}px)` : `translateY(${dy}px)`) : 'none',
             }}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-            draggable
+            onMouseDown={onMouseDown}
         >
             <SplitterInner />
         </SplitterClass>
