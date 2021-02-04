@@ -85,12 +85,15 @@ const TimeLineArea = styled.div`
     overflow-y: auto;
 `;
 
-const PropertyArea = styled.div``;
+const PropertyArea = styled.div`
+    flex: 1 1 0;
+`;
 
 interface Props {
     previewController: PreviewController;
     project: Project;
     selectedObject: BaseObject | null;
+    onProjectChange: (oldValue: Project, newValue: Project) => void;
     onObjectSelect: (object: BaseObject | null) => void;
     onObjectAdd: (object: BaseObject) => void;
     onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
@@ -105,6 +108,7 @@ export function AppShell(props: Props): React.ReactElement {
         previewController,
         project,
         selectedObject,
+        onProjectChange,
         onObjectSelect,
         onObjectAdd,
         onObjectChange,
@@ -226,7 +230,13 @@ export function AppShell(props: Props): React.ReactElement {
                         <Splitter onChange={(dx, _dy) => setMainAreaWidth(mainAreaWidth + dx)} />
 
                         <PropertyArea>
-                            <PropertyView object={selectedObject} onObjectChange={onObjectChange} onObjectRemove={onObjectRemove} />
+                            <PropertyView
+                                project={selectedObject === null ? project : null}
+                                object={selectedObject}
+                                onProjectChange={onProjectChange}
+                                onObjectChange={onObjectChange}
+                                onObjectRemove={onObjectRemove}
+                            />
                         </PropertyArea>
                     </SplitPane>
                 </BodyArea>
