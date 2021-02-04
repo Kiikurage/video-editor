@@ -47,12 +47,12 @@ interface Props {
     previewController: PreviewController;
     project: Project;
     selectedObject: BaseObject | null;
-    onObjectSelect: (newObject: BaseObject | null) => void;
-    onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
+    onSelectObject: (newObject: BaseObject | null) => void;
+    onChangeObject: (oldValue: BaseObject, newValue: BaseObject) => void;
 }
 
 export function PreviewPlayer(props: Props): React.ReactElement {
-    const { previewController, project, selectedObject, onObjectSelect, onObjectChange } = props;
+    const { previewController, project, selectedObject, onSelectObject, onChangeObject } = props;
 
     const forceUpdate = useThrottledForceUpdate();
     const onPreviewControllerSeek = useCallbackRef(() => {
@@ -93,8 +93,8 @@ export function PreviewPlayer(props: Props): React.ReactElement {
                         video={object as VideoObject}
                         previewController={previewController}
                         selected={isSelected}
-                        onSelect={() => onObjectSelect(object)}
-                        onObjectChange={onObjectChange}
+                        onSelect={() => onSelectObject(object)}
+                        onObjectChange={onChangeObject}
                     />
                 );
 
@@ -104,8 +104,8 @@ export function PreviewPlayer(props: Props): React.ReactElement {
                         key={object.id}
                         caption={object as CaptionObject}
                         selected={isSelected}
-                        onSelect={() => onObjectSelect(object)}
-                        onObjectChange={onObjectChange}
+                        onSelect={() => onSelectObject(object)}
+                        onObjectChange={onChangeObject}
                     />
                 );
 
@@ -115,8 +115,8 @@ export function PreviewPlayer(props: Props): React.ReactElement {
                         key={object.id}
                         image={object as ImageObject}
                         selected={isSelected}
-                        onSelect={() => onObjectSelect(object)}
-                        onObjectChange={onObjectChange}
+                        onSelect={() => onSelectObject(object)}
+                        onObjectChange={onChangeObject}
                     />
                 );
 
@@ -127,7 +127,7 @@ export function PreviewPlayer(props: Props): React.ReactElement {
     }
 
     const onBaseClick = useCallbackRef(() => {
-        onObjectSelect(null);
+        onSelectObject(null);
     });
 
     const onContentBaseClick = useCallbackRef((ev: React.MouseEvent) => {
@@ -135,7 +135,7 @@ export function PreviewPlayer(props: Props): React.ReactElement {
     });
 
     const onBackgroundClick = useCallbackRef(() => {
-        onObjectSelect(null);
+        onSelectObject(null);
     });
 
     return (

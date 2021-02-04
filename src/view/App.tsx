@@ -1,6 +1,10 @@
+import * as Mousetrap from 'mousetrap';
 import * as path from 'path';
 import * as React from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
+import { showSaveFileDialog } from '../ipc/renderer/showSaveFileDialog';
+import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
@@ -22,8 +26,6 @@ function usePreviewController(): PreviewController {
 }
 
 export function App(): React.ReactElement {
-    const videoController = usePreviewController();
-
     const [project, setProject] = useState<Project>(() => ({
         fps: 30,
         viewport: {
@@ -79,56 +81,81 @@ export function App(): React.ReactElement {
     }));
     const [selectedObject, setSelectedObject] = useState<BaseObject | null>(null);
 
-    const onProjectChange = (oldValue: Project, newValue: Project) => {
+    const videoController = usePreviewController();
+
+    useEffect(() => {
+        Mousetrap.bind('command+o', onOpenProject);
+        Mousetrap.bind('command+s', onSaveProject);
+        Mousetrap.bind('command+shift+s', onSaveAsNewProject);
+        Mousetrap.bind('space', onTogglePreviewPlay);
+        Mousetrap.bind('backspace', onRemoveSelectedObject);
+        Mousetrap.bind('del', onRemoveSelectedObject);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const onTogglePreviewPlay = useCallbackRef(() => {
+        if (videoController.paused) {
+            videoController.play();
+        } else {
+            videoController.pause();
+        }
+    });
+
+    const onChangeProject = useCallbackRef((oldValue: Project, newValue: Project) => {
         setProject(newValue);
-    };
+    });
 
-    const onObjectSelect = (object: BaseObject | null) => {
+    const onSelectObject = useCallbackRef((object: BaseObject | null) => {
         setSelectedObject(object);
-    };
+    });
 
-    const setObjects = (newObjects: BaseObject[]) => {
+    const onAddObject = useCallbackRef((object: BaseObject) => {
         setProject((prevState) => {
             return {
                 ...prevState,
-                objects: newObjects,
+                objects: [...project.objects, object],
             };
         });
-    };
+    });
 
-    const onObjectAdd = (object: BaseObject) => {
-        setObjects([...project.objects, object]);
-    };
-
-    const onObjectChange = (oldValue: BaseObject, newValue: BaseObject) => {
+    const onChangeObject = useCallbackRef((oldValue: BaseObject, newValue: BaseObject) => {
         if (oldValue === selectedObject) {
             setSelectedObject(newValue);
         }
 
-        const i = project.objects.indexOf(oldValue);
-        if (i === -1) return;
+        setProject((prevState) => {
+            const i = prevState.objects.indexOf(oldValue);
+            if (i === -1) return prevState;
 
-        const newObjects = project.objects.slice(0);
-        newObjects.splice(i, 1, newValue);
+            const newObjects = prevState.objects.slice(0);
+            newObjects.splice(i, 1, newValue);
 
-        setObjects(newObjects);
-    };
+            return { ...prevState, objects: newObjects };
+        });
+    });
 
-    const onObjectRemove = (object: BaseObject) => {
+    const onRemoveObject = useCallbackRef((object: BaseObject) => {
         if (object === selectedObject) {
             setSelectedObject(null);
         }
 
-        const i = project.objects.indexOf(object);
-        if (i === -1) return;
+        setProject((prevState) => {
+            const i = prevState.objects.indexOf(object);
+            if (i === -1) return prevState;
 
-        const newCaptionList = project.objects.slice(0);
-        newCaptionList.splice(i, 1);
+            const newCaptionList = prevState.objects.slice(0);
+            newCaptionList.splice(i, 1);
 
-        setObjects(newCaptionList);
-    };
+            return { ...prevState, objects: newCaptionList };
+        });
+    });
 
-    const onVideoExportButtonClick = async () => {
+    const onRemoveSelectedObject = useCallbackRef(() => {
+        if (selectedObject === null) return;
+        onRemoveObject(selectedObject);
+    });
+
+    const onExportVideo = useCallbackRef(async () => {
         const outputBuilder = new OutputBuilder().setProject(project).setOutputVideoPath('./output.mp4');
 
         outputBuilder.on('log', () => {
@@ -144,30 +171,43 @@ export function App(): React.ReactElement {
         }
         //
         // cleanUpWorkspace();
-    };
+    });
 
-    const onProjectOpen = useCallbackRef(async (path: string) => {
-        const newProject = await Project.open(path);
+    const onOpenProject = useCallbackRef(async () => {
+        const { canceled, filePaths } = await showOpenFileDialog();
+        if (canceled) return;
+
+        const newProject = await Project.open(filePaths[0]);
         setProject(newProject);
     });
 
-    const onProjectSave = useCallbackRef(async (path: string) => {
-        await Project.save(path, project);
+    const onSaveProject = useCallbackRef(() => {
+        // TODO
+        void onSaveAsNewProject();
+    });
+
+    const onSaveAsNewProject = useCallbackRef(async () => {
+        const { canceled, filePath } = await showSaveFileDialog();
+        if (canceled) return;
+
+        assert(filePath !== undefined, 'WTF?');
+
+        await Project.save(filePath, project);
     });
 
     return (
         <AppShell
             project={project}
             selectedObject={selectedObject}
-            onProjectChange={onProjectChange}
-            onObjectSelect={onObjectSelect}
-            onObjectAdd={onObjectAdd}
-            onObjectChange={onObjectChange}
-            onObjectRemove={onObjectRemove}
-            onVideoExportButtonClick={onVideoExportButtonClick}
-            onProjectOpen={onProjectOpen}
-            onProjectSave={onProjectSave}
             previewController={videoController}
+            onChangeProject={onChangeProject}
+            onSelectObject={onSelectObject}
+            onAddObject={onAddObject}
+            onChangeObject={onChangeObject}
+            onRemoveObject={onRemoveObject}
+            onExportVideo={onExportVideo}
+            onOpenProject={onOpenProject}
+            onSaveProject={onSaveProject}
         />
     );
 }

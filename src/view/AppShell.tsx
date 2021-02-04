@@ -2,7 +2,6 @@ import * as React from 'react';
 import { useState } from 'react';
 import styled from 'styled-components';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
-import { showSaveFileDialog } from '../ipc/renderer/showSaveFileDialog';
 import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
 import { BaseObject } from '../model/objects/BaseObject';
@@ -94,14 +93,14 @@ interface Props {
     previewController: PreviewController;
     project: Project;
     selectedObject: BaseObject | null;
-    onProjectChange: (oldValue: Project, newValue: Project) => void;
-    onObjectSelect: (object: BaseObject | null) => void;
-    onObjectAdd: (object: BaseObject) => void;
-    onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
-    onObjectRemove: (object: BaseObject) => void;
-    onVideoExportButtonClick: () => void;
-    onProjectOpen: (path: string) => void;
-    onProjectSave: (path: string) => void;
+    onChangeProject: (oldValue: Project, newValue: Project) => void;
+    onSelectObject: (object: BaseObject | null) => void;
+    onAddObject: (object: BaseObject) => void;
+    onChangeObject: (oldValue: BaseObject, newValue: BaseObject) => void;
+    onRemoveObject: (object: BaseObject) => void;
+    onExportVideo: () => void;
+    onOpenProject: () => void;
+    onSaveProject: () => void;
 }
 
 export function AppShell(props: Props): React.ReactElement {
@@ -109,14 +108,14 @@ export function AppShell(props: Props): React.ReactElement {
         previewController,
         project,
         selectedObject,
-        onProjectChange,
-        onObjectSelect,
-        onObjectAdd,
-        onObjectChange,
-        onObjectRemove,
-        onVideoExportButtonClick,
-        onProjectOpen,
-        onProjectSave,
+        onChangeProject,
+        onSelectObject,
+        onAddObject,
+        onChangeObject,
+        onRemoveObject,
+        onExportVideo,
+        onOpenProject,
+        onSaveProject,
     } = props;
 
     const onFileDrop = (file: File) => {
@@ -156,7 +155,7 @@ export function AppShell(props: Props): React.ReactElement {
                 return;
         }
 
-        onObjectAdd(newObject);
+        onAddObject(newObject);
     };
 
     const onPlayButtonClick = () => {
@@ -170,22 +169,7 @@ export function AppShell(props: Props): React.ReactElement {
     const [previewAreaHeight, setPreviewAreaHeight] = useState(400);
     const [mainAreaWidth, setMainAreaWidth] = useState(900);
 
-    const onSaveProjectButtonClick = useCallbackRef(async () => {
-        const { canceled, filePath } = await showSaveFileDialog();
-        if (canceled) return;
-
-        assert(filePath !== undefined, 'WTF?');
-
-        onProjectSave(filePath);
-    });
-    const onOpenProjectButtonClick = useCallbackRef(async () => {
-        const { canceled, filePaths } = await showOpenFileDialog();
-        if (canceled) return;
-
-        onProjectOpen(filePaths[0]);
-    });
-
-    const onAddCaptionButtonClick = useCallbackRef(() => {
+    const onAddNewCaption = useCallbackRef(() => {
         const currentTimeInMS = previewController.currentTimeInMS;
         const object: CaptionObject = {
             id: UUID(),
@@ -198,10 +182,10 @@ export function AppShell(props: Props): React.ReactElement {
             endInMS: currentTimeInMS + 5000,
             text: '字幕',
         };
-        onObjectAdd(object);
+        onAddObject(object);
     });
 
-    const onAddImageButtonClick = useCallbackRef(async () => {
+    const onAddNewImage = useCallbackRef(async () => {
         const { canceled, filePaths } = await showOpenFileDialog();
         if (canceled) return;
         assert(filePaths.length === 1, "Multi-file import isn't supported");
@@ -218,10 +202,10 @@ export function AppShell(props: Props): React.ReactElement {
             endInMS: currentTimeInMS + 5000,
             srcFilePath: filePaths[0],
         };
-        onObjectAdd(object);
+        onAddObject(object);
     });
 
-    const onAddVideoButtonClick = useCallbackRef(async () => {
+    const onAddNewVideo = useCallbackRef(async () => {
         const { canceled, filePaths } = await showOpenFileDialog();
         if (canceled) return;
         assert(filePaths.length === 1, "Multi-file import isn't supported");
@@ -238,7 +222,7 @@ export function AppShell(props: Props): React.ReactElement {
             endInMS: currentTimeInMS + 5000,
             srcFilePath: filePaths[0],
         };
-        onObjectAdd(object);
+        onAddObject(object);
     });
 
     return (
@@ -246,10 +230,10 @@ export function AppShell(props: Props): React.ReactElement {
             <Base>
                 <AppHeader>
                     <div>
-                        <button onClick={onSaveProjectButtonClick}>保存</button>
-                        <button onClick={onOpenProjectButtonClick}>開く</button>
+                        <button onClick={onSaveProject}>保存</button>
+                        <button onClick={onOpenProject}>開く</button>
                     </div>
-                    <button onClick={onVideoExportButtonClick}>動画出力</button>
+                    <button onClick={onExportVideo}>動画出力</button>
                 </AppHeader>
 
                 <BodyArea>
@@ -261,8 +245,8 @@ export function AppShell(props: Props): React.ReactElement {
                                         project={project}
                                         selectedObject={selectedObject}
                                         previewController={previewController}
-                                        onObjectSelect={onObjectSelect}
-                                        onObjectChange={onObjectChange}
+                                        onSelectObject={onSelectObject}
+                                        onChangeObject={onChangeObject}
                                     />
                                 </PreviewArea>
 
@@ -272,9 +256,9 @@ export function AppShell(props: Props): React.ReactElement {
                                     <MiddleToolBar
                                         onPlayButtonClick={onPlayButtonClick}
                                         onPauseButtonClick={onPauseButtonClick}
-                                        onAddCaptionButtonClick={onAddCaptionButtonClick}
-                                        onAddImageButtonClick={onAddImageButtonClick}
-                                        onAddVideoButtonClick={onAddVideoButtonClick}
+                                        onAddNewCaption={onAddNewCaption}
+                                        onAddNewImage={onAddNewImage}
+                                        onAddNewVideo={onAddNewVideo}
                                     />
                                 </MiddleToolbarArea>
 
@@ -283,8 +267,8 @@ export function AppShell(props: Props): React.ReactElement {
                                         previewController={previewController}
                                         project={project}
                                         selectedObject={selectedObject}
-                                        onObjectSelect={onObjectSelect}
-                                        onObjectUpdate={onObjectChange}
+                                        onSelectObject={onSelectObject}
+                                        onChangeObject={onChangeObject}
                                     />
                                 </TimeLineArea>
                             </SplitPane>
@@ -296,9 +280,9 @@ export function AppShell(props: Props): React.ReactElement {
                             <PropertyView
                                 project={selectedObject === null ? project : null}
                                 object={selectedObject}
-                                onProjectChange={onProjectChange}
-                                onObjectChange={onObjectChange}
-                                onObjectRemove={onObjectRemove}
+                                onChangeProject={onChangeProject}
+                                onChangeObject={onChangeObject}
+                                onRemoveObject={onRemoveObject}
                             />
                         </PropertyArea>
                     </SplitPane>

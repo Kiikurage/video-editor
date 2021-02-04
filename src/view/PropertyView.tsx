@@ -82,70 +82,70 @@ const DeleteButton = styled.button`
 interface Props {
     project: Project | null;
     object: BaseObject | null;
-    onProjectChange: (oldValue: Project, newValue: Project) => void;
-    onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
-    onObjectRemove: (object: BaseObject) => void;
+    onChangeProject: (oldValue: Project, newValue: Project) => void;
+    onChangeObject: (oldValue: BaseObject, newValue: BaseObject) => void;
+    onRemoveObject: (object: BaseObject) => void;
 }
 
 export function PropertyView(props: Props): React.ReactElement {
-    const { project, object, onProjectChange, onObjectChange } = props;
+    const { project, object, onChangeProject, onChangeObject } = props;
 
     const onProjectFPSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (project === null) return;
         const value = Number(ev.target.value);
-        onProjectChange(project, { ...project, fps: value });
+        onChangeProject(project, { ...project, fps: value });
     });
     const onProjectViewportWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (project === null) return;
         const value = Number(ev.target.value);
-        onProjectChange(project, { ...project, viewport: { ...project.viewport, width: value } });
+        onChangeProject(project, { ...project, viewport: { ...project.viewport, width: value } });
     });
     const onProjectViewportHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (project === null) return;
         const value = Number(ev.target.value);
-        onProjectChange(project, { ...project, viewport: { ...project.viewport, height: value } });
+        onChangeProject(project, { ...project, viewport: { ...project.viewport, height: value } });
     });
 
     const onObjectRemove = useCallbackRef(() => {
         if (object !== null) {
-            props.onObjectRemove(object);
+            props.onRemoveObject(object);
         }
     });
 
     const onStartInMSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (object === null) return;
         const value = Number(ev.target.value);
-        onObjectChange(object, { ...object, startInMS: value });
+        onChangeObject(object, { ...object, startInMS: value });
     });
     const onEndInMSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (object === null) return;
         const value = Number(ev.target.value);
-        onObjectChange(object, { ...object, endInMS: value });
+        onChangeObject(object, { ...object, endInMS: value });
     });
     const onXChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (object === null) return;
         const value = Number(ev.target.value);
-        onObjectChange(object, { ...object, x: value });
+        onChangeObject(object, { ...object, x: value });
     });
     const onYChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (object === null) return;
         const value = Number(ev.target.value);
-        onObjectChange(object, { ...object, y: value });
+        onChangeObject(object, { ...object, y: value });
     });
     const onWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (object === null) return;
         const value = Number(ev.target.value);
-        onObjectChange(object, { ...object, width: value });
+        onChangeObject(object, { ...object, width: value });
     });
     const onHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (object === null) return;
         const value = Number(ev.target.value);
-        onObjectChange(object, { ...object, height: value });
+        onChangeObject(object, { ...object, height: value });
     });
     const onCaptionTextChange = useCallbackRef((ev: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (object === null) return;
         const value = ev.target.value;
-        onObjectChange(object, { ...object, text: value } as CaptionObject);
+        onChangeObject(object, { ...object, text: value } as CaptionObject);
     });
 
     return (
