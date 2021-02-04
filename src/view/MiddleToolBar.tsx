@@ -25,13 +25,13 @@ const Base = styled.div`
 interface Props {
     onPlayButtonClick: () => void;
     onPauseButtonClick: () => void;
-    onAddVideoButtonClick: () => void;
-    onAddImageButtonClick: () => void;
-    onAddCaptionButtonClick: () => void;
+    onAddNewVideo: () => void;
+    onAddNewImage: () => void;
+    onAddNewCaption: () => void;
 }
 
 export function MiddleToolBar(props: Props): React.ReactElement {
-    const { onPauseButtonClick, onPlayButtonClick, onAddVideoButtonClick, onAddImageButtonClick, onAddCaptionButtonClick } = props;
+    const { onPauseButtonClick, onPlayButtonClick, onAddNewVideo, onAddNewImage, onAddNewCaption } = props;
     return (
         <Base>
             <div>
@@ -39,9 +39,9 @@ export function MiddleToolBar(props: Props): React.ReactElement {
                 <button onClick={onPauseButtonClick}>停止</button>
             </div>
             <div>
-                <button onClick={onAddVideoButtonClick}>動画を追加</button>
-                <button onClick={onAddImageButtonClick}>画像を追加</button>
-                <button onClick={onAddCaptionButtonClick}>字幕を追加</button>
+                <button onClick={onAddNewVideo}>動画を追加</button>
+                <button onClick={onAddNewImage}>画像を追加</button>
+                <button onClick={onAddNewCaption}>字幕を追加</button>
             </div>
         </Base>
     );

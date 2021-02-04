@@ -40,12 +40,12 @@ interface Props {
     previewController: PreviewController;
     project: Project;
     selectedObject: BaseObject | null;
-    onObjectUpdate: (oldValue: BaseObject, newValue: BaseObject) => void;
-    onObjectSelect: (object: BaseObject) => void;
+    onChangeObject: (oldValue: BaseObject, newValue: BaseObject) => void;
+    onSelectObject: (object: BaseObject) => void;
 }
 
 export function TimeLine(props: Props): React.ReactElement {
-    const { previewController, project, selectedObject, onObjectSelect, onObjectUpdate } = props;
+    const { previewController, project, selectedObject, onSelectObject, onChangeObject } = props;
 
     const [durationInMSForVisibleArea, setDurationInMSForVisibleArea] = useFormState(Math.max(previewController.durationInMS, 1));
     const [mouseX, setMouseX] = useState(0);
@@ -95,7 +95,7 @@ export function TimeLine(props: Props): React.ReactElement {
     });
 
     const onObjectClick = useCallbackRef((object: BaseObject) => {
-        onObjectSelect(object);
+        onSelectObject(object);
     });
 
     const pixiStageOption = useMemo(() => {
@@ -138,7 +138,7 @@ export function TimeLine(props: Props): React.ReactElement {
                                 onMoveAndResize={(newX, newWidth) => {
                                     const newStartInMS = (durationInMSForVisibleArea * newX) / baseSize.width;
                                     const newEndInMS = newStartInMS + (durationInMSForVisibleArea * newWidth) / baseSize.width;
-                                    onObjectUpdate(object, {
+                                    onChangeObject(object, {
                                         ...object,
                                         startInMS: newStartInMS,
                                         endInMS: newEndInMS,
