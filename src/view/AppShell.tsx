@@ -6,6 +6,7 @@ import { showSaveFileDialog } from '../ipc/renderer/showSaveFileDialog';
 import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
 import { BaseObject } from '../model/objects/BaseObject';
+import { CaptionObject } from '../model/objects/CaptionObject';
 import { ImageObject } from '../model/objects/ImageObject';
 import { VideoObject } from '../model/objects/VideoObject';
 import { Project } from '../model/Project';
@@ -184,6 +185,62 @@ export function AppShell(props: Props): React.ReactElement {
         onProjectOpen(filePaths[0]);
     });
 
+    const onAddCaptionButtonClick = useCallbackRef(() => {
+        const currentTimeInMS = previewController.currentTimeInMS;
+        const object: CaptionObject = {
+            id: UUID(),
+            type: CaptionObject.type,
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 100,
+            startInMS: currentTimeInMS,
+            endInMS: currentTimeInMS + 5000,
+            text: '字幕',
+        };
+        onObjectAdd(object);
+    });
+
+    const onAddImageButtonClick = useCallbackRef(async () => {
+        const { canceled, filePaths } = await showOpenFileDialog();
+        if (canceled) return;
+        assert(filePaths.length === 1, "Multi-file import isn't supported");
+
+        const currentTimeInMS = previewController.currentTimeInMS;
+        const object: ImageObject = {
+            id: UUID(),
+            type: ImageObject.type,
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 200,
+            startInMS: currentTimeInMS,
+            endInMS: currentTimeInMS + 5000,
+            srcFilePath: filePaths[0],
+        };
+        onObjectAdd(object);
+    });
+
+    const onAddVideoButtonClick = useCallbackRef(async () => {
+        const { canceled, filePaths } = await showOpenFileDialog();
+        if (canceled) return;
+        assert(filePaths.length === 1, "Multi-file import isn't supported");
+
+        const currentTimeInMS = previewController.currentTimeInMS;
+        const object: VideoObject = {
+            id: UUID(),
+            type: VideoObject.type,
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 200,
+            startInMS: currentTimeInMS,
+            endInMS: currentTimeInMS + 5000,
+            srcFilePath: filePaths[0],
+        };
+        onObjectAdd(object);
+    });
+
     return (
         <DropArea onFileDrop={onFileDrop}>
             <Base>
@@ -212,7 +269,13 @@ export function AppShell(props: Props): React.ReactElement {
                                 <Splitter onChange={(_dx, dy) => setPreviewAreaHeight(previewAreaHeight + dy)} />
 
                                 <MiddleToolbarArea>
-                                    <MiddleToolBar onPlayButtonClick={onPlayButtonClick} onPauseButtonClick={onPauseButtonClick} />
+                                    <MiddleToolBar
+                                        onPlayButtonClick={onPlayButtonClick}
+                                        onPauseButtonClick={onPauseButtonClick}
+                                        onAddCaptionButtonClick={onAddCaptionButtonClick}
+                                        onAddImageButtonClick={onAddImageButtonClick}
+                                        onAddVideoButtonClick={onAddVideoButtonClick}
+                                    />
                                 </MiddleToolbarArea>
 
                                 <TimeLineArea>
