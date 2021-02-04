@@ -1,15 +1,11 @@
-import * as path from 'path';
 import * as React from 'react';
 import { useRef, useState } from 'react';
-import { UUID } from '../lib/UUID';
 import { BaseObject } from '../model/objects/BaseObject';
-import { CaptionObject } from '../model/objects/CaptionObject';
-import { ImageObject } from '../model/objects/ImageObject';
 import { Project } from '../model/Project';
-import { VideoObject } from '../model/objects/VideoObject';
 import { OutputBuilder } from '../service/OutputBuilder';
 import { PreviewController } from '../service/PreviewController';
 import { AppShell } from './AppShell';
+import { useCallbackRef } from './hooks/useCallbackRef';
 
 function usePreviewController(): PreviewController {
     const ref = useRef<PreviewController | null>(null);
@@ -28,52 +24,7 @@ export function App(): React.ReactElement {
             width: 1920,
             height: 1080,
         },
-        objects: [
-            {
-                id: UUID(),
-                type: VideoObject.type,
-                startInMS: 0,
-                endInMS: 4 * 60 * 1000,
-                srcFilePath: path.resolve(__dirname, '../src/static/video.mp4'),
-                x: 0,
-                y: 0,
-                width: 1920,
-                height: 1080,
-            } as VideoObject,
-            {
-                id: UUID(),
-                type: ImageObject.type,
-                startInMS: 3000,
-                endInMS: 20000,
-                x: 100,
-                y: 100,
-                width: 400,
-                height: 400,
-                srcFilePath: path.resolve(__dirname, '../src/static/image.png'),
-            } as ImageObject,
-            {
-                id: UUID(),
-                type: CaptionObject.type,
-                startInMS: 5000,
-                endInMS: 8000,
-                text: '最初の字幕',
-                x: 960,
-                y: 1040,
-                width: 1920,
-                height: 1080,
-            } as CaptionObject,
-            {
-                id: UUID(),
-                type: CaptionObject.type,
-                startInMS: 10000,
-                endInMS: 15000,
-                text: '2番目の字幕',
-                x: 0,
-                y: 0,
-                width: 1920,
-                height: 1080,
-            } as CaptionObject,
-        ],
+        objects: [],
     }));
     const [selectedObject, setSelectedObject] = useState<BaseObject | null>(null);
 
@@ -140,6 +91,15 @@ export function App(): React.ReactElement {
         // cleanUpWorkspace();
     };
 
+    const onProjectOpen = useCallbackRef(async (path: string) => {
+        const newProject = await Project.open(path);
+        setProject(newProject);
+    });
+
+    const onProjectSave = useCallbackRef(async (path: string) => {
+        await Project.save(path, project);
+    });
+
     return (
         <AppShell
             project={project}
@@ -149,6 +109,8 @@ export function App(): React.ReactElement {
             onObjectChange={onObjectChange}
             onObjectRemove={onObjectRemove}
             onVideoExportButtonClick={onVideoExportButtonClick}
+            onProjectOpen={onProjectOpen}
+            onProjectSave={onProjectSave}
             previewController={videoController}
         />
     );
