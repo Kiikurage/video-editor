@@ -1,14 +1,9 @@
 import * as ffmpeg from '@ffmpeg-installer/ffmpeg';
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog } from 'electron';
 import * as path from 'path';
-import { IPCMessages } from './model/IPCMessages';
-
-ipcMain.on(IPCMessages.GET_FFMPEG_INFO, (ev) => {
-    ev.returnValue = {
-        path: ffmpeg.path,
-        version: ffmpeg.version,
-    };
-});
+import { assert } from './lib/util';
+import { IPCMain } from './ipc/IPCMain';
+import { IPCMessage } from './model/IPCMessage';
 
 app.on('window-all-closed', () => {
     app.quit();
@@ -26,8 +21,28 @@ app.on('ready', () => {
             // titleBarStyle: 'hiddenInset'
         });
 
+        win.webContents;
         await win.loadFile(path.resolve(__dirname, './index.html'));
 
         win.show();
     })();
+});
+
+IPCMain.onMessage(IPCMessage.GET_FFMPEG_INFO, () => ({
+    path: ffmpeg.path,
+    version: ffmpeg.version,
+}));
+
+IPCMain.onMessage(IPCMessage.SHOW_SAVE_FILE_DIALOG, async (ev) => {
+    const browserWindow = BrowserWindow.fromWebContents(ev.sender);
+    assert(browserWindow !== null, 'Application not found');
+
+    return await dialog.showSaveDialog(browserWindow, {});
+});
+
+IPCMain.onMessage(IPCMessage.SHOW_OPEN_FILE_DIALOG, async (ev) => {
+    const browserWindow = BrowserWindow.fromWebContents(ev.sender);
+    assert(browserWindow !== null, 'Application not found');
+
+    return await dialog.showOpenDialog(browserWindow, {});
 });

@@ -1,6 +1,9 @@
 import * as React from 'react';
 import { useState } from 'react';
 import styled from 'styled-components';
+import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
+import { showSaveFileDialog } from '../ipc/renderer/showSaveFileDialog';
+import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
 import { BaseObject } from '../model/objects/BaseObject';
 import { ImageObject } from '../model/objects/ImageObject';
@@ -8,6 +11,7 @@ import { VideoObject } from '../model/objects/VideoObject';
 import { Project } from '../model/Project';
 import { PreviewController } from '../service/PreviewController';
 import { DropArea } from './DropArea';
+import { useCallbackRef } from './hooks/useCallbackRef';
 import { MiddleToolBar } from './MiddleToolBar';
 import { PreviewPlayer } from './PreviewPlayer';
 import { PropertyView } from './PropertyView';
@@ -92,6 +96,8 @@ interface Props {
     onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
     onObjectRemove: (object: BaseObject) => void;
     onVideoExportButtonClick: () => void;
+    onProjectOpen: (path: string) => void;
+    onProjectSave: (path: string) => void;
 }
 
 export function AppShell(props: Props): React.ReactElement {
@@ -104,6 +110,8 @@ export function AppShell(props: Props): React.ReactElement {
         onObjectChange,
         onObjectRemove,
         onVideoExportButtonClick,
+        onProjectOpen,
+        onProjectSave,
     } = props;
 
     const onFileDrop = (file: File) => {
@@ -157,10 +165,29 @@ export function AppShell(props: Props): React.ReactElement {
     const [previewAreaHeight, setPreviewAreaHeight] = useState(400);
     const [mainAreaWidth, setMainAreaWidth] = useState(900);
 
+    const onSaveProjectButtonClick = useCallbackRef(async () => {
+        const { canceled, filePath } = await showSaveFileDialog();
+        if (canceled) return;
+
+        assert(filePath !== undefined, 'WTF?');
+
+        onProjectSave(filePath);
+    });
+    const onOpenProjectButtonClick = useCallbackRef(async () => {
+        const { canceled, filePaths } = await showOpenFileDialog();
+        if (canceled) return;
+
+        onProjectOpen(filePaths[0]);
+    });
+
     return (
         <DropArea onFileDrop={onFileDrop}>
             <Base>
                 <AppHeader>
+                    <div>
+                        <button onClick={onSaveProjectButtonClick}>保存</button>
+                        <button onClick={onOpenProjectButtonClick}>開く</button>
+                    </div>
                     <button onClick={onVideoExportButtonClick}>動画出力</button>
                 </AppHeader>
 

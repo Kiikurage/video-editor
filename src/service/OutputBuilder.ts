@@ -1,5 +1,4 @@
 import * as childProcess from 'child_process';
-import { ipcRenderer } from 'electron';
 import { EventEmitter } from 'events';
 import { promises as fs } from 'fs';
 import * as path from 'path';
@@ -8,9 +7,9 @@ import { promisify } from 'util';
 import { assert } from '../lib/util';
 import { CaptionObject } from '../model/objects/CaptionObject';
 import { ImageObject } from '../model/objects/ImageObject';
-import { IPCMessages } from '../model/IPCMessages';
 import { Project } from '../model/Project';
 import { VideoObject } from '../model/objects/VideoObject';
+import { getFFMpegInfo } from '../ipc/renderer/getFFMepgInfo';
 
 interface OutputBuilderEvents {
     on(type: 'log', callback: () => void): void;
@@ -28,11 +27,11 @@ export class OutputBuilder extends EventEmitter implements OutputBuilderEvents {
         return this._log;
     }
 
-    static buildFFMpegCommand(assets: Asset[], outputVideoPath: string): string {
+    static async buildFFMpegCommand(assets: Asset[], outputVideoPath: string): Promise<string> {
         console.log('build start');
         const command: string[] = [];
 
-        const ffmpeg = ipcRenderer.sendSync(IPCMessages.GET_FFMPEG_INFO) as { path: string; version: string };
+        const ffmpeg = await getFFMpegInfo();
         console.log(`FFMPEG path=${ffmpeg.path} version=${ffmpeg.version}`);
 
         command.push(ffmpeg.path);
@@ -162,7 +161,7 @@ export class OutputBuilder extends EventEmitter implements OutputBuilderEvents {
         // ffmpeg読んで合成
         this.addLog(`Build encode command`);
         const outputVideoPath = path.join(workspacePath, './output.mp4');
-        const command = OutputBuilder.buildFFMpegCommand(assets, outputVideoPath);
+        const command = await OutputBuilder.buildFFMpegCommand(assets, outputVideoPath);
         this.addLog(`  - command: ${command}`);
 
         this.addLog(`Encode video`);
