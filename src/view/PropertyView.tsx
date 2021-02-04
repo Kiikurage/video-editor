@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
 import { VideoObject } from '../model/objects/VideoObject';
+import { Project } from '../model/Project';
 import { useCallbackRef } from './hooks/useCallbackRef';
 
 const Base = styled.div`
@@ -79,13 +80,31 @@ const DeleteButton = styled.button`
 `;
 
 interface Props {
+    project: Project | null;
     object: BaseObject | null;
+    onProjectChange: (oldValue: Project, newValue: Project) => void;
     onObjectChange: (oldValue: BaseObject, newValue: BaseObject) => void;
     onObjectRemove: (object: BaseObject) => void;
 }
 
 export function PropertyView(props: Props): React.ReactElement {
-    const { object, onObjectChange } = props;
+    const { project, object, onProjectChange, onObjectChange } = props;
+
+    const onProjectFPSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        if (project === null) return;
+        const value = Number(ev.target.value);
+        onProjectChange(project, { ...project, fps: value });
+    });
+    const onProjectViewportWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        if (project === null) return;
+        const value = Number(ev.target.value);
+        onProjectChange(project, { ...project, viewport: { ...project.viewport, width: value } });
+    });
+    const onProjectViewportHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        if (project === null) return;
+        const value = Number(ev.target.value);
+        onProjectChange(project, { ...project, viewport: { ...project.viewport, height: value } });
+    });
 
     const onObjectRemove = useCallbackRef(() => {
         if (object !== null) {
@@ -157,15 +176,14 @@ export function PropertyView(props: Props): React.ReactElement {
                                 <input type="number" min={0} value={object.y} onChange={onYChange} />
                             </PropertyRow>
                             <PropertyRow>
-                                <PropertyName>Width</PropertyName>
+                                <PropertyName>幅</PropertyName>
                                 <input type="number" min={0} value={object.width} onChange={onWidthChange} />
                             </PropertyRow>
                             <PropertyRow>
-                                <PropertyName>Height</PropertyName>
+                                <PropertyName>高さ</PropertyName>
                                 <input type="number" min={0} value={object.height} onChange={onHeightChange} />
                             </PropertyRow>
                         </PropertyGroup>
-
                         {CaptionObject.isCaption(object) && (
                             <PropertyGroup>
                                 <PropertyGroupName>字幕</PropertyGroupName>
@@ -175,7 +193,6 @@ export function PropertyView(props: Props): React.ReactElement {
                                 </PropertyRow>
                             </PropertyGroup>
                         )}
-
                         {VideoObject.isVideo(object) && (
                             <PropertyGroup>
                                 <PropertyGroupName>動画</PropertyGroupName>
@@ -191,6 +208,41 @@ export function PropertyView(props: Props): React.ReactElement {
                         <DeleteButton onClick={onObjectRemove}>削除</DeleteButton>
                     </Footer>
                 </>
+            )}
+            {project !== null && (
+                <Body>
+                    <ObjectSummary>
+                        <div>PROJECT</div>
+                    </ObjectSummary>
+
+                    <PropertyGroup>
+                        <PropertyGroupName>プロジェクト設定</PropertyGroupName>
+                        <PropertyRow>
+                            <PropertyName>FPS</PropertyName>
+                            <input type="number" min={1} max={60} value={project.fps} onChange={onProjectFPSChange} />
+                        </PropertyRow>
+                        <PropertyRow>
+                            <PropertyName>幅</PropertyName>
+                            <input
+                                type="number"
+                                min={0}
+                                max={1960}
+                                value={project.viewport.width}
+                                onChange={onProjectViewportWidthChange}
+                            />
+                        </PropertyRow>
+                        <PropertyRow>
+                            <PropertyName>高さ</PropertyName>
+                            <input
+                                type="number"
+                                min={0}
+                                max={1080}
+                                value={project.viewport.height}
+                                onChange={onProjectViewportHeightChange}
+                            />
+                        </PropertyRow>
+                    </PropertyGroup>
+                </Body>
             )}
         </Base>
     );

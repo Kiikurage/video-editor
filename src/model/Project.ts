@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import { BaseObject } from './objects/BaseObject';
 
 export interface Project {
+    fps: number;
     viewport: {
         width: number;
         height: number;

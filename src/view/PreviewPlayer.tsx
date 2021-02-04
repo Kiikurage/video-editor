@@ -68,7 +68,7 @@ export function PreviewPlayer(props: Props): React.ReactElement {
     }, [onPreviewControllerSeek, forceUpdate, previewController]);
 
     const contentBaseWidth = 640;
-    const contentBaseHeight = 360;
+    const contentBaseHeight = (contentBaseWidth * project.viewport.height) / project.viewport.width;
 
     const pixiStageOption = useMemo(() => {
         return {

@@ -1,6 +1,11 @@
+import * as path from 'path';
 import * as React from 'react';
 import { useRef, useState } from 'react';
+import { UUID } from '../lib/UUID';
 import { BaseObject } from '../model/objects/BaseObject';
+import { CaptionObject } from '../model/objects/CaptionObject';
+import { ImageObject } from '../model/objects/ImageObject';
+import { VideoObject } from '../model/objects/VideoObject';
 import { Project } from '../model/Project';
 import { OutputBuilder } from '../service/OutputBuilder';
 import { PreviewController } from '../service/PreviewController';
@@ -20,13 +25,63 @@ export function App(): React.ReactElement {
     const videoController = usePreviewController();
 
     const [project, setProject] = useState<Project>(() => ({
+        fps: 30,
         viewport: {
             width: 1920,
             height: 1080,
         },
-        objects: [],
+        objects: [
+            {
+                id: UUID(),
+                type: VideoObject.type,
+                startInMS: 0,
+                endInMS: 4 * 60 * 1000,
+                srcFilePath: path.resolve(__dirname, '../src/static/video.mp4'),
+                x: 0,
+                y: 0,
+                width: 1920,
+                height: 1080,
+            } as VideoObject,
+            {
+                id: UUID(),
+                type: ImageObject.type,
+                startInMS: 3000,
+                endInMS: 20000,
+                x: 100,
+                y: 100,
+                width: 400,
+                height: 400,
+                srcFilePath: path.resolve(__dirname, '../src/static/image.png'),
+            } as ImageObject,
+            {
+                id: UUID(),
+                type: CaptionObject.type,
+                startInMS: 5000,
+                endInMS: 8000,
+                text: '最初の字幕',
+                x: 960,
+                y: 1040,
+                width: 1920,
+                height: 1080,
+            } as CaptionObject,
+            {
+                id: UUID(),
+                type: CaptionObject.type,
+                startInMS: 10000,
+                endInMS: 15000,
+                text: '2番目の字幕',
+                x: 0,
+                y: 0,
+                width: 1920,
+                height: 1080,
+            } as CaptionObject,
+        ],
     }));
     const [selectedObject, setSelectedObject] = useState<BaseObject | null>(null);
+
+    const onProjectChange = (oldValue: Project, newValue: Project) => {
+        setProject(newValue);
+    };
 
     const onObjectSelect = (object: BaseObject | null) => {
         setSelectedObject(object);
@@ -104,6 +159,7 @@ export function App(): React.ReactElement {
         <AppShell
             project={project}
             selectedObject={selectedObject}
+            onProjectChange={onProjectChange}
             onObjectSelect={onObjectSelect}
             onObjectAdd={onObjectAdd}
             onObjectChange={onObjectChange}
