@@ -49,20 +49,41 @@ export class OutputBuilder extends EventEmitter implements OutputBuilderEvents {
             for (const asset of assets) {
                 if (asset.id === 0) continue;
 
-                const filterInput1 = asset.id === 1 ? '[0]' : '[v]';
-                const filterInput2 = `[${asset.id}]`;
-                const filterInput2Resized = `[${asset.id}_resized]`;
+                const filterInput1 = asset.id === 1 ? '0' : 'v';
+                let filterInput2 = asset.id.toString();
                 const startTimeInSecond = (asset.startInMS / 1000).toFixed(3);
                 const endTimeInSecond = (asset.endInMS / 1000).toFixed(3);
                 const filterOutput = asset.id === assets.length - 1 ? '' : '[v]';
 
-                filterComplexExpr.push(
-                    [filterInput2, `scale=${Math.floor(asset.width)}x${Math.floor(asset.height)}`, filterInput2Resized].join('')
-                );
+                if (asset.path.endsWith('mp4')) {
+                    const filterInput2Trimmed = filterInput2 + '_trimmed';
+                    filterComplexExpr.push(
+                        [
+                            `[${filterInput2}]`,
+                            `trim=${asset.startInMS.toFixed(3)}:${asset.endInMS.toFixed(3)}`,
+                            `[${filterInput2Trimmed}]`,
+                        ].join('')
+                    );
+                    filterInput2 = filterInput2Trimmed;
+                }
+
+                const resize = true;
+                if (resize) {
+                    const filterInput2Resized = filterInput2 + '_resized';
+                    filterComplexExpr.push(
+                        [
+                            `[${filterInput2}]`,
+                            `scale=${Math.floor(asset.width)}x${Math.floor(asset.height)}`,
+                            `[${filterInput2Resized}]`,
+                        ].join('')
+                    );
+                    filterInput2 = filterInput2Resized;
+                }
+
                 filterComplexExpr.push(
                     [
-                        filterInput1,
-                        filterInput2Resized,
+                        `[${filterInput1}]`,
+                        `[${filterInput2}]`,
                         'overlay=',
                         [
                             `x=${Math.floor(asset.x)}`,
