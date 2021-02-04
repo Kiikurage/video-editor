@@ -2,14 +2,16 @@ import * as childProcess from 'child_process';
 import { EventEmitter } from 'events';
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import * as PIXI from 'pixi.js';
 import * as tmp from 'tmp';
 import { promisify } from 'util';
+import { getFFMpegInfo } from '../ipc/renderer/getFFMepgInfo';
 import { assert } from '../lib/util';
 import { CaptionObject } from '../model/objects/CaptionObject';
 import { ImageObject } from '../model/objects/ImageObject';
-import { Project } from '../model/Project';
 import { VideoObject } from '../model/objects/VideoObject';
-import { getFFMpegInfo } from '../ipc/renderer/getFFMepgInfo';
+import { Project } from '../model/Project';
+import { CaptionObjectViewBehavior } from '../view/pixi/PreviewPlayer/CaptionObjectView';
 
 interface OutputBuilderEvents {
     on(type: 'log', callback: () => void): void;
@@ -54,13 +56,19 @@ export class OutputBuilder extends EventEmitter implements OutputBuilderEvents {
                 const endTimeInSecond = (asset.endInMS / 1000).toFixed(3);
                 const filterOutput = asset.id === assets.length - 1 ? '' : '[v]';
 
-                filterComplexExpr.push([filterInput2, `scale=${asset.width}x${asset.height}`, filterInput2Resized].join(''));
+                filterComplexExpr.push(
+                    [filterInput2, `scale=${Math.floor(asset.width)}x${Math.floor(asset.height)}`, filterInput2Resized].join('')
+                );
                 filterComplexExpr.push(
                     [
                         filterInput1,
                         filterInput2Resized,
                         'overlay=',
-                        [`x=${asset.x}`, `y=${asset.y}`, `enable='between(t,${startTimeInSecond},${endTimeInSecond})'`].join(':'),
+                        [
+                            `x=${Math.floor(asset.x)}`,
+                            `y=${Math.floor(asset.y)}`,
+                            `enable='between(t,${startTimeInSecond},${endTimeInSecond})'`,
+                        ].join(':'),
                         filterOutput,
                     ].join('')
                 );
@@ -104,8 +112,9 @@ export class OutputBuilder extends EventEmitter implements OutputBuilderEvents {
             await fs.unlink('./tmp');
         } catch {
             // ignored
+        } finally {
+            await fs.symlink(workspacePath, './tmp');
         }
-        await fs.symlink(workspacePath, './tmp');
 
         const assets: Asset[] = [];
         for (let i = 0; i < this.project.objects.length; i++) {
@@ -126,10 +135,10 @@ export class OutputBuilder extends EventEmitter implements OutputBuilderEvents {
                     path: captionImagePath,
                     startInMS: object.startInMS,
                     endInMS: object.endInMS,
-                    x: 0,
-                    y: 0,
-                    width: this.project.viewport.width,
-                    height: this.project.viewport.height,
+                    x: object.x,
+                    y: object.y,
+                    width: object.width,
+                    height: object.height,
                 });
             } else if (VideoObject.isVideo(object)) {
                 assets.push({
@@ -137,10 +146,10 @@ export class OutputBuilder extends EventEmitter implements OutputBuilderEvents {
                     path: object.srcFilePath,
                     startInMS: object.startInMS,
                     endInMS: object.endInMS,
-                    x: 0,
-                    y: 0,
-                    width: this.project.viewport.width,
-                    height: this.project.viewport.height,
+                    x: object.x,
+                    y: object.y,
+                    width: object.width,
+                    height: object.height,
                 });
             } else if (ImageObject.isImage(object)) {
                 assets.push({
@@ -197,26 +206,20 @@ interface Asset {
     height: number;
 }
 
-function renderCaption(project: Project, caption: CaptionObject): Promise<Blob | null> {
-    const canvas = document.createElement('canvas');
-    canvas.width = project.viewport.width;
-    canvas.height = project.viewport.height;
+async function renderCaption(project: Project, caption: CaptionObject): Promise<Blob | null> {
+    const app = new PIXI.Application({
+        width: caption.width,
+        height: caption.height,
+        transparent: true,
+    });
 
-    const ctx = canvas.getContext('2d');
-    assert(ctx !== null, 'Failed to initialize canvas context');
+    const captionView = CaptionObjectViewBehavior.customDisplayObject(caption);
+    app.stage.addChild(captionView);
+    app.render();
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => app.view.toBlob(resolve));
 
-    const width = ctx.canvas.width;
-    const height = ctx.canvas.height;
+    app.destroy(true);
 
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 80px "Noto Sans JP"';
-    ctx.fillStyle = '#aa66ff';
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 4;
-    ctx.fillText(caption.text, width / 2, height - 100, width - 200);
-    ctx.strokeText(caption.text, width / 2, height - 100, width - 200);
-
-    return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve));
+    return blob;
 }
