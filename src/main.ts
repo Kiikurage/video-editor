@@ -21,7 +21,6 @@ app.on('ready', () => {
             // titleBarStyle: 'hiddenInset'
         });
 
-        win.webContents;
         await win.loadFile(path.resolve(__dirname, './index.html'));
 
         win.show();

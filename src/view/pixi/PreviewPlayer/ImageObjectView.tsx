@@ -1,9 +1,7 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useState } from 'react';
-import { CustomPIXIComponent } from 'react-pixi-fiber';
+import { CustomPIXIComponent, CustomPIXIComponentBehaviorDefinition } from 'react-pixi-fiber';
 import { ImageObject } from '../../../model/objects/ImageObject';
-import { useCallbackRef } from '../../hooks/useCallbackRef';
 import { ResizeView } from './ResizeView';
 
 interface Props {
@@ -13,47 +11,33 @@ interface Props {
     onObjectChange: (oldValue: ImageObject, newValue: ImageObject) => void;
 }
 
-interface InnerProps {
-    texture: PIXI.Texture;
-    width: number;
-    height: number;
-}
+export const ImageObjectViewBehavior: CustomPIXIComponentBehaviorDefinition<PIXI.Sprite, ImageObject> = {
+    customDisplayObject(object: ImageObject) {
+        const base = new PIXI.Sprite();
 
-const ImageObjectView = CustomPIXIComponent(
-    {
-        customDisplayObject() {
-            const base = new PIXI.Sprite();
+        base.x = 0;
+        base.y = 0;
+        base.width = object.width;
+        base.height = object.height;
+        base.texture = PIXI.Texture.from(object.srcFilePath);
 
-            return base;
-        },
-        customApplyProps(base: PIXI.Sprite, oldProps: InnerProps, newProps: InnerProps): void {
-            const { texture, width, height } = newProps;
-
-            base.x = 0;
-            base.y = 0;
-            base.width = width;
-            base.height = height;
-            base.texture = texture;
-        },
+        return base;
     },
-    'ImageObjectView'
-);
+    customApplyProps(base: PIXI.Sprite, oldObject: ImageObject, newObject: ImageObject) {
+        if (oldObject.srcFilePath !== newObject.srcFilePath) {
+            base.texture = PIXI.Texture.from(newObject.srcFilePath);
+        }
+    },
+};
+
+const ImageObjectView = CustomPIXIComponent(ImageObjectViewBehavior, 'ImageObjectView');
 
 function ImageObjectViewWrapper(props: Props): React.ReactElement {
     const { image, selected, onSelect, onObjectChange } = props;
 
-    const [texture, setTexture] = useState(PIXI.Texture.EMPTY);
-    useEffect(() => {
-        setTexture(PIXI.Texture.from(image.srcFilePath));
-    }, [image.srcFilePath]);
-
-    const onClick = useCallbackRef(() => {
-        onSelect();
-    });
-
     return (
-        <ResizeView object={image} onObjectChange={onObjectChange} onSelect={onClick} selected={selected}>
-            <ImageObjectView texture={texture} width={image.width} height={image.height} />
+        <ResizeView object={image} onObjectChange={onObjectChange} onSelect={onSelect} selected={selected}>
+            <ImageObjectView {...image} />
         </ResizeView>
     );
 }
