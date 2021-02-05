@@ -1,13 +1,12 @@
+import { EventEmitterEvents } from '../model/EventEmitterEvents';
 import { Timer } from './Timer';
 import { EventEmitter } from 'events';
 
-interface PreviewControllerEvents {
-    on(type: 'pause', listener: () => void): void;
-    on(type: 'seek', listener: () => void): void;
-
-    off(type: 'pause', listener: () => void): void;
-    off(type: 'seek', listener: () => void): void;
-}
+type PreviewControllerEvents = EventEmitterEvents<{
+    play: void;
+    pause: void;
+    seek: void;
+}>;
 
 export class PreviewController extends EventEmitter implements PreviewControllerEvents {
     private readonly timer: Timer = new Timer();
@@ -43,10 +42,15 @@ export class PreviewController extends EventEmitter implements PreviewController
     }
 
     play(): void {
+        if (!this.paused) return;
+
         this.timer.start();
+        this.emit('play');
     }
 
     pause(): void {
+        if (this.paused) return;
+
         this.timer.stop();
         this.emit('pause');
     }

@@ -5,9 +5,8 @@ import styled from 'styled-components';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
 import { ImageObject } from '../model/objects/ImageObject';
-import { Project } from '../model/Project';
 import { VideoObject } from '../model/objects/VideoObject';
-import { PreviewController } from '../service/PreviewController';
+import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
 import { Background } from './pixi/PreviewPlayer/Background';
@@ -43,29 +42,28 @@ const ContentBase = styled.div`
     }
 `;
 
-interface Props {
-    previewController: PreviewController;
-    project: Project;
-    selectedObject: BaseObject | null;
-    onSelectObject: (newObject: BaseObject | null) => void;
-    onChangeObject: (oldValue: BaseObject, newValue: BaseObject) => void;
-}
-
-export function PreviewPlayer(props: Props): React.ReactElement {
-    const { previewController, project, selectedObject, onSelectObject, onChangeObject } = props;
+export function PreviewPlayer(): React.ReactElement {
+    const appController = useAppController();
+    const { previewController, project, selectedObject } = appController;
 
     const forceUpdate = useThrottledForceUpdate();
-    const onPreviewControllerSeek = useCallbackRef(() => {
-        forceUpdate();
-    });
-
     useEffect(() => {
-        previewController.on('seek', onPreviewControllerSeek);
+        appController.on('project.change', forceUpdate);
+        appController.on('object.select', forceUpdate);
 
         return () => {
-            previewController.off('seek', onPreviewControllerSeek);
+            appController.off('project.change', forceUpdate);
+            appController.off('object.select', forceUpdate);
         };
-    }, [onPreviewControllerSeek, forceUpdate, previewController]);
+    }, [appController, forceUpdate]);
+
+    useEffect(() => {
+        previewController.on('seek', forceUpdate);
+
+        return () => {
+            previewController.off('seek', forceUpdate);
+        };
+    }, [previewController, forceUpdate]);
 
     const contentBaseWidth = 640;
     const contentBaseHeight = (contentBaseWidth * project.viewport.height) / project.viewport.width;
@@ -93,8 +91,8 @@ export function PreviewPlayer(props: Props): React.ReactElement {
                         video={object as VideoObject}
                         previewController={previewController}
                         selected={isSelected}
-                        onSelect={() => onSelectObject(object)}
-                        onObjectChange={onChangeObject}
+                        onSelect={() => appController.selectObject(object.id)}
+                        onObjectChange={appController.updateObject}
                     />
                 );
 
@@ -104,8 +102,8 @@ export function PreviewPlayer(props: Props): React.ReactElement {
                         key={object.id}
                         caption={object as CaptionObject}
                         selected={isSelected}
-                        onSelect={() => onSelectObject(object)}
-                        onObjectChange={onChangeObject}
+                        onSelect={() => appController.selectObject(object.id)}
+                        onObjectChange={appController.updateObject}
                     />
                 );
 
@@ -115,8 +113,8 @@ export function PreviewPlayer(props: Props): React.ReactElement {
                         key={object.id}
                         image={object as ImageObject}
                         selected={isSelected}
-                        onSelect={() => onSelectObject(object)}
-                        onObjectChange={onChangeObject}
+                        onSelect={() => appController.selectObject(object.id)}
+                        onObjectChange={appController.updateObject}
                     />
                 );
 
@@ -126,17 +124,13 @@ export function PreviewPlayer(props: Props): React.ReactElement {
         }
     }
 
-    const onBaseClick = useCallbackRef(() => {
-        onSelectObject(null);
-    });
+    const onBaseClick = useCallbackRef(() => appController.selectObject(null));
 
     const onContentBaseClick = useCallbackRef((ev: React.MouseEvent) => {
         ev.stopPropagation();
     });
 
-    const onBackgroundClick = useCallbackRef(() => {
-        onSelectObject(null);
-    });
+    const onBackgroundClick = useCallbackRef(() => appController.selectObject(null));
 
     return (
         <Base onClick={onBaseClick}>

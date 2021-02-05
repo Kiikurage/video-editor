@@ -12,12 +12,11 @@ import { ImageObject } from '../model/objects/ImageObject';
 import { VideoObject } from '../model/objects/VideoObject';
 import { Project } from '../model/Project';
 import { CaptionObjectViewBehavior } from '../view/pixi/PreviewPlayer/CaptionObjectView';
+import { EventEmitterEvents } from '../model/EventEmitterEvents';
 
-interface OutputBuilderEvents {
-    on(type: 'log', callback: () => void): void;
-
-    off(type: 'log', callback: () => void): void;
-}
+type OutputBuilderEvents = EventEmitterEvents<{
+    log: void;
+}>;
 
 export class OutputBuilder extends EventEmitter implements OutputBuilderEvents {
     private outputVideoPath = '';

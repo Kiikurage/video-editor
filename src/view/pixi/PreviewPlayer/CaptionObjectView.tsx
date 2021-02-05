@@ -9,7 +9,7 @@ interface Props {
     caption: CaptionObject;
     selected: boolean;
     onSelect: () => void;
-    onObjectChange: (oldValue: CaptionObject, newValue: CaptionObject) => void;
+    onObjectChange: (newValue: CaptionObject) => void;
 }
 
 export const CaptionObjectViewBehavior = {

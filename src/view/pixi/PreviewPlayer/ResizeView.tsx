@@ -48,7 +48,7 @@ function ResizeViewInner(props: PropsWithChildren<InnerProps>): React.ReactEleme
 interface Props<T extends BaseObject> {
     object: T;
     selected: boolean;
-    onObjectChange: (oldValue: T, newValue: T) => void;
+    onObjectChange: (newValue: T) => void;
     onSelect: () => void;
 }
 
@@ -229,7 +229,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         if (type === 'start') {
             onSelect();
         } else if (type === 'end') {
-            onObjectChange(object, {
+            onObjectChange({
                 ...object,
                 x: object.x + dx,
                 y: object.y + dy,
@@ -245,7 +245,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         setHeight(object.height - dy);
 
         if (type === 'end') {
-            onObjectChange(object, {
+            onObjectChange({
                 ...object,
                 x: object.x + dx,
                 y: object.y + dy,
@@ -262,7 +262,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         setHeight(object.height - dy);
 
         if (type === 'end') {
-            onObjectChange(object, {
+            onObjectChange({
                 ...object,
                 y: object.y + dy,
                 width: object.width + dx,
@@ -278,7 +278,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         setHeight(object.height + dy);
 
         if (type === 'end') {
-            onObjectChange(object, {
+            onObjectChange({
                 ...object,
                 x: object.x + dx,
                 width: object.width - dx,
@@ -293,7 +293,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         setHeight(object.height + dy);
 
         if (type === 'end') {
-            onObjectChange(object, {
+            onObjectChange({
                 ...object,
                 width: object.width + dx,
                 height: object.height + dy,
