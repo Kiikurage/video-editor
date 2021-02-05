@@ -120,16 +120,6 @@ export function PropertyView(): React.ReactElement {
         }
     });
 
-    const onStartInMSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        if (selectedObject === null) return;
-        const value = Number(ev.target.value);
-        appController.updateObject({ ...selectedObject, startInMS: value });
-    });
-    const onEndInMSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        if (selectedObject === null) return;
-        const value = Number(ev.target.value);
-        appController.updateObject({ ...selectedObject, endInMS: value });
-    });
     const onXChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (selectedObject === null) return;
         const value = Number(ev.target.value);
@@ -203,11 +193,11 @@ export function PropertyView(): React.ReactElement {
                             <PropertyGroupName>一般</PropertyGroupName>
                             <PropertyRow>
                                 <PropertyName>開始</PropertyName>
-                                <input type="number" min={0} value={selectedObject.startInMS} onChange={onStartInMSChange} />
+                                <span>{formatTimeByQuantization(selectedObject.startInMS, project.fps)}</span>
                             </PropertyRow>
                             <PropertyRow>
                                 <PropertyName>終了</PropertyName>
-                                <input type="number" min={0} value={selectedObject.endInMS} onChange={onEndInMSChange} />
+                                <span>{formatTimeByQuantization(selectedObject.endInMS, project.fps)}</span>
                             </PropertyRow>
                             <PropertyRow>
                                 <PropertyName>X</PropertyName>
@@ -253,4 +243,25 @@ export function PropertyView(): React.ReactElement {
             )}
         </Base>
     );
+}
+
+function formatTimeByQuantization(timeInMS: number, fps: number): string {
+    let rest = Math.floor(timeInMS);
+
+    const millisecond = rest % 1000;
+    rest = (rest - millisecond) / 1000;
+
+    const second = rest % 60;
+    rest = (rest - second) / 60;
+
+    const minute = rest % 60;
+    rest = (rest - minute) / 60;
+
+    const hour = rest;
+
+    const frame = Math.round((millisecond * fps) / 1000);
+
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second
+        .toString()
+        .padStart(2, '0')}.${frame.toString().padStart(2, '0')}`;
 }
