@@ -6,7 +6,7 @@ type TimerEvents = EventEmitterEvents<{
 }>;
 
 export class Timer extends EventEmitter implements TimerEvents {
-    public durationInMS: number = 60 * 1000;
+    public durationInMS: number = 10 * 60 * 1000;
 
     private isStarted = false;
     private startedAtInMS = 0;
@@ -46,9 +46,6 @@ export class Timer extends EventEmitter implements TimerEvents {
     }
 
     seek(timeInMS: number): void {
-        if (timeInMS < 0) timeInMS = 0;
-        if (timeInMS > this.durationInMS) timeInMS = this.durationInMS;
-
         if (this.isStarted) {
             this.startedFromInMS = timeInMS;
             this.startedAtInMS = Date.now();

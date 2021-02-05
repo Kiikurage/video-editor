@@ -10,12 +10,14 @@ interface InnerProps {
     width: number;
     height: number;
     selected: boolean;
+    object: BaseObject;
 }
 
 interface PixiInnerProps {
     width: number;
     height: number;
     selected: boolean;
+    object: BaseObject;
 }
 
 const PixiResizeViewInner = CustomPIXIComponent(
@@ -36,10 +38,10 @@ const PixiResizeViewInner = CustomPIXIComponent(
 );
 
 function ResizeViewInner(props: PropsWithChildren<InnerProps>): React.ReactElement {
-    const { width, height, selected, children } = props;
+    const { width, height, selected, children, object } = props;
 
     return (
-        <PixiResizeViewInner width={width} height={height} selected={selected}>
+        <PixiResizeViewInner width={width} height={height} selected={selected} object={object}>
             {children}
         </PixiResizeViewInner>
     );
@@ -63,6 +65,7 @@ interface PixiProps {
     neDragHandlers: PixiDragHandlers;
     swDragHandlers: PixiDragHandlers;
     seDragHandlers: PixiDragHandlers;
+    object: BaseObject;
 }
 
 const RESIZER_SIZE = 40;
@@ -313,8 +316,9 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
             neDragHandlers={neDragHandlers}
             swDragHandlers={swDragHandlers}
             seDragHandlers={seDragHandlers}
+            object={object}
         >
-            <ResizeViewInner width={width} height={height} selected={selected}>
+            <ResizeViewInner object={object} width={width} height={height} selected={selected}>
                 {children}
             </ResizeViewInner>
         </PixiResizeView>
