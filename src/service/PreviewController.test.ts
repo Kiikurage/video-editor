@@ -42,9 +42,9 @@ describe('currentTimeInMS', () => {
 });
 
 describe('durationInMS', () => {
-    it('Should be 60*1000 as default', () => {
+    it('Should be 10*60*1000 as default', () => {
         const controller = new PreviewController();
-        expect(controller.durationInMS).toBe(60 * 1000);
+        expect(controller.durationInMS).toBe(10 * 60 * 1000);
     });
 
     it('Should be able to get and set', () => {

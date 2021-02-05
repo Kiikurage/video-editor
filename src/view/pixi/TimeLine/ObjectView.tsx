@@ -1,21 +1,30 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
+import { useState } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
-import { useFormState } from '../../hooks/useFormState';
+import { BaseObject } from '../../../model/objects/BaseObject';
 import { attachPixiDragHandlers, detachPixiDragHandlers, PixiDragHandlers, usePixiDragHandlers } from '../../hooks/usePixiDragHandlers';
+import { quantizeTime } from '../../TimeLine';
 
 interface Props {
+    isSelected: boolean;
+    text: string;
+    object: BaseObject;
+    y: number;
+    fps: number;
+    pixelPerSecond: number;
+    offsetInMS: number;
+    onClick: () => void;
+    onChange: (newStartInMS: number, newEndInMS: number) => void;
+}
+
+interface InnerProps {
     isSelected: boolean;
     text: string;
     x: number;
     y: number;
     width: number;
-    height: number;
     onClick: () => void;
-    onMoveAndResize: (newX: number, newWidth: number) => void;
-}
-
-interface StateProps {
     baseDragHandlers: PixiDragHandlers;
     wResizerDragHandlers: PixiDragHandlers;
     eResizerDragHandlers: PixiDragHandlers;
@@ -54,23 +63,17 @@ const ObjectView = CustomPIXIComponent(
 
             return base;
         },
-        customApplyProps(base: PIXI.Graphics, oldProps: Props & StateProps, newProps: Props & StateProps): void {
-            const {
-                isSelected,
-                text,
-                x,
-                y,
-                width,
-                height,
-                onClick,
-                baseDragHandlers,
-                wResizerDragHandlers,
-                eResizerDragHandlers,
-            } = newProps;
+        customApplyProps(base: PIXI.Graphics, oldProps: InnerProps, newProps: InnerProps): void {
+            const { isSelected, text, x, y, width, onClick, baseDragHandlers, wResizerDragHandlers, eResizerDragHandlers } = newProps;
+
+            const height = 22;
+
             base.x = x - 4;
             base.y = y;
             base.width = width + 8;
             base.height = height;
+            base.scale.x = 1;
+            base.scale.y = 1;
             base.clear();
             if (isSelected) {
                 base.lineStyle(2, 0x4d90fe, 1);
@@ -90,7 +93,9 @@ const ObjectView = CustomPIXIComponent(
 
             const textNode = base.getChildByName('text') as PIXI.Text;
             textNode.x = 8;
-            textNode.y = (height - 14) / 2;
+            textNode.y = height / 2;
+            textNode.anchor.x = 0;
+            textNode.anchor.y = 0.5;
             textNode.text = text;
 
             const textNodeMask = textNode.mask as PIXI.Graphics;
@@ -136,47 +141,57 @@ const ObjectView = CustomPIXIComponent(
 );
 
 function ObjectViewWrapper(props: Props): React.ReactElement {
-    const [x, setX] = useFormState(props.x);
-    const [width, setWidth] = useFormState(props.width);
+    const { text, object, y, isSelected, pixelPerSecond, offsetInMS, onClick, onChange, fps } = props;
+
+    const x1 = ((object.startInMS - offsetInMS) / 1000) * pixelPerSecond;
+    const x2 = ((object.endInMS - offsetInMS) / 1000) * pixelPerSecond;
+    const [dx1, setDx1] = useState(0);
+    const [dx2, setDx2] = useState(0);
 
     const baseDragHandlers = usePixiDragHandlers((dx, _dy, type) => {
-        const newX = props.x + dx;
-        setX(newX);
-
         if (type === 'end') {
-            props.onMoveAndResize(newX, width);
+            onChange(((x1 + dx) / pixelPerSecond) * 1000 + offsetInMS, ((x2 + dx) / pixelPerSecond) * 1000 + offsetInMS);
+            setDx1(0);
+            setDx2(0);
+        } else {
+            setDx1(dx);
+            setDx2(dx);
         }
     });
 
     const wResizerDragHandlers = usePixiDragHandlers((dx, _dy, type, ev) => {
-        const newX = props.x + dx;
-        const newWidth = props.width - dx;
-        setX(newX);
-        setWidth(newWidth);
+        ev.stopPropagation();
 
-        if (type === 'start') {
-            ev.stopPropagation();
-        } else if (type === 'end') {
-            props.onMoveAndResize(newX, newWidth);
+        if (type === 'end') {
+            onChange(((x1 + dx) / pixelPerSecond) * 1000 + offsetInMS, object.endInMS);
+            setDx1(0);
+        } else {
+            setDx1(dx);
         }
     });
 
     const eResizerDragHandlers = usePixiDragHandlers((dx, _dy, type, ev) => {
-        const newWidth = props.width + dx;
-        setWidth(newWidth);
+        ev.stopPropagation();
 
-        if (type === 'start') {
-            ev.stopPropagation();
-        } else if (type === 'end') {
-            props.onMoveAndResize(x, newWidth);
+        if (type === 'end') {
+            onChange(object.startInMS, ((x2 + dx) / pixelPerSecond) * 1000 + offsetInMS);
+            setDx2(0);
+        } else {
+            setDx2(dx);
         }
     });
 
+    const qx1 = ((quantizeTime(((x1 + dx1) * 1000) / pixelPerSecond + offsetInMS, fps) - offsetInMS) * pixelPerSecond) / 1000;
+    const qx2 = ((quantizeTime(((x2 + dx2) * 1000) / pixelPerSecond + offsetInMS, fps) - offsetInMS) * pixelPerSecond) / 1000;
+
     return (
         <ObjectView
-            {...props}
-            x={x}
-            width={width}
+            text={text}
+            x={qx1}
+            y={y}
+            width={qx2 - qx1}
+            isSelected={isSelected}
+            onClick={onClick}
             baseDragHandlers={baseDragHandlers}
             wResizerDragHandlers={wResizerDragHandlers}
             eResizerDragHandlers={eResizerDragHandlers}

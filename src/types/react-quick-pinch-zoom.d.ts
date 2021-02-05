@@ -4,6 +4,7 @@ declare module 'react-quick-pinch-zoom' {
         maxZoom?: number;
         minZoom?: number;
         zoomOutFactor?: number;
+        wheelScaleFactor?: number;
     }
 
     const QuickPinchZoom: React.ComponentClass<Props>;
