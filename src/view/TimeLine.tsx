@@ -7,8 +7,7 @@ import styled from 'styled-components';
 import { range } from '../lib/range';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
-import { Project } from '../model/Project';
-import { PreviewController } from '../service/PreviewController';
+import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useFormState } from './hooks/useFormState';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
@@ -36,21 +35,24 @@ const Base = styled.div`
     }
 `;
 
-interface Props {
-    previewController: PreviewController;
-    project: Project;
-    selectedObject: BaseObject | null;
-    onChangeObject: (oldValue: BaseObject, newValue: BaseObject) => void;
-    onSelectObject: (object: BaseObject) => void;
-}
+export function TimeLine(): React.ReactElement {
+    const appController = useAppController();
+    const { previewController, project, selectedObject } = appController;
 
-export function TimeLine(props: Props): React.ReactElement {
-    const { previewController, project, selectedObject, onSelectObject, onChangeObject } = props;
+    const forceUpdate = useThrottledForceUpdate();
+    useEffect(() => {
+        appController.on('project.change', forceUpdate);
+        appController.on('object.select', forceUpdate);
+
+        return () => {
+            appController.off('project.change', forceUpdate);
+            appController.off('object.select', forceUpdate);
+        };
+    }, [appController, forceUpdate]);
 
     const [durationInMSForVisibleArea, setDurationInMSForVisibleArea] = useFormState(Math.max(previewController.durationInMS, 1));
     const [mouseX, setMouseX] = useState(0);
     const [baseSize, setBaseSize] = useState({ width: 100, height: 100 });
-    const forceUpdate = useThrottledForceUpdate();
 
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const onBaseElementReferenceUpdate = useCallbackRef((base: HTMLDivElement | null) => {
@@ -94,9 +96,7 @@ export function TimeLine(props: Props): React.ReactElement {
         previewController.currentTimeInMS = (durationInMSForVisibleArea * ev.clientX) / baseSize.width;
     });
 
-    const onObjectClick = useCallbackRef((object: BaseObject) => {
-        onSelectObject(object);
-    });
+    const onObjectClick = useCallbackRef((object: BaseObject) => appController.selectObject(object.id));
 
     const pixiStageOption = useMemo(() => {
         return { backgroundColor: 0xffffff, width: baseSize.width, height: baseSize.height };
@@ -138,7 +138,7 @@ export function TimeLine(props: Props): React.ReactElement {
                                 onMoveAndResize={(newX, newWidth) => {
                                     const newStartInMS = (durationInMSForVisibleArea * newX) / baseSize.width;
                                     const newEndInMS = newStartInMS + (durationInMSForVisibleArea * newWidth) / baseSize.width;
-                                    onChangeObject(object, {
+                                    appController.updateObject({
                                         ...object,
                                         startInMS: newStartInMS,
                                         endInMS: newEndInMS,

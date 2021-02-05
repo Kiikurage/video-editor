@@ -1,5 +1,9 @@
 import * as React from 'react';
+import { useEffect } from 'react';
 import styled from 'styled-components';
+import { useAppController } from './AppControllerProvider';
+import { useCallbackRef } from './hooks/useCallbackRef';
+import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
 
 const Base = styled.div`
     display: flex;
@@ -23,20 +27,45 @@ const Base = styled.div`
 `;
 
 interface Props {
-    onPlayButtonClick: () => void;
-    onPauseButtonClick: () => void;
     onAddNewVideo: () => void;
     onAddNewImage: () => void;
     onAddNewCaption: () => void;
 }
 
 export function MiddleToolBar(props: Props): React.ReactElement {
-    const { onPauseButtonClick, onPlayButtonClick, onAddNewVideo, onAddNewImage, onAddNewCaption } = props;
+    const { previewController } = useAppController();
+    const { onAddNewVideo, onAddNewImage, onAddNewCaption } = props;
+    const forceUpdate = useThrottledForceUpdate();
+
+    const onPlayButtonClick = useCallbackRef((ev: React.MouseEvent) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        previewController.play();
+    });
+    const onPauseButtonClick = useCallbackRef((ev: React.MouseEvent) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        previewController.pause();
+    });
+
+    useEffect(() => {
+        previewController.on('play', forceUpdate);
+        previewController.on('pause', forceUpdate);
+
+        return () => {
+            previewController.off('play', forceUpdate);
+            previewController.off('pause', forceUpdate);
+        };
+    }, [previewController, forceUpdate]);
+
     return (
         <Base>
             <div>
-                <button onClick={onPlayButtonClick}>再生</button>
-                <button onClick={onPauseButtonClick}>停止</button>
+                {previewController.paused ? (
+                    <button onClick={onPlayButtonClick}>再生</button>
+                ) : (
+                    <button onClick={onPauseButtonClick}>停止</button>
+                )}
             </div>
             <div>
                 <button onClick={onAddNewVideo}>動画を追加</button>

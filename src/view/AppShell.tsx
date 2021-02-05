@@ -8,8 +8,7 @@ import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
 import { ImageObject } from '../model/objects/ImageObject';
 import { VideoObject } from '../model/objects/VideoObject';
-import { Project } from '../model/Project';
-import { PreviewController } from '../service/PreviewController';
+import { useAppController } from './AppControllerProvider';
 import { DropArea } from './DropArea';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { MiddleToolBar } from './MiddleToolBar';
@@ -89,34 +88,8 @@ const PropertyArea = styled.div`
     flex: 1 1 0;
 `;
 
-interface Props {
-    previewController: PreviewController;
-    project: Project;
-    selectedObject: BaseObject | null;
-    onChangeProject: (oldValue: Project, newValue: Project) => void;
-    onSelectObject: (object: BaseObject | null) => void;
-    onAddObject: (object: BaseObject) => void;
-    onChangeObject: (oldValue: BaseObject, newValue: BaseObject) => void;
-    onRemoveObject: (object: BaseObject) => void;
-    onExportVideo: () => void;
-    onOpenProject: () => void;
-    onSaveProject: () => void;
-}
-
-export function AppShell(props: Props): React.ReactElement {
-    const {
-        previewController,
-        project,
-        selectedObject,
-        onChangeProject,
-        onSelectObject,
-        onAddObject,
-        onChangeObject,
-        onRemoveObject,
-        onExportVideo,
-        onOpenProject,
-        onSaveProject,
-    } = props;
+export function AppShell(): React.ReactElement {
+    const appController = useAppController();
 
     const onFileDrop = (file: File) => {
         let newObject: BaseObject;
@@ -128,8 +101,8 @@ export function AppShell(props: Props): React.ReactElement {
                     type: 'VIDEO',
                     id: UUID(),
                     srcFilePath: file.path,
-                    startInMS: previewController.currentTimeInMS,
-                    endInMS: previewController.currentTimeInMS + 10000,
+                    startInMS: appController.previewController.currentTimeInMS,
+                    endInMS: appController.previewController.currentTimeInMS + 10000,
                     x: 0,
                     y: 0,
                     width: 400,
@@ -142,8 +115,8 @@ export function AppShell(props: Props): React.ReactElement {
                     type: 'IMAGE',
                     id: UUID(),
                     srcFilePath: file.path,
-                    startInMS: previewController.currentTimeInMS,
-                    endInMS: previewController.currentTimeInMS + 10000,
+                    startInMS: appController.previewController.currentTimeInMS,
+                    endInMS: appController.previewController.currentTimeInMS + 10000,
                     x: 0,
                     y: 0,
                     width: 400,
@@ -155,22 +128,14 @@ export function AppShell(props: Props): React.ReactElement {
                 return;
         }
 
-        onAddObject(newObject);
-    };
-
-    const onPlayButtonClick = () => {
-        previewController.play();
-    };
-
-    const onPauseButtonClick = () => {
-        previewController.pause();
+        appController.addObject(newObject);
     };
 
     const [previewAreaHeight, setPreviewAreaHeight] = useState(400);
     const [mainAreaWidth, setMainAreaWidth] = useState(900);
 
     const onAddNewCaption = useCallbackRef(() => {
-        const currentTimeInMS = previewController.currentTimeInMS;
+        const currentTimeInMS = appController.previewController.currentTimeInMS;
         const object: CaptionObject = {
             id: UUID(),
             type: CaptionObject.type,
@@ -182,7 +147,7 @@ export function AppShell(props: Props): React.ReactElement {
             endInMS: currentTimeInMS + 5000,
             text: '字幕',
         };
-        onAddObject(object);
+        appController.addObject(object);
     });
 
     const onAddNewImage = useCallbackRef(async () => {
@@ -190,7 +155,7 @@ export function AppShell(props: Props): React.ReactElement {
         if (canceled) return;
         assert(filePaths.length === 1, "Multi-file import isn't supported");
 
-        const currentTimeInMS = previewController.currentTimeInMS;
+        const currentTimeInMS = appController.previewController.currentTimeInMS;
         const object: ImageObject = {
             id: UUID(),
             type: ImageObject.type,
@@ -202,7 +167,7 @@ export function AppShell(props: Props): React.ReactElement {
             endInMS: currentTimeInMS + 5000,
             srcFilePath: filePaths[0],
         };
-        onAddObject(object);
+        appController.addObject(object);
     });
 
     const onAddNewVideo = useCallbackRef(async () => {
@@ -210,7 +175,7 @@ export function AppShell(props: Props): React.ReactElement {
         if (canceled) return;
         assert(filePaths.length === 1, "Multi-file import isn't supported");
 
-        const currentTimeInMS = previewController.currentTimeInMS;
+        const currentTimeInMS = appController.previewController.currentTimeInMS;
         const object: VideoObject = {
             id: UUID(),
             type: VideoObject.type,
@@ -222,7 +187,7 @@ export function AppShell(props: Props): React.ReactElement {
             endInMS: currentTimeInMS + 5000,
             srcFilePath: filePaths[0],
         };
-        onAddObject(object);
+        appController.addObject(object);
     });
 
     return (
@@ -230,10 +195,10 @@ export function AppShell(props: Props): React.ReactElement {
             <Base>
                 <AppHeader>
                     <div>
-                        <button onClick={onSaveProject}>保存</button>
-                        <button onClick={onOpenProject}>開く</button>
+                        <button onClick={appController.saveProject}>保存</button>
+                        <button onClick={appController.openProject}>開く</button>
                     </div>
-                    <button onClick={onExportVideo}>動画出力</button>
+                    <button onClick={appController.exportVideo}>動画出力</button>
                 </AppHeader>
 
                 <BodyArea>
@@ -241,21 +206,13 @@ export function AppShell(props: Props): React.ReactElement {
                         <MainArea style={{ width: mainAreaWidth }}>
                             <SplitPane direction="column">
                                 <PreviewArea style={{ height: previewAreaHeight }}>
-                                    <PreviewPlayer
-                                        project={project}
-                                        selectedObject={selectedObject}
-                                        previewController={previewController}
-                                        onSelectObject={onSelectObject}
-                                        onChangeObject={onChangeObject}
-                                    />
+                                    <PreviewPlayer />
                                 </PreviewArea>
 
                                 <Splitter onChange={(_dx, dy) => setPreviewAreaHeight(previewAreaHeight + dy)} />
 
                                 <MiddleToolbarArea>
                                     <MiddleToolBar
-                                        onPlayButtonClick={onPlayButtonClick}
-                                        onPauseButtonClick={onPauseButtonClick}
                                         onAddNewCaption={onAddNewCaption}
                                         onAddNewImage={onAddNewImage}
                                         onAddNewVideo={onAddNewVideo}
@@ -263,13 +220,7 @@ export function AppShell(props: Props): React.ReactElement {
                                 </MiddleToolbarArea>
 
                                 <TimeLineArea>
-                                    <TimeLine
-                                        previewController={previewController}
-                                        project={project}
-                                        selectedObject={selectedObject}
-                                        onSelectObject={onSelectObject}
-                                        onChangeObject={onChangeObject}
-                                    />
+                                    <TimeLine />
                                 </TimeLineArea>
                             </SplitPane>
                         </MainArea>
@@ -277,13 +228,7 @@ export function AppShell(props: Props): React.ReactElement {
                         <Splitter onChange={(dx, _dy) => setMainAreaWidth(mainAreaWidth + dx)} />
 
                         <PropertyArea>
-                            <PropertyView
-                                project={selectedObject === null ? project : null}
-                                object={selectedObject}
-                                onChangeProject={onChangeProject}
-                                onChangeObject={onChangeObject}
-                                onRemoveObject={onRemoveObject}
-                            />
+                            <PropertyView />
                         </PropertyArea>
                     </SplitPane>
                 </BodyArea>

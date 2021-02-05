@@ -1,10 +1,9 @@
 import { EventEmitter } from 'events';
+import { EventEmitterEvents } from '../model/EventEmitterEvents';
 
-interface TimerEvents {
-    on(type: 'seek', listener: () => void): void;
-
-    off(type: 'seek', listener: () => void): void;
-}
+type TimerEvents = EventEmitterEvents<{
+    seek: void;
+}>;
 
 export class Timer extends EventEmitter implements TimerEvents {
     public durationInMS: number = 60 * 1000;
