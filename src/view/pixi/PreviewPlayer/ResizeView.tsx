@@ -226,80 +226,80 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
     const [height, setHeight] = useFormState(object.height);
 
     const baseDragHandlers = usePixiDragHandlers((dx, dy, type) => {
-        setX(object.x + dx);
-        setY(object.y + dy);
+        setX(Math.round(object.x + dx));
+        setY(Math.round(object.y + dy));
 
         if (type === 'start') {
             onSelect();
         } else if (type === 'end') {
             onObjectChange({
                 ...object,
-                x: object.x + dx,
-                y: object.y + dy,
+                x: Math.round(object.x + dx),
+                y: Math.round(object.y + dy),
             });
         }
     });
 
     const nwDragHandlers = usePixiDragHandlers((dx, dy, type, ev) => {
         ev.stopPropagation();
-        setX(object.x + dx);
-        setY(object.y + dy);
-        setWidth(object.width - dx);
-        setHeight(object.height - dy);
+        setX(Math.round(object.x + dx));
+        setY(Math.round(object.y + dy));
+        setWidth(Math.round(object.width - dx));
+        setHeight(Math.round(object.height - dy));
 
         if (type === 'end') {
             onObjectChange({
                 ...object,
-                x: object.x + dx,
-                y: object.y + dy,
-                width: object.width - dx,
-                height: object.height - dy,
+                x: Math.round(object.x + dx),
+                y: Math.round(object.y + dy),
+                width: Math.round(object.width - dx),
+                height: Math.round(object.height - dy),
             });
         }
     });
 
     const neDragHandlers = usePixiDragHandlers((dx, dy, type, ev) => {
         ev.stopPropagation();
-        setY(object.y + dy);
-        setWidth(object.width + dx);
-        setHeight(object.height - dy);
+        setY(Math.round(object.y + dy));
+        setWidth(Math.round(object.width + dx));
+        setHeight(Math.round(object.height - dy));
 
         if (type === 'end') {
             onObjectChange({
                 ...object,
-                y: object.y + dy,
-                width: object.width + dx,
-                height: object.height - dy,
+                y: Math.round(object.y + dy),
+                width: Math.round(object.width + dx),
+                height: Math.round(object.height - dy),
             });
         }
     });
 
     const swDragHandlers = usePixiDragHandlers((dx, dy, type, ev) => {
         ev.stopPropagation();
-        setX(object.x + dx);
-        setWidth(object.width - dx);
-        setHeight(object.height + dy);
+        setX(Math.round(object.x + dx));
+        setWidth(Math.round(object.width - dx));
+        setHeight(Math.round(object.height + dy));
 
         if (type === 'end') {
             onObjectChange({
                 ...object,
-                x: object.x + dx,
-                width: object.width - dx,
-                height: object.height + dy,
+                x: Math.round(object.x + dx),
+                width: Math.round(object.width - dx),
+                height: Math.round(object.height + dy),
             });
         }
     });
 
     const seDragHandlers = usePixiDragHandlers((dx, dy, type, ev) => {
         ev.stopPropagation();
-        setWidth(object.width + dx);
-        setHeight(object.height + dy);
+        setWidth(Math.round(object.width + dx));
+        setHeight(Math.round(object.height + dy));
 
         if (type === 'end') {
             onObjectChange({
                 ...object,
-                width: object.width + dx,
-                height: object.height + dy,
+                width: Math.round(object.width + dx),
+                height: Math.round(object.height + dy),
             });
         }
     });
