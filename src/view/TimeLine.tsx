@@ -1,11 +1,12 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Stage } from 'react-pixi-fiber';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AppContext, Stage } from 'react-pixi-fiber';
 import QuickPinchZoom from 'react-quick-pinch-zoom';
 import styled from 'styled-components';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
+import { VideoObject } from '../model/objects/VideoObject';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
@@ -13,6 +14,7 @@ import { CurrentTimeIndicator } from './pixi/TimeLine/CurrentTimeIndicator';
 import { Divider } from './pixi/TimeLine/Divider';
 import { MouseTimeIndicator } from './pixi/TimeLine/MouseTimeIndicator';
 import { ObjectView } from './pixi/TimeLine/ObjectView';
+import { TimelineVideoObjectView } from './pixi/TimeLine/TimelineVideoObjectView';
 
 PIXI.settings.RENDER_OPTIONS.autoDensity = true;
 PIXI.settings.RENDER_OPTIONS.resolution = devicePixelRatio;
@@ -67,7 +69,12 @@ export function TimeLine(): React.ReactElement {
     const [pixelPerSecond, setPixelPerSecond] = useState(DEFAULT_SCALE);
     const [mouseX, setMouseX] = useState(0);
     const [baseSize, setBaseSize] = useState({ width: 100, height: 100 });
+    const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
     const scrollPositionInScreenScale = useRef({ x: 0, y: 0 });
+
+    const onGetPixiApplication = useCallbackRef((app: PIXI.Application) => {
+        setPixiApp(app);
+    });
 
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const onBaseElementReferenceUpdate = useCallbackRef((base: HTMLDivElement | null) => {
@@ -85,6 +92,11 @@ export function TimeLine(): React.ReactElement {
         });
         resizeObserverRef.current.observe(base);
     });
+
+    useEffect(() => {
+        if (!pixiApp) return;
+        pixiApp.renderer.resize(baseSize.width, baseSize.height);
+    }, [baseSize.height, baseSize.width, pixiApp]);
 
     const onVideoControllerSeek = useCallbackRef(() => {
         forceUpdate();
@@ -118,8 +130,8 @@ export function TimeLine(): React.ReactElement {
     });
 
     const pixiStageOption = useMemo(() => {
-        return { backgroundColor: 0xffffff, width: baseSize.width, height: baseSize.height };
-    }, [baseSize]);
+        return { backgroundColor: 0xffffff, width: 800, height: 300 };
+    }, []);
 
     const visibleAreaMinTimeInMS = (scrollPositionInScreenScale.current.x / pixelPerSecond) * 1000;
     const visibleAreaMaxTimeInMS = visibleAreaMinTimeInMS + (baseSize.width / pixelPerSecond) * 1000;
@@ -153,6 +165,8 @@ export function TimeLine(): React.ReactElement {
                         Scrollable
                     </ScrollPlaceholder>
                     <Stage options={pixiStageOption}>
+                        <PixiApplicationAccessor onGetApplication={onGetPixiApplication} />
+
                         {dividers}
 
                         {project.objects.map((object, i) => {
@@ -161,28 +175,68 @@ export function TimeLine(): React.ReactElement {
                             }
 
                             const isSelected = object === selectedObject;
-                            return (
-                                <ObjectView
-                                    key={object.id}
-                                    isSelected={isSelected}
-                                    text={CaptionObject.isCaption(object) ? object.text : `[${object.type}]`}
-                                    object={object}
-                                    y={32 + 20 * i}
-                                    fps={project.fps}
-                                    pixelPerSecond={pixelPerSecond}
-                                    offsetInMS={visibleAreaMinTimeInMS}
-                                    onClick={() => onObjectClick(object)}
-                                    onChange={(newStartInMS, newEndInMS) => {
-                                        appController.commitHistory(() => {
-                                            appController.updateObject({
-                                                ...object,
-                                                startInMS: quantizeTime(newStartInMS, project.fps),
-                                                endInMS: quantizeTime(newEndInMS, project.fps),
+                            const HEIGHT = 45;
+                            const x = ((object.startInMS - visibleAreaMinTimeInMS) * pixelPerSecond) / 1000;
+                            const width = ((object.endInMS - object.startInMS) * pixelPerSecond) / 1000;
+                            if (VideoObject.isVideo(object)) {
+                                return (
+                                    <TimelineVideoObjectView
+                                        key={object.id}
+                                        isSelected={isSelected}
+                                        video={object}
+                                        x={x}
+                                        y={32 + HEIGHT * i}
+                                        width={width}
+                                        height={HEIGHT}
+                                        pixelPerSecond={pixelPerSecond}
+                                        onClick={() => onObjectClick(object)}
+                                        onChange={(newX, newWidth) => {
+                                            appController.commitHistory(() => {
+                                                appController.updateObject({
+                                                    ...object,
+                                                    startInMS: quantizeTime(
+                                                        (newX / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
+                                                        project.fps
+                                                    ),
+                                                    endInMS: quantizeTime(
+                                                        ((newX + newWidth) / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
+                                                        project.fps
+                                                    ),
+                                                });
                                             });
-                                        });
-                                    }}
-                                />
-                            );
+                                        }}
+                                    />
+                                );
+                            } else {
+                                return (
+                                    <ObjectView
+                                        key={object.id}
+                                        isSelected={isSelected}
+                                        text={CaptionObject.isCaption(object) ? `字幕:"${object.text}"` : `${object.type}`}
+                                        object={object}
+                                        x={x}
+                                        y={32 + HEIGHT * i}
+                                        width={width}
+                                        height={HEIGHT}
+                                        onClick={() => onObjectClick(object)}
+                                        onChange={(newX, newWidth) => {
+                                            appController.commitHistory(() => {
+                                                appController.updateObject({
+                                                    ...object,
+                                                    startInMS: quantizeTime(
+                                                        (newX / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
+                                                        project.fps
+                                                    ),
+                                                    endInMS: quantizeTime(
+                                                        ((newX + newWidth) / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
+                                                        project.fps
+                                                    ),
+                                                });
+                                            });
+                                        }}
+                                    />
+                                );
+                            }
                         })}
 
                         {visibleAreaMinTimeInMS < previewController.currentTimeInMS &&
@@ -199,6 +253,16 @@ export function TimeLine(): React.ReactElement {
             </Base>
         </QuickPinchZoom>
     );
+}
+
+function PixiApplicationAccessor(props: { onGetApplication: (app: PIXI.Application) => void }): React.ReactElement {
+    const { onGetApplication } = props;
+    const application = useContext(AppContext);
+    useEffect(() => {
+        onGetApplication(application);
+    }, [onGetApplication, application]);
+
+    return <></>;
 }
 
 export function quantizeTime(timeInMS: number, fps: number): number {

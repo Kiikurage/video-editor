@@ -1,18 +1,20 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
-import { BaseObject } from '../../../model/objects/BaseObject';
+import { VideoObject } from '../../../model/objects/VideoObject';
+import { KeyframeLoader } from '../../../service/KeyFrameLoader';
+import { useCallbackRef } from '../../hooks/useCallbackRef';
 import { attachPixiDragHandlers, detachPixiDragHandlers, PixiDragHandlers, usePixiDragHandlers } from '../../hooks/usePixiDragHandlers';
 import { FocusRing } from '../FocusRing';
 
 interface Props {
-    object: BaseObject;
+    video: VideoObject;
     x: number;
     y: number;
     width: number;
     height: number;
-    text: string;
+    pixelPerSecond: number;
     isSelected: boolean;
     onClick: () => void;
     onChange: (newX: number, newWidth: number) => void;
@@ -23,27 +25,18 @@ interface InnerProps {
     y: number;
     width: number;
     height: number;
-    text: string;
+    pixelPerSecond: number;
+    keyframeLoader: KeyframeLoader | null;
     onClick: () => void;
     backgroundDragHandlers: PixiDragHandlers;
     wResizerDragHandlers: PixiDragHandlers;
     eResizerDragHandlers: PixiDragHandlers;
 }
 
-const ObjectView = CustomPIXIComponent(
+const TimelineVideoObjectView = CustomPIXIComponent(
     {
         customDisplayObject() {
             const base = new PIXI.Container();
-
-            const textNode = new PIXI.Text('', {
-                fill: 0x3465b5,
-                fontSize: 10,
-                fontWeight: 'normal',
-            });
-            textNode.name = 'text';
-            textNode.mask = new PIXI.Graphics();
-            base.addChild(textNode);
-            base.addChild(textNode.mask);
 
             const background = new PIXI.Graphics();
             background.name = 'background';
@@ -66,24 +59,30 @@ const ObjectView = CustomPIXIComponent(
             wResizer.cursor = 'ew-resize';
             base.addChild(wResizer);
 
+            const thumbnailsLayer = new PIXI.Container();
+            thumbnailsLayer.name = 'thumbnailsLayer';
+            thumbnailsLayer.mask = new PIXI.Graphics();
+            base.addChild(thumbnailsLayer);
+            base.addChild(thumbnailsLayer.mask);
+
             return base;
         },
         customApplyProps(base: PIXI.Graphics, oldProps: InnerProps, newProps: InnerProps): void {
-            const { x, y, width, height, text, onClick, backgroundDragHandlers, wResizerDragHandlers, eResizerDragHandlers } = newProps;
+            const {
+                x,
+                y,
+                width,
+                height,
+                pixelPerSecond,
+                keyframeLoader,
+                onClick,
+                backgroundDragHandlers,
+                wResizerDragHandlers,
+                eResizerDragHandlers,
+            } = newProps;
 
             base.x = x;
             base.y = y;
-
-            const textNode = base.getChildByName('text') as PIXI.Text;
-            textNode.x = 4;
-            textNode.y = 4;
-            textNode.anchor.x = 0;
-            textNode.anchor.y = 0;
-            textNode.text = text;
-            textNode.scale.x = 1;
-            textNode.scale.y = 1;
-
-            (textNode.mask as PIXI.Graphics).clear().beginFill(0xffffff, 1).drawRect(0, 0, width, height).endFill();
 
             const eResizer = base.getChildByName('eResizer') as PIXI.Graphics;
             eResizer.x = width - 8;
@@ -108,6 +107,34 @@ const ObjectView = CustomPIXIComponent(
             if (wResizerDragHandlers) {
                 attachPixiDragHandlers(wResizer, wResizerDragHandlers);
             }
+            const thumbnailsLayer = base.getChildByName('thumbnailsLayer') as PIXI.Container;
+            (thumbnailsLayer.mask as PIXI.Graphics).clear().beginFill(0xffffff, 1).drawRoundedRect(0, 0, width, height, 4).endFill();
+
+            const thumbnailWidth = (height * 16) / 9;
+            const numThumbnails = Math.ceil((width + thumbnailWidth) / thumbnailWidth);
+            while (thumbnailsLayer.children.length < numThumbnails) {
+                thumbnailsLayer.addChild(new PIXI.Sprite());
+            }
+            while (thumbnailsLayer.children.length > numThumbnails) {
+                thumbnailsLayer.removeChildAt(thumbnailsLayer.children.length - 1);
+            }
+            for (let i = 0; i < thumbnailsLayer.children.length; i++) {
+                const thumbnail = thumbnailsLayer.children[i] as PIXI.Sprite;
+                const xStart = thumbnailWidth * i;
+                const tStart = (xStart / pixelPerSecond) * 1000;
+                const thumbnailImageSource = keyframeLoader?.getKeyframe(tStart);
+
+                if (thumbnailImageSource) {
+                    if (thumbnail.texture?.textureCacheIds[0] !== thumbnailImageSource.filePath) {
+                        thumbnail.texture = PIXI.Texture.from(thumbnailImageSource.filePath);
+                    }
+                }
+
+                thumbnail.x = thumbnailWidth * i;
+                thumbnail.y = 0;
+                thumbnail.width = thumbnailWidth;
+                thumbnail.height = height;
+            }
 
             const background = base.getChildByName('background') as PIXI.Graphics;
             background.clear();
@@ -128,16 +155,35 @@ const ObjectView = CustomPIXIComponent(
             }
         },
     },
-    'ObjectView'
+    'TimelineVideoObjectView'
 );
 
-function ObjectViewWrapper(props: Props): React.ReactElement {
-    const { object, x, y, width, height, text, isSelected, onClick, onChange } = props;
+function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
+    const { video, x, y, width, height, pixelPerSecond, isSelected, onClick, onChange } = props;
+
+    const onKeyframeLoad = useCallbackRef(() => {
+        // TODO: Redraw thumbnails
+    });
+    const keyframeLoader = useRef<KeyframeLoader | null>(null);
+    useEffect(() => {
+        if (!VideoObject.isVideo(video)) return;
+
+        keyframeLoader.current = new KeyframeLoader(video.srcFilePath);
+        keyframeLoader.current.on('load', onKeyframeLoad);
+        void keyframeLoader.current.extractKeyframe();
+
+        return () => {
+            keyframeLoader.current?.clearAllCache();
+            keyframeLoader.current?.off('load', onKeyframeLoad);
+        };
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [onKeyframeLoad, video.srcFilePath]);
 
     const [{ dx1, dx2 }, setDx] = useState({ dx1: 0, dx2: 0 });
     useEffect(() => {
         setDx({ dx1: 0, dx2: 0 });
-    }, [object]);
+    }, [video]);
 
     const backgroundDragHandlers = usePixiDragHandlers((dx, _dy, type) => {
         if (type === 'end' && dx !== 0) {
@@ -168,20 +214,21 @@ function ObjectViewWrapper(props: Props): React.ReactElement {
     });
 
     return (
-        <ObjectView
+        <TimelineVideoObjectView
             x={x + dx1}
             y={y}
             width={width + dx2 - dx1}
             height={height}
-            text={text}
+            pixelPerSecond={pixelPerSecond}
+            keyframeLoader={keyframeLoader.current}
             onClick={onClick}
             backgroundDragHandlers={backgroundDragHandlers}
             wResizerDragHandlers={wResizerDragHandlers}
             eResizerDragHandlers={eResizerDragHandlers}
         >
             <FocusRing isSelected={isSelected} width={width + dx2 - dx1} height={height} />
-        </ObjectView>
+        </TimelineVideoObjectView>
     );
 }
 
-export { ObjectViewWrapper as ObjectView };
+export { TimelineVideoObjectViewWrapper as TimelineVideoObjectView };

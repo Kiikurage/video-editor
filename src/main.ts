@@ -1,4 +1,5 @@
 import * as ffmpeg from '@ffmpeg-installer/ffmpeg';
+import * as ffprobe from '@ffprobe-installer/ffprobe';
 import { app, BrowserWindow, dialog } from 'electron';
 import * as path from 'path';
 import { assert } from './lib/util';
@@ -30,6 +31,11 @@ app.on('ready', () => {
 IPCMain.onMessage(IPCMessage.GET_FFMPEG_INFO, () => ({
     path: ffmpeg.path,
     version: ffmpeg.version,
+}));
+
+IPCMain.onMessage(IPCMessage.GET_FFPROBE_INFO, () => ({
+    path: ffprobe.path,
+    version: ffprobe.version,
 }));
 
 IPCMain.onMessage(IPCMessage.SHOW_SAVE_FILE_DIALOG, async (ev) => {
