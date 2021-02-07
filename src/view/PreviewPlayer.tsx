@@ -80,6 +80,12 @@ export function PreviewPlayer(): React.ReactElement {
 
     const activeObjects = project.objects.filter((object) => object.startInMS <= currentTimeInMS && currentTimeInMS < object.endInMS);
 
+    const onObjectChange = useCallbackRef((oldObject: BaseObject, newObject: BaseObject) => {
+        appController.commitHistory(() => {
+            appController.updateObject(newObject);
+        });
+    });
+
     function renderObjectView(object: BaseObject): React.ReactNode {
         const isSelected = selectedObject === object;
 
@@ -92,7 +98,7 @@ export function PreviewPlayer(): React.ReactElement {
                         previewController={previewController}
                         selected={isSelected}
                         onSelect={() => appController.selectObject(object.id)}
-                        onObjectChange={appController.updateObject}
+                        onObjectChange={onObjectChange}
                     />
                 );
 
@@ -103,7 +109,7 @@ export function PreviewPlayer(): React.ReactElement {
                         caption={object as CaptionObject}
                         selected={isSelected}
                         onSelect={() => appController.selectObject(object.id)}
-                        onObjectChange={appController.updateObject}
+                        onObjectChange={onObjectChange}
                     />
                 );
 
@@ -114,7 +120,7 @@ export function PreviewPlayer(): React.ReactElement {
                         image={object as ImageObject}
                         selected={isSelected}
                         onSelect={() => appController.selectObject(object.id)}
-                        onObjectChange={appController.updateObject}
+                        onObjectChange={onObjectChange}
                     />
                 );
 

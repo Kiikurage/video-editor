@@ -12,7 +12,7 @@ interface Props {
     previewController: PreviewController;
     selected: boolean;
     onSelect: () => void;
-    onObjectChange: (newValue: VideoObject) => void;
+    onObjectChange: (oldObject: VideoObject, newObject: VideoObject) => void;
 }
 
 interface InnerProps {

@@ -2,9 +2,11 @@ import { EventEmitter } from 'events';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { showSaveFileDialog } from '../ipc/renderer/showSaveFileDialog';
 import { assert } from '../lib/util';
+import { AppState } from '../model/AppState';
+import { EventEmitterEvents } from '../model/EventEmitterEvents';
+import { HistoryManager } from '../model/HistoryManager';
 import { BaseObject } from '../model/objects/BaseObject';
 import { Project } from '../model/Project';
-import { EventEmitterEvents } from '../model/EventEmitterEvents';
 import { OutputBuilder } from './OutputBuilder';
 import { PreviewController } from './PreviewController';
 
@@ -14,26 +16,32 @@ type AppControllerEvents = EventEmitterEvents<{
 }>;
 
 export class AppController extends EventEmitter implements AppControllerEvents {
+    private readonly historyManager: HistoryManager<AppState>;
     private readonly _previewController = new PreviewController();
     private _selectedObjectId: string | null = null;
     private _project: Project = Project.EMPTY;
 
-    get previewController(): PreviewController {
-        return this._previewController;
+    constructor() {
+        super();
+        this.historyManager = new HistoryManager(this.getState);
+    }
+
+    get selectedObjectId(): string | null {
+        return this._selectedObjectId;
     }
 
     get project(): Project {
         return this._project;
     }
 
+    get previewController(): PreviewController {
+        return this._previewController;
+    }
+
     get selectedObject(): BaseObject | null {
         if (this.selectedObjectId === null) return null;
 
         return this.project.objects.find((object) => object.id === this.selectedObjectId) ?? null;
-    }
-
-    get selectedObjectId(): string | null {
-        return this._selectedObjectId;
     }
 
     togglePreviewPlay = (): void => {
@@ -132,4 +140,36 @@ export class AppController extends EventEmitter implements AppControllerEvents {
 
         await Project.save(filePath, project);
     };
+
+    undo = (): void => {
+        const state = this.historyManager.undo();
+        if (state === undefined) return;
+
+        this.restoreFromState(state);
+    };
+
+    redo = (): void => {
+        const state = this.historyManager.redo();
+        if (state === undefined) return;
+
+        this.restoreFromState(state);
+    };
+
+    commitHistory = (fn: () => void): void => {
+        this.historyManager.commit(fn);
+    };
+
+    private getState = (): AppState => {
+        return {
+            previewTimeInMS: this.previewController.currentTimeInMS,
+            project: this.project,
+            selectedObjectId: this.selectedObjectId,
+        };
+    };
+
+    private restoreFromState(state: AppState): void {
+        this.setProject(state.project);
+        this.selectObject(state.selectedObjectId);
+        this.previewController.currentTimeInMS = state.previewTimeInMS;
+    }
 }

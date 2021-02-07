@@ -128,7 +128,9 @@ export function AppShell(): React.ReactElement {
                 return;
         }
 
-        appController.addObject(newObject);
+        appController.commitHistory(() => {
+            appController.addObject(newObject);
+        });
     };
 
     const [previewAreaHeight, setPreviewAreaHeight] = useState(400);
@@ -147,7 +149,9 @@ export function AppShell(): React.ReactElement {
             endInMS: currentTimeInMS + 5000,
             text: '字幕',
         };
-        appController.addObject(object);
+        appController.commitHistory(() => {
+            appController.addObject(object);
+        });
     });
 
     const onAddNewImage = useCallbackRef(async () => {
@@ -167,7 +171,9 @@ export function AppShell(): React.ReactElement {
             endInMS: currentTimeInMS + 5000,
             srcFilePath: filePaths[0],
         };
-        appController.addObject(object);
+        appController.commitHistory(() => {
+            appController.addObject(object);
+        });
     });
 
     const onAddNewVideo = useCallbackRef(async () => {
@@ -187,7 +193,9 @@ export function AppShell(): React.ReactElement {
             endInMS: currentTimeInMS + 5000,
             srcFilePath: filePaths[0],
         };
-        appController.addObject(object);
+        appController.commitHistory(() => {
+            appController.addObject(object);
+        });
     });
 
     return (

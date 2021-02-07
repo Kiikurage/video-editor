@@ -12,8 +12,18 @@ export function App(): React.ReactElement {
         Mousetrap.bind('command+s', appController.saveProject);
         Mousetrap.bind('command+shift+s', appController.saveAsNewProject);
         Mousetrap.bind('space', appController.togglePreviewPlay);
-        Mousetrap.bind('backspace', appController.removeSelectedObject);
-        Mousetrap.bind('del', appController.removeSelectedObject);
+        Mousetrap.bind('backspace', () => {
+            appController.commitHistory(() => {
+                appController.removeSelectedObject();
+            });
+        });
+        Mousetrap.bind('del', () => {
+            appController.commitHistory(() => {
+                appController.removeSelectedObject();
+            });
+        });
+        Mousetrap.bind('command+z', appController.undo);
+        Mousetrap.bind('command+shift+z', appController.redo);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

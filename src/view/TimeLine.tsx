@@ -173,10 +173,12 @@ export function TimeLine(): React.ReactElement {
                                     offsetInMS={visibleAreaMinTimeInMS}
                                     onClick={() => onObjectClick(object)}
                                     onChange={(newStartInMS, newEndInMS) => {
-                                        appController.updateObject({
-                                            ...object,
-                                            startInMS: quantizeTime(newStartInMS, project.fps),
-                                            endInMS: quantizeTime(newEndInMS, project.fps),
+                                        appController.commitHistory(() => {
+                                            appController.updateObject({
+                                                ...object,
+                                                startInMS: quantizeTime(newStartInMS, project.fps),
+                                                endInMS: quantizeTime(newEndInMS, project.fps),
+                                            });
                                         });
                                     }}
                                 />
