@@ -233,7 +233,7 @@ export function PropertyView(): React.ReactElement {
                                 <PropertyGroupName>字幕</PropertyGroupName>
                                 <PropertyRow>
                                     <PropertyName>内容</PropertyName>
-                                    <textarea value={selectedObject.text} onChange={onCaptionTextChange} />
+                                    <textarea defaultValue={selectedObject.text} onChange={onCaptionTextChange} />
                                 </PropertyRow>
                             </PropertyGroup>
                         )}
