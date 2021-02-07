@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, useMemo } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
 import { BaseObject } from '../../../model/objects/BaseObject';
 import { useFormState } from '../../hooks/useFormState';
@@ -61,14 +61,37 @@ interface PixiProps {
     height: number;
     selected: boolean;
     baseDragHandlers: PixiDragHandlers;
-    nwDragHandlers: PixiDragHandlers;
-    neDragHandlers: PixiDragHandlers;
-    swDragHandlers: PixiDragHandlers;
-    seDragHandlers: PixiDragHandlers;
+    resizerDragHandlers: Record<string, PixiDragHandlers>;
     object: BaseObject;
 }
 
 const RESIZER_SIZE = 40;
+
+const DIR = [
+    { name: 'nwResizer', cursor: 'nwse-resize', x: -1, y: -1 },
+    { name: 'nResizer', cursor: 'ns-resize', x: 0, y: -1 },
+    { name: 'neResizer', cursor: 'nesw-resize', x: 1, y: -1 },
+    { name: 'wResizer', cursor: 'ew-resize', x: -1, y: 0 },
+    { name: 'eResizer', cursor: 'ew-resize', x: 1, y: 0 },
+    { name: 'swResizer', cursor: 'nesw-resize', x: -1, y: 1 },
+    { name: 'sResizer', cursor: 'ns-resize', x: 0, y: 1 },
+    { name: 'seResizer', cursor: 'nwse-resize', x: 1, y: 1 },
+];
+
+function createResizer(name: string, cursor: string): PIXI.Graphics {
+    const resizer = new PIXI.Graphics();
+    resizer.interactive = true;
+    resizer.buttonMode = true;
+    resizer.width = RESIZER_SIZE;
+    resizer.height = RESIZER_SIZE;
+    resizer.lineStyle(4, 0xffffff, 1);
+    resizer.beginFill(0x4d90fe, 1);
+    resizer.drawRect(0, 0, RESIZER_SIZE, RESIZER_SIZE);
+    resizer.endFill();
+    resizer.name = name;
+    resizer.cursor = cursor;
+    return resizer;
+}
 
 const PixiResizeView = CustomPIXIComponent(
     {
@@ -82,117 +105,27 @@ const PixiResizeView = CustomPIXIComponent(
             frame.name = 'frame';
             base.addChild(frame);
 
-            const nwResizer = new PIXI.Graphics();
-            nwResizer.interactive = true;
-            nwResizer.buttonMode = true;
-            nwResizer.width = RESIZER_SIZE;
-            nwResizer.height = RESIZER_SIZE;
-            nwResizer.lineStyle(4, 0xffffff, 1);
-            nwResizer.beginFill(0x4d90fe, 1);
-            nwResizer.drawRect(0, 0, RESIZER_SIZE, RESIZER_SIZE);
-            nwResizer.endFill();
-            nwResizer.name = 'nwResizer';
-            nwResizer.cursor = 'nwse-resize';
-            base.addChild(nwResizer);
-
-            const swResizer = new PIXI.Graphics();
-            swResizer.interactive = true;
-            swResizer.buttonMode = true;
-            swResizer.width = RESIZER_SIZE;
-            swResizer.height = RESIZER_SIZE;
-            swResizer.lineStyle(4, 0xffffff, 1);
-            swResizer.beginFill(0x4d90fe, 1);
-            swResizer.drawRect(0, 0, RESIZER_SIZE, RESIZER_SIZE);
-            swResizer.endFill();
-            swResizer.name = 'swResizer';
-            swResizer.cursor = 'nesw-resize';
-            base.addChild(swResizer);
-
-            const neResizer = new PIXI.Graphics();
-            neResizer.interactive = true;
-            neResizer.buttonMode = true;
-            neResizer.width = RESIZER_SIZE;
-            neResizer.height = RESIZER_SIZE;
-            neResizer.lineStyle(4, 0xffffff, 1);
-            neResizer.beginFill(0x4d90fe, 1);
-            neResizer.drawRect(0, 0, RESIZER_SIZE, RESIZER_SIZE);
-            neResizer.endFill();
-            neResizer.name = 'neResizer';
-            neResizer.cursor = 'nesw-resize';
-            base.addChild(neResizer);
-
-            const seResizer = new PIXI.Graphics();
-            seResizer.interactive = true;
-            seResizer.buttonMode = true;
-            seResizer.width = RESIZER_SIZE;
-            seResizer.height = RESIZER_SIZE;
-            seResizer.lineStyle(4, 0xffffff, 1);
-            seResizer.beginFill(0x4d90fe, 1);
-            seResizer.drawRect(0, 0, RESIZER_SIZE, RESIZER_SIZE);
-            seResizer.endFill();
-            seResizer.name = 'seResizer';
-            seResizer.cursor = 'nwse-resize';
-            base.addChild(seResizer);
+            for (const { name, cursor } of DIR) {
+                base.addChild(createResizer(name, cursor));
+            }
 
             return base;
         },
         customApplyProps(base: PIXI.Container, oldProps: PixiProps, newProps: PixiProps): void {
-            const {
-                x,
-                y,
-                width,
-                height,
-                selected,
-                baseDragHandlers,
-                nwDragHandlers,
-                neDragHandlers,
-                swDragHandlers,
-                seDragHandlers,
-            } = newProps;
+            const { x, y, width, height, selected, baseDragHandlers, resizerDragHandlers } = newProps;
 
-            const nwResizer = base.getChildByName('nwResizer') as PIXI.Graphics;
-            nwResizer.visible = selected;
-            nwResizer.x = 0;
-            nwResizer.y = 0;
-            nwResizer.width = RESIZER_SIZE;
-            nwResizer.height = RESIZER_SIZE;
-            if (oldProps.nwDragHandlers) {
-                detachPixiDragHandlers(nwResizer, nwDragHandlers);
+            for (const { name, x, y } of DIR) {
+                const resizer = base.getChildByName(name) as PIXI.Graphics;
+                resizer.visible = selected;
+                resizer.x = x === -1 ? 0 : x === 1 ? width : width / 2;
+                resizer.y = y === -1 ? 0 : y === 1 ? height : height / 2;
+                resizer.width = RESIZER_SIZE;
+                resizer.height = RESIZER_SIZE;
+                if (oldProps.resizerDragHandlers) {
+                    detachPixiDragHandlers(resizer, resizerDragHandlers[name]);
+                }
+                attachPixiDragHandlers(resizer, resizerDragHandlers[name]);
             }
-            attachPixiDragHandlers(nwResizer, nwDragHandlers);
-
-            const neResizer = base.getChildByName('neResizer') as PIXI.Graphics;
-            neResizer.visible = selected;
-            neResizer.x = width;
-            neResizer.y = 0;
-            neResizer.width = RESIZER_SIZE;
-            neResizer.height = RESIZER_SIZE;
-            if (oldProps.neDragHandlers) {
-                detachPixiDragHandlers(neResizer, neDragHandlers);
-            }
-            attachPixiDragHandlers(neResizer, neDragHandlers);
-
-            const swResizer = base.getChildByName('swResizer') as PIXI.Graphics;
-            swResizer.visible = selected;
-            swResizer.x = 0;
-            swResizer.y = height;
-            swResizer.width = RESIZER_SIZE;
-            swResizer.height = RESIZER_SIZE;
-            if (oldProps.swDragHandlers) {
-                detachPixiDragHandlers(swResizer, swDragHandlers);
-            }
-            attachPixiDragHandlers(swResizer, swDragHandlers);
-
-            const seResizer = base.getChildByName('seResizer') as PIXI.Graphics;
-            seResizer.visible = selected;
-            seResizer.x = width;
-            seResizer.y = height;
-            seResizer.width = RESIZER_SIZE;
-            seResizer.height = RESIZER_SIZE;
-            if (oldProps.seDragHandlers) {
-                detachPixiDragHandlers(seResizer, seDragHandlers);
-            }
-            attachPixiDragHandlers(seResizer, seDragHandlers);
 
             const frame = base.getChildByName('frame') as PIXI.Graphics;
             frame.visible = selected;
@@ -240,69 +173,36 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         }
     });
 
-    const nwDragHandlers = usePixiDragHandlers((dx, dy, type, ev) => {
-        ev.stopPropagation();
-        setX(Math.round(object.x + dx));
-        setY(Math.round(object.y + dy));
-        setWidth(Math.round(object.width - dx));
-        setHeight(Math.round(object.height - dy));
+    const resizerDragHandlers: Record<string, PixiDragHandlers> = useMemo(() => ({}), []);
+    for (const { name, x, y } of DIR) {
+        // TODO: Don't Use react-hook inside for-loop
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        resizerDragHandlers[name] = usePixiDragHandlers((dx, dy, type, ev) => {
+            ev.stopPropagation();
 
-        if (type === 'end') {
-            onObjectChange(object, {
-                ...object,
-                x: Math.round(object.x + dx),
-                y: Math.round(object.y + dy),
-                width: Math.round(object.width - dx),
-                height: Math.round(object.height - dy),
-            });
-        }
-    });
+            const x1 = Math.round(object.x + dx * (x === -1 ? 1 : 0));
+            const x2 = Math.round(object.x + object.width + dx * (x === 1 ? 1 : 0));
+            const y1 = Math.round(object.y + dy * (y === -1 ? 1 : 0));
+            const y2 = Math.round(object.y + object.height + dy * (y === 1 ? 1 : 0));
+            const w = Math.abs(x2 - x1);
+            const h = Math.abs(y2 - y1);
 
-    const neDragHandlers = usePixiDragHandlers((dx, dy, type, ev) => {
-        ev.stopPropagation();
-        setY(Math.round(object.y + dy));
-        setWidth(Math.round(object.width + dx));
-        setHeight(Math.round(object.height - dy));
+            setX(Math.min(x1, x2));
+            setY(Math.min(y1, y2));
+            setWidth(w);
+            setHeight(h);
 
-        if (type === 'end') {
-            onObjectChange(object, {
-                ...object,
-                y: Math.round(object.y + dy),
-                width: Math.round(object.width + dx),
-                height: Math.round(object.height - dy),
-            });
-        }
-    });
-
-    const swDragHandlers = usePixiDragHandlers((dx, dy, type, ev) => {
-        ev.stopPropagation();
-        setX(Math.round(object.x + dx));
-        setWidth(Math.round(object.width - dx));
-        setHeight(Math.round(object.height + dy));
-
-        if (type === 'end') {
-            onObjectChange(object, {
-                ...object,
-                x: Math.round(object.x + dx),
-                width: Math.round(object.width - dx),
-                height: Math.round(object.height + dy),
-            });
-        }
-    });
-
-    const seDragHandlers = usePixiDragHandlers((dx, dy, type, ev) => {
-        ev.stopPropagation();
-        setWidth(Math.round(object.width + dx));
-        setHeight(Math.round(object.height + dy));
-
-        if (type === 'end') {
-            onObjectChange(object, {
-                ...object,
-                width: Math.round(object.width + dx),
-                height: Math.round(object.height + dy),
-            });
-        }
-    });
+            if (type === 'end') {
+                onObjectChange(object, {
+                    ...object,
+                    x: Math.min(x1, x2),
+                    y: Math.min(y1, y2),
+                    width: w,
+                    height: h,
+                });
+            }
+        });
+    }
 
     return (
         <PixiResizeView
@@ -312,10 +212,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
             height={height}
             selected={selected}
             baseDragHandlers={baseDragHandlers}
-            nwDragHandlers={nwDragHandlers}
-            neDragHandlers={neDragHandlers}
-            swDragHandlers={swDragHandlers}
-            seDragHandlers={seDragHandlers}
+            resizerDragHandlers={resizerDragHandlers}
             object={object}
         >
             <ResizeViewInner object={object} width={width} height={height} selected={selected}>
