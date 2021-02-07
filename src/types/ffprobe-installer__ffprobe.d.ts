@@ -1,5 +1,5 @@
-declare module '@ffmpeg-installer/ffmpeg' {
-    export interface FFMpegInfo {
+declare module '@ffprobe-installer/ffprobe' {
+    export interface FFProbeInfo {
         path: string;
         version: string;
     }

@@ -24,9 +24,7 @@ interface InnerProps {
 const VideoObjectView = CustomPIXIComponent(
     {
         customDisplayObject() {
-            const base = new PIXI.Sprite();
-
-            return base;
+            return new PIXI.Sprite();
         },
         customApplyProps(base: PIXI.Sprite, oldProps: InnerProps, newProps: InnerProps): void {
             const { texture, width, height } = newProps;

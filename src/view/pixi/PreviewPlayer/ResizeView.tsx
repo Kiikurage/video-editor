@@ -121,10 +121,12 @@ const PixiResizeView = CustomPIXIComponent(
                 resizer.y = y === -1 ? 0 : y === 1 ? height : height / 2;
                 resizer.width = RESIZER_SIZE;
                 resizer.height = RESIZER_SIZE;
-                if (oldProps.resizerDragHandlers) {
-                    detachPixiDragHandlers(resizer, resizerDragHandlers[name]);
+                if (oldProps.resizerDragHandlers && oldProps.resizerDragHandlers[name]) {
+                    detachPixiDragHandlers(resizer, oldProps.resizerDragHandlers[name]);
                 }
-                attachPixiDragHandlers(resizer, resizerDragHandlers[name]);
+                if (resizerDragHandlers && resizerDragHandlers[name]) {
+                    attachPixiDragHandlers(resizer, resizerDragHandlers[name]);
+                }
             }
 
             const frame = base.getChildByName('frame') as PIXI.Graphics;
@@ -144,7 +146,9 @@ const PixiResizeView = CustomPIXIComponent(
             if (oldProps.baseDragHandlers) {
                 detachPixiDragHandlers(base, oldProps.baseDragHandlers);
             }
-            attachPixiDragHandlers(base, baseDragHandlers);
+            if (baseDragHandlers) {
+                attachPixiDragHandlers(base, baseDragHandlers);
+            }
         },
     },
     'PixiResizeView'

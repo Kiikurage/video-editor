@@ -242,7 +242,7 @@ export function PropertyView(): React.ReactElement {
                                 <PropertyGroupName>動画</PropertyGroupName>
                                 <PropertyRow>
                                     <PropertyName>元ファイル</PropertyName>
-                                    <input type="text" value={selectedObject.srcFilePath} />
+                                    <input type="text" defaultValue={selectedObject.srcFilePath} />
                                 </PropertyRow>
                             </PropertyGroup>
                         )}
