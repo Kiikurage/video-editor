@@ -116,34 +116,46 @@ export function PropertyView(): React.ReactElement {
 
     const onObjectRemove = useCallbackRef(() => {
         if (selectedObject !== null) {
-            appController.removeObject(selectedObject.id);
+            appController.commitHistory(() => {
+                appController.removeObject(selectedObject.id);
+            });
         }
     });
 
     const onXChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (selectedObject === null) return;
         const value = Number(ev.target.value);
-        appController.updateObject({ ...selectedObject, x: value });
+        appController.commitHistory(() => {
+            appController.updateObject({ ...selectedObject, x: value });
+        });
     });
     const onYChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (selectedObject === null) return;
         const value = Number(ev.target.value);
-        appController.updateObject({ ...selectedObject, y: value });
+        appController.commitHistory(() => {
+            appController.updateObject({ ...selectedObject, y: value });
+        });
     });
     const onWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (selectedObject === null) return;
         const value = Number(ev.target.value);
-        appController.updateObject({ ...selectedObject, width: value });
+        appController.commitHistory(() => {
+            appController.updateObject({ ...selectedObject, width: value });
+        });
     });
     const onHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (selectedObject === null) return;
         const value = Number(ev.target.value);
-        appController.updateObject({ ...selectedObject, height: value });
+        appController.commitHistory(() => {
+            appController.updateObject({ ...selectedObject, height: value });
+        });
     });
     const onCaptionTextChange = useCallbackRef((ev: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (selectedObject === null) return;
         const value = ev.target.value;
-        appController.updateObject({ ...selectedObject, text: value } as CaptionObject);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...selectedObject, text: value } as CaptionObject);
+        });
     });
 
     return (

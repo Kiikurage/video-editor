@@ -50,7 +50,7 @@ function ResizeViewInner(props: PropsWithChildren<InnerProps>): React.ReactEleme
 interface Props<T extends BaseObject> {
     object: T;
     selected: boolean;
-    onObjectChange: (newValue: T) => void;
+    onObjectChange: (oldObject: T, newObject: T) => void;
     onSelect: () => void;
 }
 
@@ -232,7 +232,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         if (type === 'start') {
             onSelect();
         } else if (type === 'end') {
-            onObjectChange({
+            onObjectChange(object, {
                 ...object,
                 x: Math.round(object.x + dx),
                 y: Math.round(object.y + dy),
@@ -248,7 +248,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         setHeight(Math.round(object.height - dy));
 
         if (type === 'end') {
-            onObjectChange({
+            onObjectChange(object, {
                 ...object,
                 x: Math.round(object.x + dx),
                 y: Math.round(object.y + dy),
@@ -265,7 +265,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         setHeight(Math.round(object.height - dy));
 
         if (type === 'end') {
-            onObjectChange({
+            onObjectChange(object, {
                 ...object,
                 y: Math.round(object.y + dy),
                 width: Math.round(object.width + dx),
@@ -281,7 +281,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         setHeight(Math.round(object.height + dy));
 
         if (type === 'end') {
-            onObjectChange({
+            onObjectChange(object, {
                 ...object,
                 x: Math.round(object.x + dx),
                 width: Math.round(object.width - dx),
@@ -296,7 +296,7 @@ export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<
         setHeight(Math.round(object.height + dy));
 
         if (type === 'end') {
-            onObjectChange({
+            onObjectChange(object, {
                 ...object,
                 width: Math.round(object.width + dx),
                 height: Math.round(object.height + dy),

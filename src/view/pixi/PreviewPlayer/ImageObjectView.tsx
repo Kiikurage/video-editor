@@ -8,7 +8,7 @@ interface Props {
     image: ImageObject;
     selected: boolean;
     onSelect: () => void;
-    onObjectChange: (newValue: ImageObject) => void;
+    onObjectChange: (oldObject: ImageObject, newObject: ImageObject) => void;
 }
 
 export const ImageObjectViewBehavior: CustomPIXIComponentBehaviorDefinition<PIXI.Sprite, ImageObject> = {
