@@ -23,6 +23,10 @@ export class AppController extends EventEmitter implements AppControllerEvents {
     constructor() {
         super();
         this.historyManager = new HistoryManager(this.getState);
+
+        this.on('project.change', () => {
+            this.previewController.durationInMS = Project.computeDurationInMS(this.project);
+        });
     }
 
     private _selectedObjectId: string | null = null;
