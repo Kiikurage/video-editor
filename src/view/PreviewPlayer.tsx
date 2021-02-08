@@ -131,7 +131,7 @@ export function PreviewPlayer(): React.ReactElement {
                 );
 
             case AudioObject.type:
-                return <AudioObjectView audio={object as AudioObject} previewController={previewController} />;
+                return <AudioObjectView key={object.id} audio={object as AudioObject} previewController={previewController} />;
 
             default:
                 console.warn(`Unknown object type: ${object.type}`);
