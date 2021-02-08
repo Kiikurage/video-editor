@@ -1,6 +1,6 @@
 import { UUID } from '../../lib/UUID';
-import { CaptionObject } from './BaseObject';
 import { AudioObject } from './AudioObject';
+import { BaseObject } from './BaseObject';
 
 describe('isAudio', () => {
     it('Should be able to distinguish', () => {
@@ -13,7 +13,7 @@ describe('isAudio', () => {
         };
         expect(AudioObject.isAudio(video)).toBe(true);
 
-        const object: CaptionObject = {
+        const object: BaseObject = {
             type: 'NOT_AUDIO',
             id: UUID(),
             startInMS: 0,

@@ -6,18 +6,25 @@ import { BaseObject } from '../../../model/objects/BaseObject';
 import { useFormState } from '../../hooks/useFormState';
 import { attachPixiDragHandlers, detachPixiDragHandlers, PixiDragHandlers, usePixiDragHandlers } from '../../hooks/usePixiDragHandlers';
 
+type ResizableObject = BaseObject & {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+
 interface InnerProps {
     width: number;
     height: number;
     selected: boolean;
-    object: BaseObject;
+    object: ResizableObject;
 }
 
 interface PixiInnerProps {
     width: number;
     height: number;
     selected: boolean;
-    object: BaseObject;
+    object: ResizableObject;
 }
 
 const PixiResizeViewInner = CustomPIXIComponent(
@@ -47,7 +54,7 @@ function ResizeViewInner(props: PropsWithChildren<InnerProps>): React.ReactEleme
     );
 }
 
-interface Props<T extends BaseObject> {
+interface Props<T extends ResizableObject> {
     object: T;
     selected: boolean;
     onObjectChange: (oldObject: T, newObject: T) => void;
@@ -62,7 +69,7 @@ interface PixiProps {
     selected: boolean;
     baseDragHandlers: PixiDragHandlers;
     resizerDragHandlers: Record<string, PixiDragHandlers>;
-    object: BaseObject;
+    object: ResizableObject;
 }
 
 const RESIZER_SIZE = 40;
@@ -154,7 +161,7 @@ const PixiResizeView = CustomPIXIComponent(
     'PixiResizeView'
 );
 
-export function ResizeView<T extends BaseObject>(props: PropsWithChildren<Props<T>>): React.ReactElement {
+export function ResizeView<T extends ResizableObject>(props: PropsWithChildren<Props<T>>): React.ReactElement {
     const { object, selected, onObjectChange, onSelect, children } = props;
 
     const [x, setX] = useFormState(object.x);

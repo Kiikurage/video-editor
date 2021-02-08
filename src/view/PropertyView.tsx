@@ -321,7 +321,7 @@ function SrcFilePropertyGroup<T extends BaseObject & { srcFilePath: string }>(pr
         <PropertyGroup key={object.id}>
             <PropertyRow>
                 <PropertyName>元ファイル</PropertyName>
-                <input type="text" defaultValue={object.srcFilePath} onChange={onFileChange} />
+                <input type="file" onChange={onFileChange} />
             </PropertyRow>
         </PropertyGroup>
     );
