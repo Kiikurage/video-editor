@@ -11,6 +11,7 @@ import { Project } from '../model/Project';
 import { PreviewController } from './PreviewController';
 
 type AppControllerEvents = EventEmitterEvents<{
+    'project.open': void;
     'project.change': void;
     'object.select': void;
 }>;
@@ -119,6 +120,7 @@ export class AppController extends EventEmitter implements AppControllerEvents {
 
         const newProject = await Project.open(filePaths[0]);
         this.setProject(newProject);
+        this.emit('project.open', newProject);
     };
 
     saveProject = (): void => {

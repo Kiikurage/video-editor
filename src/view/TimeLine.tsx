@@ -2,11 +2,11 @@ import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppContext, Stage } from 'react-pixi-fiber';
-import QuickPinchZoom from 'react-quick-pinch-zoom';
 import styled from 'styled-components';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
 import { VideoObject } from '../model/objects/VideoObject';
+import { Project } from '../model/Project';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
@@ -49,24 +49,41 @@ const ScrollPlaceholder = styled.div`
     display: block;
 `;
 
-const DEFAULT_SCALE = 1;
-
 export function TimeLine(): React.ReactElement {
     const appController = useAppController();
     const { previewController, project, selectedObject } = appController;
 
+    const onProjectOpen = useCallbackRef((newProject: Project) => {
+        scaleFactorRef.current = Math.log2(baseSize.width / (Project.computeDurationInMS(newProject) / 1000)) / SCALE_FACTOR_FACTOR;
+        forceUpdate();
+    });
+
     const forceUpdate = useThrottledForceUpdate();
     useEffect(() => {
+        appController.on('project.open', onProjectOpen);
         appController.on('project.change', forceUpdate);
         appController.on('object.select', forceUpdate);
 
         return () => {
+            appController.off('project.open', onProjectOpen);
             appController.off('project.change', forceUpdate);
             appController.off('object.select', forceUpdate);
         };
-    }, [appController, forceUpdate]);
+    }, [appController, forceUpdate, onProjectOpen]);
 
-    const [pixelPerSecond, setPixelPerSecond] = useState(DEFAULT_SCALE);
+    const scaleFactorRef = useRef(0);
+    const SCALE_FACTOR_FACTOR = 0.1;
+    const onWheel = useCallbackRef((ev: React.WheelEvent) => {
+        if (ev.ctrlKey) {
+            const MIN_SCALE_FACTOR = -40;
+            const MAX_SCALE_FACTOR = 90;
+            scaleFactorRef.current = Math.min(Math.max(MIN_SCALE_FACTOR, scaleFactorRef.current - ev.deltaY), MAX_SCALE_FACTOR);
+            forceUpdate();
+        }
+    });
+    const pixelPerSecond = 2 ** (scaleFactorRef.current * SCALE_FACTOR_FACTOR);
+    console.log(pixelPerSecond);
+
     const [mouseX, setMouseX] = useState(0);
     const [baseSize, setBaseSize] = useState({ width: 100, height: 100 });
     const [pixiApp, setPixiApp] = useState<PIXI.Application | null>(null);
@@ -114,10 +131,6 @@ export function TimeLine(): React.ReactElement {
         };
     }, [onVideoControllerSeek, onVideoControllerTick, previewController]);
 
-    const onPinchZoomUpdate = useCallbackRef((data: { x: number; y: number; scale: number }) => {
-        setPixelPerSecond(10 ** (data.scale - 1));
-    });
-
     const onObjectLayerMouseMove = useCallbackRef((ev: React.MouseEvent) => {
         setMouseX(ev.clientX);
     });
@@ -163,100 +176,100 @@ export function TimeLine(): React.ReactElement {
     }
 
     return (
-        <QuickPinchZoom onUpdate={onPinchZoomUpdate} maxZoom={3} minZoom={0.01} wheelScaleFactor={1500} zoomOutFactor={0}>
-            <Base ref={onBaseElementReferenceUpdate} onMouseMove={onObjectLayerMouseMove} onClick={onObjectLayerClick}>
-                <ScrollWrapper onScroll={onScroll}>
-                    <ScrollPlaceholder style={{ width: previewController.durationInMS * pixelPerSecond, height: 400 }}>
-                        Scrollable
-                    </ScrollPlaceholder>
-                    <Stage options={pixiStageOption}>
-                        <PixiApplicationAccessor onGetApplication={onGetPixiApplication} />
+        // <QuickPinchZoom onUpdate={onPinchZoomUpdate} maxZoom={3} minZoom={0.01} wheelScaleFactor={1500} zoomOutFactor={0}>
+        <Base ref={onBaseElementReferenceUpdate} onMouseMove={onObjectLayerMouseMove} onClick={onObjectLayerClick} onWheel={onWheel}>
+            <ScrollWrapper onScroll={onScroll}>
+                <ScrollPlaceholder style={{ width: previewController.durationInMS * pixelPerSecond, height: 400 }}>
+                    Scrollable
+                </ScrollPlaceholder>
+                <Stage options={pixiStageOption}>
+                    <PixiApplicationAccessor onGetApplication={onGetPixiApplication} />
 
-                        {dividers}
+                    {dividers}
 
-                        {project.objects.map((object, i) => {
-                            if (object.endInMS < visibleAreaMinTimeInMS || object.startInMS > visibleAreaMaxTimeInMS) {
-                                return null;
-                            }
+                    {project.objects.map((object, i) => {
+                        if (object.endInMS < visibleAreaMinTimeInMS || object.startInMS > visibleAreaMaxTimeInMS) {
+                            return null;
+                        }
 
-                            const isSelected = object === selectedObject;
-                            const HEIGHT = 45;
-                            const x = ((object.startInMS - visibleAreaMinTimeInMS) * pixelPerSecond) / 1000;
-                            const width = ((object.endInMS - object.startInMS) * pixelPerSecond) / 1000;
-                            if (VideoObject.isVideo(object)) {
-                                return (
-                                    <TimelineVideoObjectView
-                                        key={object.id}
-                                        isSelected={isSelected}
-                                        video={object}
-                                        x={x}
-                                        y={32 + HEIGHT * i}
-                                        width={width}
-                                        height={HEIGHT}
-                                        pixelPerSecond={pixelPerSecond}
-                                        onClick={() => onObjectClick(object)}
-                                        onChange={(newX, newWidth) => {
-                                            appController.commitHistory(() => {
-                                                appController.updateObject({
-                                                    ...object,
-                                                    startInMS: quantizeTime(
-                                                        (newX / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
-                                                        project.fps
-                                                    ),
-                                                    endInMS: quantizeTime(
-                                                        ((newX + newWidth) / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
-                                                        project.fps
-                                                    ),
-                                                });
+                        const isSelected = object === selectedObject;
+                        const HEIGHT = 45;
+                        const x = ((object.startInMS - visibleAreaMinTimeInMS) * pixelPerSecond) / 1000;
+                        const width = ((object.endInMS - object.startInMS) * pixelPerSecond) / 1000;
+                        if (VideoObject.isVideo(object)) {
+                            return (
+                                <TimelineVideoObjectView
+                                    key={object.id}
+                                    isSelected={isSelected}
+                                    video={object}
+                                    x={x}
+                                    y={32 + HEIGHT * i}
+                                    width={width}
+                                    height={HEIGHT}
+                                    pixelPerSecond={pixelPerSecond}
+                                    onClick={() => onObjectClick(object)}
+                                    onChange={(newX, newWidth) => {
+                                        appController.commitHistory(() => {
+                                            appController.updateObject({
+                                                ...object,
+                                                startInMS: quantizeTime(
+                                                    (newX / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
+                                                    project.fps
+                                                ),
+                                                endInMS: quantizeTime(
+                                                    ((newX + newWidth) / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
+                                                    project.fps
+                                                ),
                                             });
-                                        }}
-                                    />
-                                );
-                            } else {
-                                return (
-                                    <ObjectView
-                                        key={object.id}
-                                        isSelected={isSelected}
-                                        text={CaptionObject.isCaption(object) ? `字幕:"${object.text}"` : `${object.type}`}
-                                        object={object}
-                                        x={x}
-                                        y={32 + HEIGHT * i}
-                                        width={width}
-                                        height={HEIGHT}
-                                        onClick={() => onObjectClick(object)}
-                                        onChange={(newX, newWidth) => {
-                                            appController.commitHistory(() => {
-                                                appController.updateObject({
-                                                    ...object,
-                                                    startInMS: quantizeTime(
-                                                        (newX / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
-                                                        project.fps
-                                                    ),
-                                                    endInMS: quantizeTime(
-                                                        ((newX + newWidth) / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
-                                                        project.fps
-                                                    ),
-                                                });
-                                            });
-                                        }}
-                                    />
-                                );
-                            }
-                        })}
-
-                        {visibleAreaMinTimeInMS < previewController.currentTimeInMS &&
-                            previewController.currentTimeInMS < visibleAreaMaxTimeInMS && (
-                                <CurrentTimeIndicator
-                                    x={((previewController.currentTimeInMS - visibleAreaMinTimeInMS) / 1000) * pixelPerSecond}
-                                    height={baseSize.height}
+                                        });
+                                    }}
                                 />
-                            )}
+                            );
+                        } else {
+                            return (
+                                <ObjectView
+                                    key={object.id}
+                                    isSelected={isSelected}
+                                    text={CaptionObject.isCaption(object) ? `字幕:"${object.text}"` : `${object.type}`}
+                                    object={object}
+                                    x={x}
+                                    y={32 + HEIGHT * i}
+                                    width={width}
+                                    height={HEIGHT}
+                                    onClick={() => onObjectClick(object)}
+                                    onChange={(newX, newWidth) => {
+                                        appController.commitHistory(() => {
+                                            appController.updateObject({
+                                                ...object,
+                                                startInMS: quantizeTime(
+                                                    (newX / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
+                                                    project.fps
+                                                ),
+                                                endInMS: quantizeTime(
+                                                    ((newX + newWidth) / pixelPerSecond) * 1000 + visibleAreaMinTimeInMS,
+                                                    project.fps
+                                                ),
+                                            });
+                                        });
+                                    }}
+                                />
+                            );
+                        }
+                    })}
 
-                        <MouseTimeIndicator x={mouseX} height={baseSize.height} />
-                    </Stage>
-                </ScrollWrapper>
-            </Base>
-        </QuickPinchZoom>
+                    {visibleAreaMinTimeInMS < previewController.currentTimeInMS &&
+                        previewController.currentTimeInMS < visibleAreaMaxTimeInMS && (
+                            <CurrentTimeIndicator
+                                x={((previewController.currentTimeInMS - visibleAreaMinTimeInMS) / 1000) * pixelPerSecond}
+                                height={baseSize.height}
+                            />
+                        )}
+
+                    <MouseTimeIndicator x={mouseX} height={baseSize.height} />
+                </Stage>
+            </ScrollWrapper>
+        </Base>
+        // </QuickPinchZoom>
     );
 }
 
@@ -283,6 +296,7 @@ function formatTime(timeInMS: number): string {
 }
 
 const PREDEFINED_DIVIDER_DURATIONS = [
+    200,
     1 * 1000,
     5 * 1000,
     10 * 1000,

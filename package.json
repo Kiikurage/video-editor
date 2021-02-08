@@ -10,7 +10,7 @@
     "build": "rm -rf ./build && npm run build:tsc && npm run build:webpack",
     "build:tsc": "tsc -p ./tsconfig.main.json",
     "build:webpack": "webpack-cli bundle",
-    "test": "jest",
+    "test": "jest --coverage",
     "lint": "lint-staged"
   },
   "author": {
@@ -102,5 +102,10 @@
     "webpack": "^5.11.1",
     "webpack-cli": "^4.3.1",
     "webpack-dev-server": "^3.11.1"
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "./src/**/*.{ts,tsx}"
+    ]
   }
 }
