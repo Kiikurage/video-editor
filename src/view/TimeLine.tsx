@@ -179,7 +179,12 @@ export function TimeLine(): React.ReactElement {
         // <QuickPinchZoom onUpdate={onPinchZoomUpdate} maxZoom={3} minZoom={0.01} wheelScaleFactor={1500} zoomOutFactor={0}>
         <Base ref={onBaseElementReferenceUpdate} onMouseMove={onObjectLayerMouseMove} onClick={onObjectLayerClick} onWheel={onWheel}>
             <ScrollWrapper onScroll={onScroll}>
-                <ScrollPlaceholder style={{ width: previewController.durationInMS * pixelPerSecond, height: 400 }}>
+                <ScrollPlaceholder
+                    style={{
+                        width: (previewController.durationInMS / 1000 + 30) * pixelPerSecond,
+                        height: Math.max(400, 45 * project.objects.length + 32),
+                    }}
+                >
                     Scrollable
                 </ScrollPlaceholder>
                 <Stage options={pixiStageOption}>
@@ -195,6 +200,11 @@ export function TimeLine(): React.ReactElement {
                         const isSelected = object === selectedObject;
                         const HEIGHT = 45;
                         const x = ((object.startInMS - visibleAreaMinTimeInMS) * pixelPerSecond) / 1000;
+                        const y = 32 + HEIGHT * i - scrollPositionInScreenScale.current.y;
+                        if (y + HEIGHT < 0 || y > baseSize.height) {
+                            return null;
+                        }
+
                         const width = ((object.endInMS - object.startInMS) * pixelPerSecond) / 1000;
                         if (VideoObject.isVideo(object)) {
                             return (
@@ -203,7 +213,7 @@ export function TimeLine(): React.ReactElement {
                                     isSelected={isSelected}
                                     video={object}
                                     x={x}
-                                    y={32 + HEIGHT * i}
+                                    y={y}
                                     width={width}
                                     height={HEIGHT}
                                     pixelPerSecond={pixelPerSecond}
@@ -233,7 +243,7 @@ export function TimeLine(): React.ReactElement {
                                     text={CaptionObject.isCaption(object) ? `字幕:"${object.text}"` : `${object.type}`}
                                     object={object}
                                     x={x}
-                                    y={32 + HEIGHT * i}
+                                    y={y}
                                     width={width}
                                     height={HEIGHT}
                                     onClick={() => onObjectClick(object)}

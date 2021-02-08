@@ -38,7 +38,7 @@ export class KeyframeLoader extends EventEmitter implements KeyframeLoaderEvents
     }
 
     clearAllCache(): void {
-        this.cleanUpFunction();
+        // this.cleanUpFunction();
         this.records.length = 0;
     }
 
