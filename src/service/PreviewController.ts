@@ -6,6 +6,7 @@ type PreviewControllerEvents = EventEmitterEvents<{
     play: void;
     pause: void;
     seek: void;
+    tick: void;
 }>;
 
 export class PreviewController extends EventEmitter implements PreviewControllerEvents {
@@ -15,7 +16,12 @@ export class PreviewController extends EventEmitter implements PreviewController
         super();
 
         this.timer.on('seek', this.onTimerSeek);
+        this.timer.on('tick', this.onTimerTick);
     }
+
+    private onTimerTick = () => {
+        this.emit('tick');
+    };
 
     private onTimerSeek = () => {
         this.emit('seek');

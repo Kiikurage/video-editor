@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useEffect, useMemo } from 'react';
 import { Stage } from 'react-pixi-fiber';
 import styled from 'styled-components';
+import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
 import { ImageObject } from '../model/objects/ImageObject';
@@ -9,6 +10,7 @@ import { VideoObject } from '../model/objects/VideoObject';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
+import { AudioObjectView } from './pixi/PreviewPlayer/AudioObjectView';
 import { Background } from './pixi/PreviewPlayer/Background';
 import { CaptionObjectView } from './pixi/PreviewPlayer/CaptionObjectView';
 import { ImageObjectView } from './pixi/PreviewPlayer/ImageObjectView';
@@ -59,9 +61,11 @@ export function PreviewPlayer(): React.ReactElement {
 
     useEffect(() => {
         previewController.on('seek', forceUpdate);
+        previewController.on('tick', forceUpdate);
 
         return () => {
             previewController.off('seek', forceUpdate);
+            previewController.off('tick', forceUpdate);
         };
     }, [previewController, forceUpdate]);
 
@@ -78,7 +82,9 @@ export function PreviewPlayer(): React.ReactElement {
 
     const currentTimeInMS = previewController.currentTimeInMS;
 
-    const activeObjects = project.objects.filter((object) => object.startInMS <= currentTimeInMS && currentTimeInMS < object.endInMS);
+    const activeObjects = project.objects.filter(
+        (object) => AudioObject.isAudio(object) || (object.startInMS <= currentTimeInMS && currentTimeInMS < object.endInMS)
+    );
 
     const onObjectChange = useCallbackRef((oldObject: BaseObject, newObject: BaseObject) => {
         appController.commitHistory(() => {
@@ -123,6 +129,9 @@ export function PreviewPlayer(): React.ReactElement {
                         onObjectChange={onObjectChange}
                     />
                 );
+
+            case AudioObject.type:
+                return <AudioObjectView audio={object as AudioObject} previewController={previewController} />;
 
             default:
                 console.warn(`Unknown object type: ${object.type}`);
