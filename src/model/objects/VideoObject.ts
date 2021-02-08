@@ -12,4 +12,8 @@ export const VideoObject = {
 export interface VideoObject extends BaseObject {
     type: typeof VideoObject.type;
     srcFilePath: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
 }
