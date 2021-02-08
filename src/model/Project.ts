@@ -22,4 +22,7 @@ export const Project = {
     async open(path: string): Promise<Project> {
         return JSON.parse(await fs.readFile(path, 'utf8')) as Project;
     },
+    computeDurationInMS(project: Project): number {
+        return Math.max(...project.objects.map((o) => o.endInMS));
+    },
 } as const;

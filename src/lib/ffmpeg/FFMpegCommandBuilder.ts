@@ -93,7 +93,7 @@ async function encode(project: Project, outputPath: string, workspacePath: strin
     }
     commandParts.push(`-filter_complex "${filterExpression}"`);
 
-    commandParts.push(`-t ${(getProjectDurationInMS(project) / 1000).toFixed(3)}`);
+    commandParts.push(`-t ${(Project.computeDurationInMS(project) / 1000).toFixed(3)}`);
     if (mainStreamMap.video) {
         commandParts.push(`-map "[${mainStreamMap.video.id}]"`);
     }
@@ -109,7 +109,10 @@ async function encode(project: Project, outputPath: string, workspacePath: strin
     commandParts.push(outputPath);
 
     const command = commandParts.join(' ');
+
+    console.groupCollapsed('FFMPEG command');
     console.log(command);
+    console.groupEnd();
 
     await promisify(childProcess.exec)(command);
 }
@@ -119,10 +122,6 @@ function buildFilterExpression(streamMap: FFMpegStreamMap): string {
         .filter((stream: FFMpegStream | null) => stream !== null)
         .map((stream: FFMpegStream) => stream.buildCommand())
         .join('; ');
-}
-
-function getProjectDurationInMS(project: Project): number {
-    return Math.max(...project.objects.map((o) => o.endInMS));
 }
 
 function collectInputs(output: FFMpegStream): FFMpegInputStream[] {
