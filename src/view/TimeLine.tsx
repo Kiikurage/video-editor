@@ -101,13 +101,18 @@ export function TimeLine(): React.ReactElement {
     const onVideoControllerSeek = useCallbackRef(() => {
         forceUpdate();
     });
+    const onVideoControllerTick = useCallbackRef(() => {
+        forceUpdate();
+    });
     useEffect(() => {
         previewController.on('seek', onVideoControllerSeek);
+        previewController.on('tick', onVideoControllerTick);
 
         return () => {
             previewController.off('seek', onVideoControllerSeek);
+            previewController.off('tick', onVideoControllerTick);
         };
-    }, [onVideoControllerSeek, previewController]);
+    }, [onVideoControllerSeek, onVideoControllerTick, previewController]);
 
     const onPinchZoomUpdate = useCallbackRef((data: { x: number; y: number; scale: number }) => {
         setPixelPerSecond(10 ** (data.scale - 1));

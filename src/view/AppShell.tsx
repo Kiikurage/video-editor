@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
+import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
 import { ImageObject } from '../model/objects/ImageObject';
@@ -98,7 +99,7 @@ export function AppShell(): React.ReactElement {
         switch (fileType[0]) {
             case 'video':
                 newObject = {
-                    type: 'VIDEO',
+                    type: VideoObject.type,
                     id: UUID(),
                     srcFilePath: file.path,
                     startInMS: appController.previewController.currentTimeInMS,
@@ -112,7 +113,7 @@ export function AppShell(): React.ReactElement {
 
             case 'image':
                 newObject = {
-                    type: 'IMAGE',
+                    type: ImageObject.type,
                     id: UUID(),
                     srcFilePath: file.path,
                     startInMS: appController.previewController.currentTimeInMS,
@@ -122,6 +123,16 @@ export function AppShell(): React.ReactElement {
                     width: 400,
                     height: 400,
                 } as ImageObject;
+                break;
+
+            case 'audio':
+                newObject = {
+                    type: AudioObject.type,
+                    id: UUID(),
+                    srcFilePath: file.path,
+                    startInMS: appController.previewController.currentTimeInMS,
+                    endInMS: appController.previewController.currentTimeInMS + 10000,
+                } as AudioObject;
                 break;
 
             default:
@@ -198,6 +209,24 @@ export function AppShell(): React.ReactElement {
         });
     });
 
+    const onAddNewAudio = useCallbackRef(async () => {
+        const { canceled, filePaths } = await showOpenFileDialog();
+        if (canceled) return;
+        assert(filePaths.length === 1, "Multi-file import isn't supported");
+
+        const currentTimeInMS = appController.previewController.currentTimeInMS;
+        const object: AudioObject = {
+            id: UUID(),
+            type: AudioObject.type,
+            startInMS: currentTimeInMS,
+            endInMS: currentTimeInMS + 5000,
+            srcFilePath: filePaths[0],
+        };
+        appController.commitHistory(() => {
+            appController.addObject(object);
+        });
+    });
+
     return (
         <DropArea onFileDrop={onFileDrop}>
             <Base>
@@ -224,6 +253,7 @@ export function AppShell(): React.ReactElement {
                                         onAddNewCaption={onAddNewCaption}
                                         onAddNewImage={onAddNewImage}
                                         onAddNewVideo={onAddNewVideo}
+                                        onAddNewAudio={onAddNewAudio}
                                     />
                                 </MiddleToolbarArea>
 

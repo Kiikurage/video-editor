@@ -71,7 +71,6 @@ export class KeyframeLoader extends EventEmitter implements KeyframeLoaderEvents
         if ((await fs.readdir(this.tmpDir)).length > 0) return;
 
         const extractOperationID = this.extractOperationIDCounter++;
-        console.time(`extractKeyframe(${extractOperationID})`);
         const { path: ffmpegPath } = await getFFMpegInfo();
         await promisify(childProcess.exec)(
             [
@@ -100,8 +99,6 @@ export class KeyframeLoader extends EventEmitter implements KeyframeLoaderEvents
 
         this.records.push(...result);
         this.records.sort((r1, r2) => r1.timeInMS - r2.timeInMS);
-        console.log(this.records);
-        console.timeEnd(`extractKeyframe(${extractOperationID})`);
         this.emit('load');
     }
 }

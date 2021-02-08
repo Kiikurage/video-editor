@@ -1,13 +1,13 @@
 import { EventEmitter } from 'events';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { showSaveFileDialog } from '../ipc/renderer/showSaveFileDialog';
+import { encodeProject } from '../lib/ffmpeg/FFMpegCommandBuilder';
 import { assert } from '../lib/util';
 import { AppState } from '../model/AppState';
 import { EventEmitterEvents } from '../model/EventEmitterEvents';
 import { HistoryManager } from '../model/HistoryManager';
 import { BaseObject } from '../model/objects/BaseObject';
 import { Project } from '../model/Project';
-import { OutputBuilder } from './OutputBuilder';
 import { PreviewController } from './PreviewController';
 
 type AppControllerEvents = EventEmitterEvents<{
@@ -18,17 +18,19 @@ type AppControllerEvents = EventEmitterEvents<{
 export class AppController extends EventEmitter implements AppControllerEvents {
     private readonly historyManager: HistoryManager<AppState>;
     private readonly _previewController = new PreviewController();
-    private _selectedObjectId: string | null = null;
-    private _project: Project = Project.EMPTY;
 
     constructor() {
         super();
         this.historyManager = new HistoryManager(this.getState);
     }
 
+    private _selectedObjectId: string | null = null;
+
     get selectedObjectId(): string | null {
         return this._selectedObjectId;
     }
+
+    private _project: Project = Project.EMPTY;
 
     get project(): Project {
         return this._project;
@@ -101,21 +103,14 @@ export class AppController extends EventEmitter implements AppControllerEvents {
 
     exportVideo = async (): Promise<void> => {
         const project = this.project;
-        const outputBuilder = new OutputBuilder().setProject(project).setOutputVideoPath('./output.mp4');
-
-        outputBuilder.on('log', () => {
-            console.log(outputBuilder.log);
-        });
 
         try {
-            await outputBuilder.build();
+            await encodeProject(project, './output.mp4');
         } catch (err) {
             console.error('Failed to export video', err);
             // TODO: クリーンアップされず永遠にゴミが残る
             return;
         }
-        //
-        // cleanUpWorkspace();
     };
 
     openProject = async (): Promise<void> => {

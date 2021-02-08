@@ -1,8 +1,12 @@
-import { useEffect } from 'react';
 import * as React from 'react';
+import { useEffect } from 'react';
 import styled from 'styled-components';
+import { AudioObject } from '../model/objects/AudioObject';
+import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
+import { ImageObject } from '../model/objects/ImageObject';
 import { VideoObject } from '../model/objects/VideoObject';
+import { AppController } from '../service/AppController';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
@@ -122,42 +126,6 @@ export function PropertyView(): React.ReactElement {
         }
     });
 
-    const onXChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        if (selectedObject === null) return;
-        const value = Number(ev.target.value);
-        appController.commitHistory(() => {
-            appController.updateObject({ ...selectedObject, x: value });
-        });
-    });
-    const onYChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        if (selectedObject === null) return;
-        const value = Number(ev.target.value);
-        appController.commitHistory(() => {
-            appController.updateObject({ ...selectedObject, y: value });
-        });
-    });
-    const onWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        if (selectedObject === null) return;
-        const value = Number(ev.target.value);
-        appController.commitHistory(() => {
-            appController.updateObject({ ...selectedObject, width: value });
-        });
-    });
-    const onHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        if (selectedObject === null) return;
-        const value = Number(ev.target.value);
-        appController.commitHistory(() => {
-            appController.updateObject({ ...selectedObject, height: value });
-        });
-    });
-    const onCaptionTextChange = useCallbackRef((ev: React.ChangeEvent<HTMLTextAreaElement>) => {
-        if (selectedObject === null) return;
-        const value = ev.target.value;
-        appController.commitHistory(() => {
-            appController.updateObject({ ...selectedObject, text: value } as CaptionObject);
-        });
-    });
-
     return (
         <Base>
             {selectedObject === null ? (
@@ -201,50 +169,24 @@ export function PropertyView(): React.ReactElement {
                             <div>{selectedObject.type}</div>
                         </ObjectSummary>
 
-                        <PropertyGroup>
-                            <PropertyGroupName>一般</PropertyGroupName>
-                            <PropertyRow>
-                                <PropertyName>開始</PropertyName>
-                                <span>{formatTimeByQuantization(selectedObject.startInMS, project.fps)}</span>
-                            </PropertyRow>
-                            <PropertyRow>
-                                <PropertyName>終了</PropertyName>
-                                <span>{formatTimeByQuantization(selectedObject.endInMS, project.fps)}</span>
-                            </PropertyRow>
-                            <PropertyRow>
-                                <PropertyName>X</PropertyName>
-                                <input type="number" min={0} value={selectedObject.x} onChange={onXChange} />
-                            </PropertyRow>
-                            <PropertyRow>
-                                <PropertyName>Y</PropertyName>
-                                <input type="number" min={0} value={selectedObject.y} onChange={onYChange} />
-                            </PropertyRow>
-                            <PropertyRow>
-                                <PropertyName>幅</PropertyName>
-                                <input type="number" min={0} value={selectedObject.width} onChange={onWidthChange} />
-                            </PropertyRow>
-                            <PropertyRow>
-                                <PropertyName>高さ</PropertyName>
-                                <input type="number" min={0} value={selectedObject.height} onChange={onHeightChange} />
-                            </PropertyRow>
-                        </PropertyGroup>
-                        {CaptionObject.isCaption(selectedObject) && (
-                            <PropertyGroup>
-                                <PropertyGroupName>字幕</PropertyGroupName>
-                                <PropertyRow>
-                                    <PropertyName>内容</PropertyName>
-                                    <textarea defaultValue={selectedObject.text} onChange={onCaptionTextChange} />
-                                </PropertyRow>
-                            </PropertyGroup>
+                        <BasePropertyGroup appController={appController} object={selectedObject} />
+                        {(VideoObject.isVideo(selectedObject) ||
+                            CaptionObject.isCaption(selectedObject) ||
+                            ImageObject.isImage(selectedObject)) && (
+                            <PositionPropertyGroup appController={appController} object={selectedObject} />
                         )}
-                        {VideoObject.isVideo(selectedObject) && (
-                            <PropertyGroup>
-                                <PropertyGroupName>動画</PropertyGroupName>
-                                <PropertyRow>
-                                    <PropertyName>元ファイル</PropertyName>
-                                    <input type="text" defaultValue={selectedObject.srcFilePath} />
-                                </PropertyRow>
-                            </PropertyGroup>
+                        {(VideoObject.isVideo(selectedObject) ||
+                            CaptionObject.isCaption(selectedObject) ||
+                            ImageObject.isImage(selectedObject)) && (
+                            <SizePropertyGroup appController={appController} object={selectedObject} />
+                        )}
+                        {CaptionObject.isCaption(selectedObject) && (
+                            <CaptionPropertyGroup appController={appController} object={selectedObject} />
+                        )}
+                        {(AudioObject.isAudio(selectedObject) ||
+                            VideoObject.isVideo(selectedObject) ||
+                            ImageObject.isImage(selectedObject)) && (
+                            <SrcFilePropertyGroup appController={appController} object={selectedObject} />
                         )}
                     </Body>
 
@@ -254,6 +196,134 @@ export function PropertyView(): React.ReactElement {
                 </>
             )}
         </Base>
+    );
+}
+
+function BasePropertyGroup<T extends BaseObject>(props: { appController: AppController; object: T }): React.ReactElement {
+    const { appController, object } = props;
+
+    return (
+        <PropertyGroup>
+            <PropertyGroupName>一般</PropertyGroupName>
+            <PropertyRow>
+                <PropertyName>開始</PropertyName>
+                <span>{formatTimeByQuantization(object.startInMS, appController.project.fps)}</span>
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>終了</PropertyName>
+                <span>{formatTimeByQuantization(object.endInMS, appController.project.fps)}</span>
+            </PropertyRow>
+        </PropertyGroup>
+    );
+}
+
+function PositionPropertyGroup<T extends BaseObject & { x: number; y: number }>(props: {
+    appController: AppController;
+    object: T;
+}): React.ReactElement {
+    const { appController, object } = props;
+    const onXChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = Number(ev.target.value);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, x: value });
+        });
+    });
+    const onYChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = Number(ev.target.value);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, y: value });
+        });
+    });
+
+    return (
+        <PropertyGroup>
+            <PropertyGroupName>位置</PropertyGroupName>
+            <PropertyRow>
+                <PropertyName>X</PropertyName>
+                <input type="number" min={0} value={object.x} onChange={onXChange} />
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>Y</PropertyName>
+                <input type="number" min={0} value={object.y} onChange={onYChange} />
+            </PropertyRow>
+        </PropertyGroup>
+    );
+}
+
+function SizePropertyGroup<T extends BaseObject & { width: number; height: number }>(props: {
+    appController: AppController;
+    object: T;
+}): React.ReactElement {
+    const { appController, object } = props;
+    const onWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = Number(ev.target.value);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, width: value });
+        });
+    });
+    const onHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = Number(ev.target.value);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, height: value });
+        });
+    });
+
+    return (
+        <PropertyGroup>
+            <PropertyGroupName>サイズ</PropertyGroupName>
+            <PropertyRow>
+                <PropertyName>幅</PropertyName>
+                <input type="number" min={0} value={object.width} onChange={onWidthChange} />
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>高さ</PropertyName>
+                <input type="number" min={0} value={object.height} onChange={onHeightChange} />
+            </PropertyRow>
+        </PropertyGroup>
+    );
+}
+
+function CaptionPropertyGroup<T extends CaptionObject>(props: { appController: AppController; object: T }): React.ReactElement {
+    const { appController, object } = props;
+    const onTextChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = ev.target.value;
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, text: value });
+        });
+    });
+
+    return (
+        <PropertyGroup key={object.id}>
+            <PropertyGroupName>字幕</PropertyGroupName>
+            <PropertyRow>
+                <PropertyName>内容</PropertyName>
+                <input defaultValue={object.text} onChange={onTextChange} />
+            </PropertyRow>
+        </PropertyGroup>
+    );
+}
+
+function SrcFilePropertyGroup<T extends BaseObject & { srcFilePath: string }>(props: {
+    appController: AppController;
+    object: T;
+}): React.ReactElement {
+    const { appController, object } = props;
+    const onFileChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const files = ev.target.files;
+        if (files?.length !== 1) return;
+        console.log(files[0].path);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, srcFilePath: files[0].path });
+        });
+    });
+
+    return (
+        <PropertyGroup key={object.id}>
+            <PropertyRow>
+                <PropertyName>元ファイル</PropertyName>
+                <input type="file" onChange={onFileChange} />
+            </PropertyRow>
+        </PropertyGroup>
     );
 }
 

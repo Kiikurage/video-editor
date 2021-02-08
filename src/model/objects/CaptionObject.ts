@@ -12,4 +12,8 @@ export const CaptionObject = {
 export interface CaptionObject extends BaseObject {
     type: typeof CaptionObject.type;
     text: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
 }

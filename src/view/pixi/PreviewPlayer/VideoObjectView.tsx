@@ -67,6 +67,30 @@ function VideoObjectViewWrapper(props: Props): React.ReactElement {
         }
     });
 
+    const onPreviewControllerTick = useCallbackRef(() => {
+        const currentPreviewTimeInMS = previewController.currentTimeInMS;
+
+        const videoResource = texture.baseTexture.resource as PIXI.resources.VideoResource;
+        const videoElement = videoResource.source as HTMLVideoElement;
+
+        const expectedVideoCurrentTimeInMS = currentPreviewTimeInMS - video.startInMS;
+        const videoCurrentTimeInMS = videoElement.currentTime * 1000;
+
+        if (videoElement.paused) {
+            if (!previewController.paused) {
+                void videoElement.play().catch(() => void 0);
+            } else {
+                videoElement.currentTime = expectedVideoCurrentTimeInMS / 1000;
+                texture.update();
+            }
+        } else {
+            const lagInMS = currentPreviewTimeInMS - (videoCurrentTimeInMS + video.startInMS);
+            if (Math.abs(lagInMS) > 200) {
+                videoElement.currentTime = (expectedVideoCurrentTimeInMS + lagInMS) / 1000;
+            }
+        }
+    });
+
     const onPreviewControllerPause = useCallbackRef(() => {
         const videoResource = texture.baseTexture.resource as PIXI.resources.VideoResource;
         const videoElement = videoResource.source as HTMLVideoElement;
@@ -77,12 +101,14 @@ function VideoObjectViewWrapper(props: Props): React.ReactElement {
     useEffect(() => {
         previewController.on('pause', onPreviewControllerPause);
         previewController.on('seek', onPreviewControllerSeek);
+        previewController.on('tick', onPreviewControllerTick);
 
         return () => {
             previewController.off('pause', onPreviewControllerPause);
             previewController.off('seek', onPreviewControllerSeek);
+            previewController.off('tick', onPreviewControllerTick);
         };
-    }, [onPreviewControllerPause, onPreviewControllerSeek, previewController]);
+    }, [onPreviewControllerPause, onPreviewControllerSeek, onPreviewControllerTick, previewController]);
 
     useEffect(() => {
         return () => {

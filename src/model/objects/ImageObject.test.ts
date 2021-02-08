@@ -22,10 +22,6 @@ describe('isImage', () => {
             id: UUID(),
             startInMS: 0,
             endInMS: 100,
-            x: 0,
-            y: 0,
-            height: 100,
-            width: 100,
         };
         expect(ImageObject.isImage(object)).toBe(false);
     });
