@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
 import { VideoObject } from '../../../model/objects/VideoObject';
 import { KeyframeLoader } from '../../../service/KeyFrameLoader';
@@ -31,6 +31,7 @@ interface InnerProps {
     backgroundDragHandlers: PixiDragHandlers;
     wResizerDragHandlers: PixiDragHandlers;
     eResizerDragHandlers: PixiDragHandlers;
+    forceRerenderCounter: number;
 }
 
 const TimelineVideoObjectView = CustomPIXIComponent(
@@ -161,16 +162,15 @@ const TimelineVideoObjectView = CustomPIXIComponent(
 function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
     const { video, x, y, width, height, pixelPerSecond, isSelected, onClick, onChange } = props;
 
-    const onKeyframeLoad = useCallbackRef(() => {
-        // TODO: Redraw thumbnails
-    });
+    const [forceRerenderCounter, forceRerender] = useReducer((x: number) => x + 1, 0);
+    const onKeyframeLoad = useCallbackRef(() => forceRerender());
     const keyframeLoader = useRef<KeyframeLoader | null>(null);
     useEffect(() => {
         if (!VideoObject.isVideo(video)) return;
 
         keyframeLoader.current = new KeyframeLoader(video.srcFilePath);
         keyframeLoader.current.on('load', onKeyframeLoad);
-        void keyframeLoader.current.extractKeyframe();
+        void keyframeLoader.current.start();
 
         return () => {
             keyframeLoader.current?.clearAllCache();
@@ -215,6 +215,7 @@ function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
 
     return (
         <TimelineVideoObjectView
+            forceRerenderCounter={forceRerenderCounter}
             x={x + dx1}
             y={y}
             width={width + dx2 - dx1}
