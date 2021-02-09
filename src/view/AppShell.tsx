@@ -6,7 +6,7 @@ import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
-import { CaptionObject } from '../model/objects/CaptionObject';
+import { TextObject } from '../model/objects/TextObject';
 import { ImageObject } from '../model/objects/ImageObject';
 import { VideoObject } from '../model/objects/VideoObject';
 import { useAppController } from './AppControllerProvider';
@@ -147,11 +147,11 @@ export function AppShell(): React.ReactElement {
     const [previewAreaHeight, setPreviewAreaHeight] = useState(400);
     const [mainAreaWidth, setMainAreaWidth] = useState(900);
 
-    const onAddNewCaption = useCallbackRef(() => {
+    const onAddNewText = useCallbackRef(() => {
         const currentTimeInMS = appController.previewController.currentTimeInMS;
-        const object: CaptionObject = {
+        const object: TextObject = {
             id: UUID(),
-            type: CaptionObject.type,
+            type: TextObject.type,
             x: 100,
             y: 100,
             width: 200,
@@ -251,7 +251,7 @@ export function AppShell(): React.ReactElement {
 
                                 <MiddleToolbarArea>
                                     <MiddleToolBar
-                                        onAddNewCaption={onAddNewCaption}
+                                        onAddNewText={onAddNewText}
                                         onAddNewImage={onAddNewImage}
                                         onAddNewVideo={onAddNewVideo}
                                         onAddNewAudio={onAddNewAudio}
