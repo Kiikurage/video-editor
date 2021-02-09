@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
+import { snap } from '../../../lib/snap';
 import { BaseObject } from '../../../model/objects/BaseObject';
 import { attachPixiDragHandlers, detachPixiDragHandlers, PixiDragHandlers, usePixiDragHandlers } from '../../hooks/usePixiDragHandlers';
 import { FocusRing } from '../FocusRing';
@@ -14,6 +15,7 @@ interface Props {
     height: number;
     text: string;
     isSelected: boolean;
+    snapPositionXs: number[];
     onClick: () => void;
     onChange: (newX: number, newWidth: number) => void;
 }
@@ -132,7 +134,7 @@ const ObjectView = CustomPIXIComponent(
 );
 
 function ObjectViewWrapper(props: Props): React.ReactElement {
-    const { object, x, y, width, height, text, isSelected, onClick, onChange } = props;
+    const { object, x, y, width, height, text, isSelected, snapPositionXs, onClick, onChange } = props;
 
     const [{ dx1, dx2 }, setDx] = useState({ dx1: 0, dx2: 0 });
     useEffect(() => {
@@ -140,6 +142,17 @@ function ObjectViewWrapper(props: Props): React.ReactElement {
     }, [object]);
 
     const backgroundDragHandlers = usePixiDragHandlers((dx, _dy, type) => {
+        const newX1 = x + dx;
+        const newX2 = x + width + dx;
+        const snappedNewX1 = snap(newX1, snapPositionXs);
+        const snappedNewX2 = snap(newX2, snapPositionXs);
+
+        if (snappedNewX1 !== newX1) {
+            dx = snappedNewX1 - x;
+        } else if (snappedNewX2 !== newX2) {
+            dx = snappedNewX2 - (x + width);
+        }
+
         if (type === 'end' && dx !== 0) {
             onChange(x + dx, width);
         } else {
@@ -150,6 +163,8 @@ function ObjectViewWrapper(props: Props): React.ReactElement {
     const wResizerDragHandlers = usePixiDragHandlers((dx, _dy, type, ev) => {
         ev.stopPropagation();
 
+        dx = snap(x + dx, snapPositionXs) - x;
+
         if (type === 'end' && dx !== 0) {
             onChange(x + dx, width - dx);
         } else {
@@ -159,6 +174,8 @@ function ObjectViewWrapper(props: Props): React.ReactElement {
 
     const eResizerDragHandlers = usePixiDragHandlers((dx, _dy, type, ev) => {
         ev.stopPropagation();
+
+        dx = snap(x + width + dx, snapPositionXs) - (x + width);
 
         if (type === 'end' && dx !== 0) {
             onChange(x, width + dx);

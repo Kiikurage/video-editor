@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
+import { snap } from '../../../lib/snap';
 import { VideoObject } from '../../../model/objects/VideoObject';
 import { KeyframeLoader } from '../../../service/KeyFrameLoader';
 import { useCallbackRef } from '../../hooks/useCallbackRef';
@@ -16,6 +17,7 @@ interface Props {
     height: number;
     pixelPerSecond: number;
     isSelected: boolean;
+    snapPositionXs: number[];
     onClick: () => void;
     onChange: (newX: number, newWidth: number) => void;
 }
@@ -160,7 +162,7 @@ const TimelineVideoObjectView = CustomPIXIComponent(
 );
 
 function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
-    const { video, x, y, width, height, pixelPerSecond, isSelected, onClick, onChange } = props;
+    const { video, x, y, width, height, pixelPerSecond, isSelected, snapPositionXs, onClick, onChange } = props;
 
     const [forceRerenderCounter, forceRerender] = useReducer((x: number) => x + 1, 0);
     const onKeyframeLoad = useCallbackRef(() => forceRerender());
@@ -186,6 +188,17 @@ function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
     }, [video]);
 
     const backgroundDragHandlers = usePixiDragHandlers((dx, _dy, type) => {
+        const newX1 = x + dx;
+        const newX2 = x + width + dx;
+        const snappedNewX1 = snap(newX1, snapPositionXs);
+        const snappedNewX2 = snap(newX2, snapPositionXs);
+
+        if (snappedNewX1 !== newX1) {
+            dx = snappedNewX1 - x;
+        } else if (snappedNewX2 !== newX2) {
+            dx = snappedNewX2 - (x + width);
+        }
+
         if (type === 'end' && dx !== 0) {
             onChange(x + dx, width);
         } else {
@@ -196,6 +209,8 @@ function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
     const wResizerDragHandlers = usePixiDragHandlers((dx, _dy, type, ev) => {
         ev.stopPropagation();
 
+        dx = snap(x + dx, snapPositionXs) - x;
+
         if (type === 'end' && dx !== 0) {
             onChange(x + dx, width - dx);
         } else {
@@ -205,6 +220,8 @@ function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
 
     const eResizerDragHandlers = usePixiDragHandlers((dx, _dy, type, ev) => {
         ev.stopPropagation();
+
+        dx = snap(x + width + dx, snapPositionXs) - (x + width);
 
         if (type === 'end' && dx !== 0) {
             onChange(x, width + dx);

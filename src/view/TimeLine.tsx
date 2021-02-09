@@ -174,6 +174,26 @@ export function TimeLine(): React.ReactElement {
         durationOffset += dividerDurationInMS;
     }
 
+    const snapPositionXsBase = project.objects
+        .filter(
+            (object) =>
+                (visibleAreaMinTimeInMS <= object.startInMS && object.startInMS <= visibleAreaMaxTimeInMS) ||
+                (visibleAreaMinTimeInMS <= object.endInMS && object.endInMS <= visibleAreaMaxTimeInMS)
+        )
+        .filter((object, i) => {
+            const height = 45;
+            const y = 32 + height * i - scrollPositionInScreenScale.current.y;
+
+            return y < baseSize.height && 0 < y + height;
+        })
+        .map((object) => {
+            const x = ((object.startInMS - visibleAreaMinTimeInMS) * pixelPerSecond) / 1000;
+            const width = ((object.endInMS - object.startInMS) * pixelPerSecond) / 1000;
+
+            return [x, x + width];
+        })
+        .flat();
+
     return (
         // <QuickPinchZoom onUpdate={onPinchZoomUpdate} maxZoom={3} minZoom={0.01} wheelScaleFactor={1500} zoomOutFactor={0}>
         <Base ref={onBaseElementReferenceUpdate} onMouseMove={onObjectLayerMouseMove} onClick={onObjectLayerClick} onWheel={onWheel}>
@@ -204,6 +224,15 @@ export function TimeLine(): React.ReactElement {
                         const y = 32 + HEIGHT * i - scrollPositionInScreenScale.current.y;
                         const width = ((object.endInMS - object.startInMS) * pixelPerSecond) / 1000;
 
+                        const snapPositionXs = snapPositionXsBase.slice();
+
+                        for (const targetX of [x, x + width]) {
+                            const i = snapPositionXs.indexOf(targetX);
+                            if (i === -1) continue;
+
+                            snapPositionXs.splice(i, 1);
+                        }
+
                         if (x + width < -BUFFER || x > baseSize.width + BUFFER || y + HEIGHT < -BUFFER || y > baseSize.height + BUFFER) {
                             return null;
                         }
@@ -219,6 +248,7 @@ export function TimeLine(): React.ReactElement {
                                     width={width}
                                     height={HEIGHT}
                                     pixelPerSecond={pixelPerSecond}
+                                    snapPositionXs={snapPositionXs}
                                     onClick={() => onObjectClick(object)}
                                     onChange={(newX, newWidth) => {
                                         appController.commitHistory(() => {
@@ -248,6 +278,7 @@ export function TimeLine(): React.ReactElement {
                                     y={y}
                                     width={width}
                                     height={HEIGHT}
+                                    snapPositionXs={snapPositionXs}
                                     onClick={() => onObjectClick(object)}
                                     onChange={(newX, newWidth) => {
                                         appController.commitHistory(() => {
