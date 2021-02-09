@@ -6,6 +6,7 @@ import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
 import { ImageObject } from '../model/objects/ImageObject';
+import { SizedObject } from '../model/objects/SizedObject';
 import { VideoObject } from '../model/objects/VideoObject';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
@@ -92,8 +93,25 @@ export function PreviewPlayer(): React.ReactElement {
         });
     });
 
-    function renderObjectView(object: BaseObject): React.ReactNode {
+    function renderObjectView(object: BaseObject, snapPositionXsBase: number[], snapPositionYsBase: number[]): React.ReactNode {
         const isSelected = selectedObject === object;
+
+        const snapPositionXs = snapPositionXsBase.slice();
+        const snapPositionYs = snapPositionYsBase.slice();
+        if (SizedObject.isSized(object)) {
+            for (const targetX of [object.x, object.x + object.width]) {
+                const i = snapPositionXs.indexOf(targetX);
+                if (i === -1) continue;
+
+                snapPositionXs.splice(i, i);
+            }
+            for (const targetY of [object.y, object.y + object.height]) {
+                const i = snapPositionYs.indexOf(targetY);
+                if (i === -1) continue;
+
+                snapPositionYs.splice(i, i);
+            }
+        }
 
         switch (object.type) {
             case VideoObject.type:
@@ -103,6 +121,8 @@ export function PreviewPlayer(): React.ReactElement {
                         video={object as VideoObject}
                         previewController={previewController}
                         selected={isSelected}
+                        snapPositionXs={snapPositionXs}
+                        snapPositionYs={snapPositionYs}
                         onSelect={() => appController.selectObject(object.id)}
                         onObjectChange={onObjectChange}
                     />
@@ -114,6 +134,8 @@ export function PreviewPlayer(): React.ReactElement {
                         key={object.id}
                         caption={object as CaptionObject}
                         selected={isSelected}
+                        snapPositionXs={snapPositionXs}
+                        snapPositionYs={snapPositionYs}
                         onSelect={() => appController.selectObject(object.id)}
                         onObjectChange={onObjectChange}
                     />
@@ -125,6 +147,8 @@ export function PreviewPlayer(): React.ReactElement {
                         key={object.id}
                         image={object as ImageObject}
                         selected={isSelected}
+                        snapPositionXs={snapPositionXs}
+                        snapPositionYs={snapPositionYs}
                         onSelect={() => appController.selectObject(object.id)}
                         onObjectChange={onObjectChange}
                     />
@@ -147,12 +171,17 @@ export function PreviewPlayer(): React.ReactElement {
 
     const onBackgroundClick = useCallbackRef(() => appController.selectObject(null));
 
+    const sizedObjects = activeObjects.filter(SizedObject.isSized);
+
+    const snapPositionXsBase = [0, project.viewport.width, ...sizedObjects.map((object) => [object.x, object.x + object.width]).flat()];
+    const snapPositionYsBase = [0, project.viewport.height, ...sizedObjects.map((object) => [object.y, object.y + object.height]).flat()];
+
     return (
         <Base onClick={onBaseClick}>
             <ContentBase style={{ width: contentBaseWidth, height: contentBaseHeight }} onClick={onContentBaseClick}>
                 <Stage options={pixiStageOption}>
                     <Background width={project.viewport.width} height={project.viewport.height} onClick={onBackgroundClick} />
-                    {activeObjects.map(renderObjectView)}
+                    {activeObjects.map((object) => renderObjectView(object, snapPositionXsBase, snapPositionYsBase))}
                 </Stage>
             </ContentBase>
         </Base>

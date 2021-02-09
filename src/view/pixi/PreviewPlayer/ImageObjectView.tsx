@@ -7,6 +7,8 @@ import { ResizeView } from './ResizeView';
 interface Props {
     image: ImageObject;
     selected: boolean;
+    snapPositionXs: number[];
+    snapPositionYs: number[];
     onSelect: () => void;
     onObjectChange: (oldObject: ImageObject, newObject: ImageObject) => void;
 }
@@ -33,10 +35,17 @@ export const ImageObjectViewBehavior: CustomPIXIComponentBehaviorDefinition<PIXI
 const ImageObjectView = CustomPIXIComponent(ImageObjectViewBehavior, 'ImageObjectView');
 
 function ImageObjectViewWrapper(props: Props): React.ReactElement {
-    const { image, selected, onSelect, onObjectChange } = props;
+    const { image, selected, snapPositionXs, snapPositionYs, onSelect, onObjectChange } = props;
 
     return (
-        <ResizeView object={image} onObjectChange={onObjectChange} onSelect={onSelect} selected={selected}>
+        <ResizeView
+            object={image}
+            snapPositionXs={snapPositionXs}
+            snapPositionYs={snapPositionYs}
+            onObjectChange={onObjectChange}
+            onSelect={onSelect}
+            selected={selected}
+        >
             <ImageObjectView {...image} />
         </ResizeView>
     );
