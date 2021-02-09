@@ -82,7 +82,6 @@ export function TimeLine(): React.ReactElement {
         }
     });
     const pixelPerSecond = 2 ** (scaleFactorRef.current * SCALE_FACTOR_FACTOR);
-    console.log(pixelPerSecond);
 
     const [mouseX, setMouseX] = useState(0);
     const [baseSize, setBaseSize] = useState({ width: 100, height: 100 });
@@ -198,14 +197,17 @@ export function TimeLine(): React.ReactElement {
                         }
 
                         const isSelected = object === selectedObject;
+
+                        const BUFFER = 128;
                         const HEIGHT = 45;
                         const x = ((object.startInMS - visibleAreaMinTimeInMS) * pixelPerSecond) / 1000;
                         const y = 32 + HEIGHT * i - scrollPositionInScreenScale.current.y;
-                        if (y + HEIGHT < 0 || y > baseSize.height) {
+                        const width = ((object.endInMS - object.startInMS) * pixelPerSecond) / 1000;
+
+                        if (x + width < -BUFFER || x > baseSize.width + BUFFER || y + HEIGHT < -BUFFER || y > baseSize.height + BUFFER) {
                             return null;
                         }
 
-                        const width = ((object.endInMS - object.startInMS) * pixelPerSecond) / 1000;
                         if (VideoObject.isVideo(object)) {
                             return (
                                 <TimelineVideoObjectView
