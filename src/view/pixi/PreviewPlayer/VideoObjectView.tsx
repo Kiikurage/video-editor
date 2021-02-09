@@ -11,6 +11,8 @@ interface Props {
     video: VideoObject;
     previewController: PreviewController;
     selected: boolean;
+    snapPositionXs: number[];
+    snapPositionYs: number[];
     onSelect: () => void;
     onObjectChange: (oldObject: VideoObject, newObject: VideoObject) => void;
 }
@@ -40,7 +42,7 @@ const VideoObjectView = CustomPIXIComponent(
 );
 
 function VideoObjectViewWrapper(props: Props): React.ReactElement {
-    const { video, previewController, selected, onObjectChange, onSelect } = props;
+    const { video, previewController, selected, snapPositionXs, snapPositionYs, onObjectChange, onSelect } = props;
     const [texture, setTexture] = useState(PIXI.Texture.EMPTY);
 
     const onPreviewControllerSeek = useCallbackRef(() => {
@@ -137,7 +139,14 @@ function VideoObjectViewWrapper(props: Props): React.ReactElement {
     }, [onPreviewControllerSeek, video.srcFilePath]);
 
     return (
-        <ResizeView object={video} onObjectChange={onObjectChange} onSelect={onSelect} selected={selected}>
+        <ResizeView
+            object={video}
+            snapPositionXs={snapPositionXs}
+            snapPositionYs={snapPositionYs}
+            onObjectChange={onObjectChange}
+            onSelect={onSelect}
+            selected={selected}
+        >
             <VideoObjectView texture={texture} width={video.width} height={video.height} />
         </ResizeView>
     );

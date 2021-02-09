@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { PropsWithChildren, useMemo } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
+import { snap } from '../../../lib/snap';
 import { BaseObject } from '../../../model/objects/BaseObject';
 import { useFormState } from '../../hooks/useFormState';
 import { attachPixiDragHandlers, detachPixiDragHandlers, PixiDragHandlers, usePixiDragHandlers } from '../../hooks/usePixiDragHandlers';
@@ -57,6 +58,8 @@ function ResizeViewInner(props: PropsWithChildren<InnerProps>): React.ReactEleme
 interface Props<T extends ResizableObject> {
     object: T;
     selected: boolean;
+    snapPositionXs: number[];
+    snapPositionYs: number[];
     onObjectChange: (oldObject: T, newObject: T) => void;
     onSelect: () => void;
 }
@@ -162,7 +165,7 @@ const PixiResizeView = CustomPIXIComponent(
 );
 
 export function ResizeView<T extends ResizableObject>(props: PropsWithChildren<Props<T>>): React.ReactElement {
-    const { object, selected, onObjectChange, onSelect, children } = props;
+    const { object, selected, snapPositionXs, snapPositionYs, onObjectChange, onSelect, children } = props;
 
     const [x, setX] = useFormState(object.x);
     const [y, setY] = useFormState(object.y);
@@ -170,8 +173,29 @@ export function ResizeView<T extends ResizableObject>(props: PropsWithChildren<P
     const [height, setHeight] = useFormState(object.height);
 
     const baseDragHandlers = usePixiDragHandlers((dx, dy, type) => {
-        setX(Math.round(object.x + dx));
-        setY(Math.round(object.y + dy));
+        const newX1 = Math.round(object.x + dx);
+        const newX2 = Math.round(object.x + width + dx);
+        const newY1 = Math.round(object.y + dy);
+        const newY2 = Math.round(object.y + height + dy);
+        const snappedNewX1 = snap(newX1, snapPositionXs, 30);
+        const snappedNewX2 = snap(newX2, snapPositionXs, 30);
+        const snappedNewY1 = snap(newY1, snapPositionYs, 30);
+        const snappedNewY2 = snap(newY2, snapPositionYs, 30);
+
+        if (snappedNewX1 !== newX1) {
+            dx = snappedNewX1 - object.x;
+        } else if (snappedNewX2 !== newX2) {
+            dx = snappedNewX2 - (object.x + width);
+        }
+
+        if (snappedNewY1 !== newY1) {
+            dy = snappedNewY1 - object.y;
+        } else if (snappedNewY2 !== newY2) {
+            dy = snappedNewY2 - (object.y + height);
+        }
+
+        setX(object.x + dx);
+        setY(object.y + dy);
 
         if (type === 'start') {
             onSelect();
@@ -191,10 +215,10 @@ export function ResizeView<T extends ResizableObject>(props: PropsWithChildren<P
         resizerDragHandlers[name] = usePixiDragHandlers((dx, dy, type, ev) => {
             ev.stopPropagation();
 
-            const x1 = Math.round(object.x + dx * (x === -1 ? 1 : 0));
-            const x2 = Math.round(object.x + object.width + dx * (x === 1 ? 1 : 0));
-            const y1 = Math.round(object.y + dy * (y === -1 ? 1 : 0));
-            const y2 = Math.round(object.y + object.height + dy * (y === 1 ? 1 : 0));
+            const x1 = Math.round(x === -1 ? snap(object.x + dx, snapPositionXs, 30) : object.x);
+            const x2 = Math.round(x === 1 ? snap(object.x + object.width + dx, snapPositionXs, 30) : object.x + object.width);
+            const y1 = Math.round(y === -1 ? snap(object.y + dy, snapPositionYs, 30) : object.y);
+            const y2 = Math.round(y === 1 ? snap(object.y + object.height + dy, snapPositionYs, 30) : object.y + object.height);
             const w = Math.abs(x2 - x1);
             const h = Math.abs(y2 - y1);
 

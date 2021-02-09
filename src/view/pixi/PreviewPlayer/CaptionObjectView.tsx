@@ -8,6 +8,8 @@ import { ResizeView } from './ResizeView';
 interface Props {
     caption: CaptionObject;
     selected: boolean;
+    snapPositionXs: number[];
+    snapPositionYs: number[];
     onSelect: () => void;
     onObjectChange: (oldObject: CaptionObject, newObject: CaptionObject) => void;
 }
@@ -41,14 +43,21 @@ export const CaptionObjectViewBehavior = {
 const CaptionObjectView = CustomPIXIComponent(CaptionObjectViewBehavior, 'CaptionObjectView');
 
 function CaptionObjectViewWrapper(props: Props): React.ReactElement {
-    const { caption, selected, onSelect, onObjectChange } = props;
+    const { caption, selected, snapPositionXs, snapPositionYs, onSelect, onObjectChange } = props;
 
     const onClick = useCallbackRef(() => {
         onSelect();
     });
 
     return (
-        <ResizeView object={caption} onObjectChange={onObjectChange} onSelect={onClick} selected={selected}>
+        <ResizeView
+            object={caption}
+            snapPositionXs={snapPositionXs}
+            snapPositionYs={snapPositionYs}
+            onObjectChange={onObjectChange}
+            onSelect={onClick}
+            selected={selected}
+        >
             <CaptionObjectView {...caption} />
         </ResizeView>
     );
