@@ -5,13 +5,13 @@ import * as tmp from 'tmp';
 import { promisify } from 'util';
 import { getFFMpegInfo } from '../../ipc/renderer/getFFMepgInfo';
 import { AudioObject } from '../../model/objects/AudioObject';
-import { CaptionObject } from '../../model/objects/CaptionObject';
+import { TextObject } from '../../model/objects/TextObject';
 import { ImageObject } from '../../model/objects/ImageObject';
 import { VideoObject } from '../../model/objects/VideoObject';
 import { Project } from '../../model/Project';
 import { assert } from '../util';
 import { createAudioObjectFFMpegStream } from './loader/createAudioObjectFFMpegStream';
-import { createCaptionObjectFFMpegStream } from './loader/createCaptionObjectFFMpegStream';
+import { createTextFFMpegStream } from './loader/createTextFFMpegStream';
 import { createFFMpegStream } from './loader/createFFMpegStream';
 import { createImageObjectFFMpegStream } from './loader/createImageObjectFFMpegStream';
 import { createVideoObjectFFMpegStream } from './loader/createVideoObjectFFMpegStream';
@@ -21,7 +21,7 @@ import { FFMpegStream, FFMpegStreamMap } from './stream/FFMpegStream';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const FFMpegStreamCreatorMap: Record<string, createFFMpegStream<any>> = {
-    [CaptionObject.type]: createCaptionObjectFFMpegStream,
+    [TextObject.type]: createTextFFMpegStream,
     [VideoObject.type]: createVideoObjectFFMpegStream,
     [ImageObject.type]: createImageObjectFFMpegStream,
     [AudioObject.type]: createAudioObjectFFMpegStream,
@@ -40,7 +40,7 @@ export async function encodeProject(project: Project, outputVideoPath: string): 
     }
 
     // ffmpegでエンコード
-    const tmpOutputVideoPath = path.join(workspacePath, './v=0.5.mp4');
+    const tmpOutputVideoPath = path.join(workspacePath, './output.mp4');
     await encode(project, tmpOutputVideoPath, workspacePath);
 
     // 出力動画をコピー

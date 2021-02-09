@@ -4,7 +4,7 @@ import { Stage } from 'react-pixi-fiber';
 import styled from 'styled-components';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
-import { CaptionObject } from '../model/objects/CaptionObject';
+import { TextObject } from '../model/objects/TextObject';
 import { ImageObject } from '../model/objects/ImageObject';
 import { SizedObject } from '../model/objects/SizedObject';
 import { VideoObject } from '../model/objects/VideoObject';
@@ -13,7 +13,7 @@ import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
 import { AudioObjectView } from './pixi/PreviewPlayer/AudioObjectView';
 import { Background } from './pixi/PreviewPlayer/Background';
-import { CaptionObjectView } from './pixi/PreviewPlayer/CaptionObjectView';
+import { TextObjectView } from './pixi/PreviewPlayer/TextObjectView';
 import { ImageObjectView } from './pixi/PreviewPlayer/ImageObjectView';
 import { VideoObjectView } from './pixi/PreviewPlayer/VideoObjectView';
 
@@ -128,11 +128,11 @@ export function PreviewPlayer(): React.ReactElement {
                     />
                 );
 
-            case CaptionObject.type:
+            case TextObject.type:
                 return (
-                    <CaptionObjectView
+                    <TextObjectView
                         key={object.id}
-                        caption={object as CaptionObject}
+                        textObject={object as TextObject}
                         selected={isSelected}
                         snapPositionXs={snapPositionXs}
                         snapPositionYs={snapPositionYs}

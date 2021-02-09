@@ -4,7 +4,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppContext, Stage } from 'react-pixi-fiber';
 import styled from 'styled-components';
 import { BaseObject } from '../model/objects/BaseObject';
-import { CaptionObject } from '../model/objects/CaptionObject';
+import { TextObject } from '../model/objects/TextObject';
 import { VideoObject } from '../model/objects/VideoObject';
 import { Project } from '../model/Project';
 import { useAppController } from './AppControllerProvider';
@@ -272,7 +272,7 @@ export function TimeLine(): React.ReactElement {
                                 <ObjectView
                                     key={object.id}
                                     isSelected={isSelected}
-                                    text={CaptionObject.isCaption(object) ? `字幕:"${object.text}"` : `${object.type}`}
+                                    text={TextObject.isText(object) ? `字幕:"${object.text}"` : `${object.type}`}
                                     object={object}
                                     x={x}
                                     y={y}
