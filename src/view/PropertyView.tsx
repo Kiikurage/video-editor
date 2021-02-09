@@ -85,6 +85,10 @@ const DeleteButton = styled.button`
     cursor: pointer;
 `;
 
+const Textarea = styled.textarea`
+    resize: none;
+`;
+
 export function PropertyView(): React.ReactElement {
     const appController = useAppController();
 
@@ -287,7 +291,7 @@ function SizePropertyGroup<T extends BaseObject & { width: number; height: numbe
 
 function TextPropertyGroup<T extends TextObject>(props: { appController: AppController; object: T }): React.ReactElement {
     const { appController, object } = props;
-    const onTextChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+    const onTextChange = useCallbackRef((ev: React.ChangeEvent<HTMLTextAreaElement>) => {
         const value = ev.target.value;
         appController.commitHistory(() => {
             appController.updateObject({ ...object, text: value });
@@ -299,7 +303,7 @@ function TextPropertyGroup<T extends TextObject>(props: { appController: AppCont
             <PropertyGroupName>字幕</PropertyGroupName>
             <PropertyRow>
                 <PropertyName>内容</PropertyName>
-                <input defaultValue={object.text} onChange={onTextChange} />
+                <Textarea rows={5} defaultValue={object.text} onChange={onTextChange} />
             </PropertyRow>
         </PropertyGroup>
     );
