@@ -12,4 +12,5 @@ export const AudioObject = {
 export interface AudioObject extends BaseObject {
     type: typeof AudioObject.type;
     srcFilePath: string;
+    volume: number;
 }

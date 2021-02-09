@@ -40,7 +40,7 @@ export async function encodeProject(project: Project, outputVideoPath: string): 
     }
 
     // ffmpegでエンコード
-    const tmpOutputVideoPath = path.join(workspacePath, './output.mp4');
+    const tmpOutputVideoPath = path.join(workspacePath, './v=0.5.mp4');
     await encode(project, tmpOutputVideoPath, workspacePath);
 
     // 出力動画をコピー
