@@ -1,21 +1,21 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
-import { CaptionObject } from '../../../model/objects/CaptionObject';
+import { TextObject } from '../../../model/objects/TextObject';
 import { useCallbackRef } from '../../hooks/useCallbackRef';
 import { ResizeView } from './ResizeView';
 
 interface Props {
-    caption: CaptionObject;
+    textObject: TextObject;
     selected: boolean;
     snapPositionXs: number[];
     snapPositionYs: number[];
     onSelect: () => void;
-    onObjectChange: (oldObject: CaptionObject, newObject: CaptionObject) => void;
+    onObjectChange: (oldObject: TextObject, newObject: TextObject) => void;
 }
 
-export const CaptionObjectViewBehavior = {
-    customDisplayObject(object: CaptionObject): PIXI.Text {
+export const TextObjectViewBehavior = {
+    customDisplayObject(object: TextObject): PIXI.Text {
         const base = new PIXI.Text('');
         base.x = 0;
         base.y = 0;
@@ -33,17 +33,17 @@ export const CaptionObjectViewBehavior = {
 
         return base;
     },
-    customApplyProps(base: PIXI.Text, oldObject: CaptionObject, newObject: CaptionObject): void {
+    customApplyProps(base: PIXI.Text, oldObject: TextObject, newObject: TextObject): void {
         base.width = newObject.width;
         base.height = newObject.height;
         base.text = newObject.text;
     },
 };
 
-const CaptionObjectView = CustomPIXIComponent(CaptionObjectViewBehavior, 'CaptionObjectView');
+const TextObjectView = CustomPIXIComponent(TextObjectViewBehavior, 'TextObjectView');
 
-function CaptionObjectViewWrapper(props: Props): React.ReactElement {
-    const { caption, selected, snapPositionXs, snapPositionYs, onSelect, onObjectChange } = props;
+function TextObjectViewWrapper(props: Props): React.ReactElement {
+    const { textObject, selected, snapPositionXs, snapPositionYs, onSelect, onObjectChange } = props;
 
     const onClick = useCallbackRef(() => {
         onSelect();
@@ -51,16 +51,16 @@ function CaptionObjectViewWrapper(props: Props): React.ReactElement {
 
     return (
         <ResizeView
-            object={caption}
+            object={textObject}
             snapPositionXs={snapPositionXs}
             snapPositionYs={snapPositionYs}
             onObjectChange={onObjectChange}
             onSelect={onClick}
             selected={selected}
         >
-            <CaptionObjectView {...caption} />
+            <TextObjectView {...textObject} />
         </ResizeView>
     );
 }
 
-export { CaptionObjectViewWrapper as CaptionObjectView };
+export { TextObjectViewWrapper as TextObjectView };

@@ -1,11 +1,11 @@
 import { UUID } from '../../lib/UUID';
 import { BaseObject } from './BaseObject';
-import { CaptionObject } from './CaptionObject';
+import { TextObject } from './TextObject';
 
-describe('isCaption', () => {
+describe('isText', () => {
     it('Should be able to distinguish', () => {
-        const caption: CaptionObject = {
-            type: 'CAPTION',
+        const textObject: TextObject = {
+            type: 'TEXT',
             id: UUID(),
             startInMS: 0,
             endInMS: 100,
@@ -13,22 +13,22 @@ describe('isCaption', () => {
             y: 0,
             height: 100,
             width: 100,
-            text: 'This is caption',
+            text: 'This is text',
         };
-        expect(CaptionObject.isCaption(caption)).toBe(true);
+        expect(TextObject.isText(textObject)).toBe(true);
 
         const object: BaseObject = {
-            type: 'NOT_CAPTION',
+            type: 'NOT_TEXT',
             id: UUID(),
             startInMS: 0,
             endInMS: 100,
         };
-        expect(CaptionObject.isCaption(object)).toBe(false);
+        expect(TextObject.isText(object)).toBe(false);
     });
 });
 
 describe('type', () => {
-    it('Should be "CAPTION"', () => {
-        expect(CaptionObject.type).toBe('CAPTION');
+    it('Should be "TEXT"', () => {
+        expect(TextObject.type).toBe('TEXT');
     });
 });

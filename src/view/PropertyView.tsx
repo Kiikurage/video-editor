@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { assert } from '../lib/util';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
-import { CaptionObject } from '../model/objects/CaptionObject';
+import { TextObject } from '../model/objects/TextObject';
 import { ImageObject } from '../model/objects/ImageObject';
 import { VideoObject } from '../model/objects/VideoObject';
 import { AppController } from '../service/AppController';
@@ -172,18 +172,16 @@ export function PropertyView(): React.ReactElement {
 
                         <BasePropertyGroup appController={appController} object={selectedObject} />
                         {(VideoObject.isVideo(selectedObject) ||
-                            CaptionObject.isCaption(selectedObject) ||
+                            TextObject.isText(selectedObject) ||
                             ImageObject.isImage(selectedObject)) && (
                             <PositionPropertyGroup appController={appController} object={selectedObject} />
                         )}
                         {(VideoObject.isVideo(selectedObject) ||
-                            CaptionObject.isCaption(selectedObject) ||
+                            TextObject.isText(selectedObject) ||
                             ImageObject.isImage(selectedObject)) && (
                             <SizePropertyGroup appController={appController} object={selectedObject} />
                         )}
-                        {CaptionObject.isCaption(selectedObject) && (
-                            <CaptionPropertyGroup appController={appController} object={selectedObject} />
-                        )}
+                        {TextObject.isText(selectedObject) && <TextPropertyGroup appController={appController} object={selectedObject} />}
                         {AudioObject.isAudio(selectedObject) && (
                             <AudioPropertyGroup appController={appController} object={selectedObject} />
                         )}
@@ -287,7 +285,7 @@ function SizePropertyGroup<T extends BaseObject & { width: number; height: numbe
     );
 }
 
-function CaptionPropertyGroup<T extends CaptionObject>(props: { appController: AppController; object: T }): React.ReactElement {
+function TextPropertyGroup<T extends TextObject>(props: { appController: AppController; object: T }): React.ReactElement {
     const { appController, object } = props;
     const onTextChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         const value = ev.target.value;
