@@ -24,6 +24,12 @@ export function AudioObjectView(props: Props): React.ReactElement {
         );
     }, [audio.srcFilePath]);
 
+    useEffect(() => {
+        if (sound === null) return;
+
+        sound.volume = audio.volume;
+    }, [sound, audio.volume]);
+
     const onPreviewPlay = useCallbackRef(() => {
         if (previewController.currentTimeInMS < audio.startInMS || previewController.currentTimeInMS >= audio.endInMS) {
             return;

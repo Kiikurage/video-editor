@@ -10,6 +10,7 @@ describe('isAudio', () => {
             startInMS: 0,
             endInMS: 100,
             srcFilePath: 'path/to/video',
+            volume: 1,
         };
         expect(AudioObject.isAudio(video)).toBe(true);
 

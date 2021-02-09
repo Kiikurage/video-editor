@@ -110,7 +110,7 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         const project = this.project;
 
         try {
-            await encodeProject(project, './output.mp4');
+            await encodeProject(project, './v=0.5.mp4');
         } catch (err) {
             console.error('Failed to export video', err);
             // TODO: クリーンアップされず永遠にゴミが残る

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useEffect } from 'react';
 import styled from 'styled-components';
+import { assert } from '../lib/util';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
 import { CaptionObject } from '../model/objects/CaptionObject';
@@ -183,6 +184,9 @@ export function PropertyView(): React.ReactElement {
                         {CaptionObject.isCaption(selectedObject) && (
                             <CaptionPropertyGroup appController={appController} object={selectedObject} />
                         )}
+                        {AudioObject.isAudio(selectedObject) && (
+                            <AudioPropertyGroup appController={appController} object={selectedObject} />
+                        )}
                         {(AudioObject.isAudio(selectedObject) ||
                             VideoObject.isVideo(selectedObject) ||
                             ImageObject.isImage(selectedObject)) && (
@@ -298,6 +302,28 @@ function CaptionPropertyGroup<T extends CaptionObject>(props: { appController: A
             <PropertyRow>
                 <PropertyName>内容</PropertyName>
                 <input defaultValue={object.text} onChange={onTextChange} />
+            </PropertyRow>
+        </PropertyGroup>
+    );
+}
+
+function AudioPropertyGroup<T extends AudioObject>(props: { appController: AppController; object: T }): React.ReactElement {
+    const { appController, object } = props;
+    const onVolumeChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseFloat(ev.target.value);
+        assert(0 <= value && value <= 1, `Invalid volume value: ${value}`);
+
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, volume: value });
+        });
+    });
+
+    return (
+        <PropertyGroup key={object.id}>
+            <PropertyGroupName>音声</PropertyGroupName>
+            <PropertyRow>
+                <PropertyName>ボリューム</PropertyName>
+                <input type="number" defaultValue={object.volume} min={0} max={1} onChange={onVolumeChange} />
             </PropertyRow>
         </PropertyGroup>
     );

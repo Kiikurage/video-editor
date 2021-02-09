@@ -221,6 +221,7 @@ export function AppShell(): React.ReactElement {
             startInMS: currentTimeInMS,
             endInMS: currentTimeInMS + 5000,
             srcFilePath: filePaths[0],
+            volume: 0.5,
         };
         appController.commitHistory(() => {
             appController.addObject(object);
