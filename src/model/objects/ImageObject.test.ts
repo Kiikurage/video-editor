@@ -14,6 +14,7 @@ describe('isImage', () => {
             height: 100,
             width: 100,
             srcFilePath: 'path/to/image',
+            locked: false,
         };
         expect(ImageObject.isImage(image)).toBe(true);
 
@@ -22,6 +23,7 @@ describe('isImage', () => {
             id: UUID(),
             startInMS: 0,
             endInMS: 100,
+            locked: false,
         };
         expect(ImageObject.isImage(object)).toBe(false);
     });

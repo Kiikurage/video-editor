@@ -14,6 +14,7 @@ describe('isText', () => {
             height: 100,
             width: 100,
             text: 'This is text',
+            locked: false,
         };
         expect(TextObject.isText(textObject)).toBe(true);
 
@@ -22,6 +23,7 @@ describe('isText', () => {
             id: UUID(),
             startInMS: 0,
             endInMS: 100,
+            locked: false,
         };
         expect(TextObject.isText(object)).toBe(false);
     });

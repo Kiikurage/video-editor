@@ -3,4 +3,5 @@ export interface BaseObject {
     id: string;
     startInMS: number;
     endInMS: number;
+    locked: boolean;
 }

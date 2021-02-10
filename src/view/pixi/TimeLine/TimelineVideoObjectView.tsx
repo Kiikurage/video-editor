@@ -29,6 +29,7 @@ interface InnerProps {
     height: number;
     pixelPerSecond: number;
     keyframeLoader: KeyframeLoader | null;
+    locked: boolean;
     onClick: () => void;
     backgroundDragHandlers: PixiDragHandlers;
     wResizerDragHandlers: PixiDragHandlers;
@@ -38,28 +39,28 @@ interface InnerProps {
 
 const TimelineVideoObjectView = CustomPIXIComponent(
     {
-        customDisplayObject() {
+        customDisplayObject(props: InnerProps) {
             const base = new PIXI.Container();
 
             const background = new PIXI.Graphics();
             background.name = 'background';
             background.interactive = true;
             background.buttonMode = true;
-            background.cursor = 'move';
+            background.cursor = props.locked ? 'default' : 'move';
             base.addChild(background);
 
             const eResizer = new PIXI.Sprite();
             eResizer.name = 'eResizer';
             eResizer.interactive = true;
             eResizer.buttonMode = true;
-            eResizer.cursor = 'ew-resize';
+            eResizer.cursor = props.locked ? 'default' : 'ew-resize';
             base.addChild(eResizer);
 
             const wResizer = new PIXI.Sprite();
             wResizer.name = 'wResizer';
             wResizer.interactive = true;
             wResizer.buttonMode = true;
-            wResizer.cursor = 'ew-resize';
+            wResizer.cursor = props.locked ? 'default' : 'ew-resize';
             base.addChild(wResizer);
 
             const thumbnailsLayer = new PIXI.Container();
@@ -78,6 +79,7 @@ const TimelineVideoObjectView = CustomPIXIComponent(
                 height,
                 pixelPerSecond,
                 keyframeLoader,
+                locked,
                 onClick,
                 backgroundDragHandlers,
                 wResizerDragHandlers,
@@ -92,6 +94,7 @@ const TimelineVideoObjectView = CustomPIXIComponent(
             eResizer.y = 0;
             eResizer.width = 8;
             eResizer.height = height;
+            eResizer.cursor = locked ? 'default' : 'ew-resize';
             if (oldProps.eResizerDragHandlers) {
                 detachPixiDragHandlers(eResizer, oldProps.eResizerDragHandlers);
             }
@@ -104,6 +107,7 @@ const TimelineVideoObjectView = CustomPIXIComponent(
             wResizer.y = 0;
             wResizer.width = 8;
             wResizer.height = height;
+            wResizer.cursor = locked ? 'default' : 'ew-resize';
             if (oldProps.wResizerDragHandlers) {
                 detachPixiDragHandlers(wResizer, oldProps.wResizerDragHandlers);
             }
@@ -144,6 +148,7 @@ const TimelineVideoObjectView = CustomPIXIComponent(
             background.beginFill(0x4d90fe, 0.1);
             background.drawRoundedRect(0, 0, width, height, 4);
             background.endFill();
+            background.cursor = locked ? 'default' : 'move';
             if (oldProps.backgroundDragHandlers) {
                 detachPixiDragHandlers(background, oldProps.backgroundDragHandlers);
             }
@@ -188,6 +193,7 @@ function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
     }, [video]);
 
     const backgroundDragHandlers = usePixiDragHandlers((dx, _dy, type) => {
+        if (video.locked) return;
         const newX1 = x + dx;
         const newX2 = x + width + dx;
         const snappedNewX1 = snap(newX1, snapPositionXs);
@@ -207,6 +213,7 @@ function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
     });
 
     const wResizerDragHandlers = usePixiDragHandlers((dx, _dy, type, ev) => {
+        if (video.locked) return;
         ev.stopPropagation();
 
         dx = snap(x + dx, snapPositionXs) - x;
@@ -219,6 +226,7 @@ function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
     });
 
     const eResizerDragHandlers = usePixiDragHandlers((dx, _dy, type, ev) => {
+        if (video.locked) return;
         ev.stopPropagation();
 
         dx = snap(x + width + dx, snapPositionXs) - (x + width);
@@ -239,6 +247,7 @@ function TimelineVideoObjectViewWrapper(props: Props): React.ReactElement {
             height={height}
             pixelPerSecond={pixelPerSecond}
             keyframeLoader={keyframeLoader.current}
+            locked={video.locked}
             onClick={onClick}
             backgroundDragHandlers={backgroundDragHandlers}
             wResizerDragHandlers={wResizerDragHandlers}

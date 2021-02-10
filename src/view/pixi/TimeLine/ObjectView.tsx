@@ -26,6 +26,7 @@ interface InnerProps {
     width: number;
     height: number;
     text: string;
+    locked: boolean;
     onClick: () => void;
     backgroundDragHandlers: PixiDragHandlers;
     wResizerDragHandlers: PixiDragHandlers;
@@ -34,7 +35,7 @@ interface InnerProps {
 
 const ObjectView = CustomPIXIComponent(
     {
-        customDisplayObject() {
+        customDisplayObject(props: InnerProps) {
             const base = new PIXI.Container();
 
             const textNode = new PIXI.Text('', {
@@ -51,27 +52,38 @@ const ObjectView = CustomPIXIComponent(
             background.name = 'background';
             background.interactive = true;
             background.buttonMode = true;
-            background.cursor = 'move';
+            background.cursor = props.locked ? 'default' : 'move';
             base.addChild(background);
 
             const eResizer = new PIXI.Sprite();
             eResizer.name = 'eResizer';
             eResizer.interactive = true;
             eResizer.buttonMode = true;
-            eResizer.cursor = 'ew-resize';
+            eResizer.cursor = props.locked ? 'default' : 'ew-resize';
             base.addChild(eResizer);
 
             const wResizer = new PIXI.Sprite();
             wResizer.name = 'wResizer';
             wResizer.interactive = true;
             wResizer.buttonMode = true;
-            wResizer.cursor = 'ew-resize';
+            wResizer.cursor = props.locked ? 'default' : 'ew-resize';
             base.addChild(wResizer);
 
             return base;
         },
         customApplyProps(base: PIXI.Graphics, oldProps: InnerProps, newProps: InnerProps): void {
-            const { x, y, width, height, text, onClick, backgroundDragHandlers, wResizerDragHandlers, eResizerDragHandlers } = newProps;
+            const {
+                x,
+                y,
+                width,
+                height,
+                text,
+                locked,
+                onClick,
+                backgroundDragHandlers,
+                wResizerDragHandlers,
+                eResizerDragHandlers,
+            } = newProps;
 
             base.x = x;
             base.y = y;
@@ -92,6 +104,7 @@ const ObjectView = CustomPIXIComponent(
             eResizer.y = 0;
             eResizer.width = 8;
             eResizer.height = height;
+            eResizer.cursor = locked ? 'default' : 'ew-resize';
             if (oldProps.eResizerDragHandlers) {
                 detachPixiDragHandlers(eResizer, oldProps.eResizerDragHandlers);
             }
@@ -104,6 +117,7 @@ const ObjectView = CustomPIXIComponent(
             wResizer.y = 0;
             wResizer.width = 8;
             wResizer.height = height;
+            wResizer.cursor = locked ? 'default' : 'ew-resize';
             if (oldProps.wResizerDragHandlers) {
                 detachPixiDragHandlers(wResizer, oldProps.wResizerDragHandlers);
             }
@@ -116,6 +130,7 @@ const ObjectView = CustomPIXIComponent(
             background.beginFill(0x4d90fe, 0.1);
             background.drawRoundedRect(0, 0, width, height, 4);
             background.endFill();
+            background.cursor = locked ? 'default' : 'move';
             if (oldProps.backgroundDragHandlers) {
                 detachPixiDragHandlers(background, oldProps.backgroundDragHandlers);
             }
@@ -142,6 +157,8 @@ function ObjectViewWrapper(props: Props): React.ReactElement {
     }, [object]);
 
     const backgroundDragHandlers = usePixiDragHandlers((dx, _dy, type) => {
+        if (object.locked) return;
+
         const newX1 = x + dx;
         const newX2 = x + width + dx;
         const snappedNewX1 = snap(newX1, snapPositionXs);
@@ -161,6 +178,7 @@ function ObjectViewWrapper(props: Props): React.ReactElement {
     });
 
     const wResizerDragHandlers = usePixiDragHandlers((dx, _dy, type, ev) => {
+        if (object.locked) return;
         ev.stopPropagation();
 
         dx = snap(x + dx, snapPositionXs) - x;
@@ -173,6 +191,7 @@ function ObjectViewWrapper(props: Props): React.ReactElement {
     });
 
     const eResizerDragHandlers = usePixiDragHandlers((dx, _dy, type, ev) => {
+        if (object.locked) return;
         ev.stopPropagation();
 
         dx = snap(x + width + dx, snapPositionXs) - (x + width);
@@ -192,6 +211,7 @@ function ObjectViewWrapper(props: Props): React.ReactElement {
             height={height}
             text={text}
             onClick={onClick}
+            locked={object.locked}
             backgroundDragHandlers={backgroundDragHandlers}
             wResizerDragHandlers={wResizerDragHandlers}
             eResizerDragHandlers={eResizerDragHandlers}
