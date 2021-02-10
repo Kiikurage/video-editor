@@ -11,7 +11,10 @@ export function App(): React.ReactElement {
         Mousetrap.bind('command+o', appController.openProject);
         Mousetrap.bind('command+s', appController.saveProject);
         Mousetrap.bind('command+shift+s', appController.saveAsNewProject);
-        Mousetrap.bind('space', appController.togglePreviewPlay);
+        Mousetrap.bind('space', (ev) => {
+            ev.preventDefault();
+            appController.togglePreviewPlay();
+        });
         Mousetrap.bind('backspace', () => {
             appController.commitHistory(() => {
                 appController.removeSelectedObject();

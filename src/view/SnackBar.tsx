@@ -8,7 +8,10 @@ import { useCallbackRef } from './hooks/useCallbackRef';
 const fadeIn = keyframes`
   0% {
     opacity: 0;
-    transform: translateX(100px);
+    transform: translateX(50px);
+  }
+  80% {
+    opacity: 1;
   }
   100% {
     opacity: 1;
@@ -23,9 +26,12 @@ const fadeOut = keyframes`
     opacity: 1;
     transform: translateX(0);
   }
+  80% {
+    opacity: 0;
+  }
   100% {
     opacity: 0;
-    transform: translateX(100px);
+    transform: translateX(50px);
   }
 `;
 
@@ -39,7 +45,7 @@ const Base = styled.div<{ color: string; fadeOut: boolean }>`
     color: ${(props) => mix(0.05, props.color, '#ffffff')};
     box-shadow: rgba(50, 50, 93, 0.15) 0 2px 5px -1px, rgba(0, 0, 0, 0.2) 0px 1px 3px -1px;
     cursor: pointer;
-    animation: ${(props) => (props.fadeOut ? fadeOut : fadeIn)} 500ms ${EASING} forwards;
+    animation: ${(props) => (props.fadeOut ? fadeOut : fadeIn)} 1000ms ${EASING} forwards;
 `;
 
 interface Props {

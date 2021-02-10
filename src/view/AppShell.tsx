@@ -117,7 +117,7 @@ export function AppShell(): React.ReactElement {
             fontStyle: {
                 fontFamily: 'Noto Sans JP',
                 fontSize: 80,
-                fontWeight: 900,
+                fontWeight: '900',
                 fill: 0x000000,
                 stroke: 0xffffff,
                 strokeThickness: 0,
