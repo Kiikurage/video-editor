@@ -1,9 +1,11 @@
 import * as React from 'react';
 import { useEffect } from 'react';
 import styled from 'styled-components';
+import { convertColorFromPixiToDOM } from '../lib/convertColorFromPixiToDOM';
 import { assert } from '../lib/util';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
+import { FontStyle } from '../model/objects/FontStyle';
 import { TextObject } from '../model/objects/TextObject';
 import { ImageObject } from '../model/objects/ImageObject';
 import { VideoObject } from '../model/objects/VideoObject';
@@ -14,6 +16,7 @@ import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
 import LockedIcon from '../icons/lock-24px.svg';
 import UnlockedIcon from '../icons/lock_open-24px.svg';
+import { convertColorFromDOMToPixi } from '../lib/convertColorFromDOMToPixi';
 
 const Base = styled.div`
     position: relative;
@@ -50,6 +53,7 @@ const PropertyGroupName = styled.header`
     font-weight: bold;
     letter-spacing: 0.1em;
     color: #888;
+    line-height: 1;
 `;
 
 const PropertyRow = styled.div`
@@ -144,6 +148,9 @@ export function PropertyView(): React.ReactElement {
                             TextObject.isText(selectedObject) ||
                             ImageObject.isImage(selectedObject)) && (
                             <SizePropertyGroup appController={appController} object={selectedObject} />
+                        )}
+                        {TextObject.isText(selectedObject) && (
+                            <FontStylePropertyGroup appController={appController} object={selectedObject} />
                         )}
                         {TextObject.isText(selectedObject) && <TextPropertyGroup appController={appController} object={selectedObject} />}
                         {AudioObject.isAudio(selectedObject) && (
@@ -294,6 +301,93 @@ function SizePropertyGroup<T extends BaseObject & { width: number; height: numbe
             <PropertyRow>
                 <PropertyName>高さ</PropertyName>
                 <input type="number" min={0} value={object.height} onChange={onHeightChange} readOnly={object.locked} />
+            </PropertyRow>
+        </PropertyGroup>
+    );
+}
+
+function FontStylePropertyGroup<T extends BaseObject & { fontStyle: FontStyle }>(props: {
+    appController: AppController;
+    object: T;
+}): React.ReactElement {
+    const { appController, object } = props;
+    const onFontFamilyChange = useCallbackRef((ev: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = ev.target.value;
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, fontStyle: { ...object.fontStyle, fontFamily: value } });
+        });
+    });
+    const onFontWeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = ev.target.value;
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, fontStyle: { ...object.fontStyle, fontWeight: value } });
+        });
+    });
+    const onFillChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = convertColorFromDOMToPixi(ev.target.value);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, fontStyle: { ...object.fontStyle, fill: value } });
+        });
+    });
+    const onStrokeChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = convertColorFromDOMToPixi(ev.target.value);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, fontStyle: { ...object.fontStyle, stroke: value } });
+        });
+    });
+    const onStrokeThicknessChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseInt(ev.target.value);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, fontStyle: { ...object.fontStyle, strokeThickness: value } });
+        });
+    });
+
+    return (
+        <PropertyGroup key={object.id}>
+            <PropertyGroupName>フォント</PropertyGroupName>
+            <PropertyRow>
+                <PropertyName>フォントの種類</PropertyName>
+                <select defaultValue={object.fontStyle.fontSize} disabled={object.locked} onChange={onFontFamilyChange}>
+                    <option value="Noto Sans JP">Noto Sans JP</option>
+                </select>
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>太さ</PropertyName>
+                <select defaultValue={object.fontStyle.fontWeight} disabled={object.locked} onChange={onFontWeightChange}>
+                    <option value="100">100</option>
+                    <option value="300">300</option>
+                    <option value="400">400</option>
+                    <option value="500">500</option>
+                    <option value="700">700</option>
+                    <option value="900">900</option>
+                </select>
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>色</PropertyName>
+                <input
+                    type="color"
+                    defaultValue={convertColorFromPixiToDOM(object.fontStyle.fill)}
+                    readOnly={object.locked}
+                    onChange={onFillChange}
+                />
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>縁取りの色</PropertyName>
+                <input
+                    type="color"
+                    defaultValue={convertColorFromPixiToDOM(object.fontStyle.stroke)}
+                    readOnly={object.locked}
+                    onChange={onStrokeChange}
+                />
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>縁取りの太さ</PropertyName>
+                <input
+                    type="number"
+                    defaultValue={object.fontStyle.strokeThickness}
+                    readOnly={object.locked}
+                    onChange={onStrokeThicknessChange}
+                />
             </PropertyRow>
         </PropertyGroup>
     );

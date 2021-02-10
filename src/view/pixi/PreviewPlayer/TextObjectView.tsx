@@ -24,12 +24,12 @@ export const TextObjectViewBehavior = {
         base.text = object.text;
 
         const textStyle = base.style as PIXI.TextStyle;
-        textStyle.fontFamily = 'Noto Sans JP';
-        textStyle.fontSize = 80;
-        textStyle.fontWeight = 'bold';
-        textStyle.fill = 0xaa66ff;
-        textStyle.stroke = 0xffffff;
-        textStyle.strokeThickness = 10;
+        textStyle.fontFamily = object.fontStyle.fontFamily;
+        textStyle.fontSize = object.fontStyle.fontSize;
+        textStyle.fontWeight = object.fontStyle.fontWeight;
+        textStyle.fill = object.fontStyle.fill;
+        textStyle.stroke = object.fontStyle.stroke;
+        textStyle.strokeThickness = object.fontStyle.strokeThickness;
 
         return base;
     },
@@ -37,6 +37,14 @@ export const TextObjectViewBehavior = {
         base.width = newObject.width;
         base.height = newObject.height;
         base.text = newObject.text;
+
+        const textStyle = base.style as PIXI.TextStyle;
+        textStyle.fontFamily = newObject.fontStyle.fontFamily;
+        textStyle.fontSize = newObject.fontStyle.fontSize;
+        textStyle.fontWeight = newObject.fontStyle.fontWeight;
+        textStyle.fill = newObject.fontStyle.fill;
+        textStyle.stroke = newObject.fontStyle.stroke;
+        textStyle.strokeThickness = newObject.fontStyle.strokeThickness;
     },
 };
 

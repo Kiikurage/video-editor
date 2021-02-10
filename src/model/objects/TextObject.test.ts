@@ -15,6 +15,14 @@ describe('isText', () => {
             width: 100,
             text: 'This is text',
             locked: false,
+            fontStyle: {
+                fontFamily: 'Noto Sans JP',
+                fontSize: 80,
+                fontWeight: 'bold',
+                fill: 0xaa66ff,
+                stroke: 0xffffff,
+                strokeThickness: 10,
+            },
         };
         expect(TextObject.isText(textObject)).toBe(true);
 

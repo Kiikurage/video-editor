@@ -68,7 +68,7 @@ export function MiddleToolBar(props: Props): React.ReactElement {
             </div>
             <div>
                 <button onClick={onAddNewAsset}>素材を追加</button>
-                <button onClick={onAddNewText}>字幕を追加</button>
+                <button onClick={onAddNewText}>テキストを追加</button>
             </div>
         </Base>
     );
