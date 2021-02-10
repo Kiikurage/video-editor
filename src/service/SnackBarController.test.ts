@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 describe('showMessage()', () => {
-    it('As default, message should be { type: "info", clearAfterInMS: -1 }', () => {
+    it('As default, message should be { type: "info", clearAfterInMS: 5000 }', () => {
         expect(SnackBarController.getMessages()).toEqual([]);
         expect(onChange.mock.calls.length).toBe(0);
 
@@ -25,7 +25,7 @@ describe('showMessage()', () => {
                 id: messageId,
                 text: 'test message',
                 type: 'info',
-                clearAfterInMS: -1,
+                clearAfterInMS: 5000,
             },
         ]);
         expect(onChange.mock.calls.length).toBe(1);
@@ -35,14 +35,14 @@ describe('showMessage()', () => {
         expect(SnackBarController.getMessages()).toEqual([]);
         expect(onChange.mock.calls.length).toBe(0);
 
-        const messageId = SnackBarController.showMessage('test message', { type: 'error', clearAfterInMS: 5000 });
+        const messageId = SnackBarController.showMessage('test message', { type: 'error', clearAfterInMS: 3000 });
 
         expect(SnackBarController.getMessages()).toEqual([
             {
                 id: messageId,
                 text: 'test message',
                 type: 'error',
-                clearAfterInMS: 5000,
+                clearAfterInMS: 3000,
             },
         ]);
         expect(onChange.mock.calls.length).toBe(1);
@@ -60,7 +60,7 @@ describe('clearMessage()', () => {
                 id: messageId,
                 text: 'test message',
                 type: 'info',
-                clearAfterInMS: -1,
+                clearAfterInMS: 5000,
             },
         ]);
         expect(onChange.mock.calls.length).toBe(1);

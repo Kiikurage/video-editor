@@ -54,7 +54,7 @@ export class SnackBarController extends EventEmitter implements SnackBarControll
             id: newMessageId,
             text: text,
             type: option.type ?? 'info',
-            clearAfterInMS: option.clearAfterInMS ?? -1,
+            clearAfterInMS: option.clearAfterInMS ?? 5000,
         });
 
         this.emit('change');
