@@ -18,7 +18,7 @@ it('Should return the messages', () => {
             id: expect.anything() as number,
             text: 'TestMessage',
             type: 'info',
-            clearAfterInMS: -1,
+            clearAfterInMS: 5000,
         },
     ]);
 });

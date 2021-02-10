@@ -109,18 +109,18 @@ export function PropertyView(): React.ReactElement {
         if (selectedObject !== null) return;
         const value = Number(ev.target.value);
 
-        appController.setProject({ ...project, fps: value });
+        appController.setProject({ ...project, fps: value, isSaved: false });
     });
     const onProjectViewportWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (selectedObject !== null) return;
         const value = Number(ev.target.value);
 
-        appController.setProject({ ...project, viewport: { ...project.viewport, width: value } });
+        appController.setProject({ ...project, viewport: { ...project.viewport, width: value }, isSaved: false });
     });
     const onProjectViewportHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         if (selectedObject !== null) return;
         const value = Number(ev.target.value);
-        appController.setProject({ ...project, viewport: { ...project.viewport, height: value } });
+        appController.setProject({ ...project, viewport: { ...project.viewport, height: value }, isSaved: false });
     });
 
     const onObjectRemove = useCallbackRef(() => {

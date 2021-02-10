@@ -54,7 +54,8 @@ export function TimeLine(): React.ReactElement {
     const { previewController, project, selectedObject } = appController;
 
     const onProjectOpen = useCallbackRef((newProject: Project) => {
-        scaleFactorRef.current = Math.log2(baseSize.width / (Project.computeDurationInMS(newProject) / 1000)) / SCALE_FACTOR_FACTOR;
+        const defaultVisibleDuration = Math.max(Project.computeDurationInMS(newProject), 1000);
+        scaleFactorRef.current = Math.log2(baseSize.width / (defaultVisibleDuration / 1000)) / SCALE_FACTOR_FACTOR;
         forceUpdate();
     });
 
@@ -195,7 +196,6 @@ export function TimeLine(): React.ReactElement {
         .flat();
 
     return (
-        // <QuickPinchZoom onUpdate={onPinchZoomUpdate} maxZoom={3} minZoom={0.01} wheelScaleFactor={1500} zoomOutFactor={0}>
         <Base ref={onBaseElementReferenceUpdate} onMouseMove={onObjectLayerMouseMove} onClick={onObjectLayerClick} onWheel={onWheel}>
             <ScrollWrapper onScroll={onScroll}>
                 <ScrollPlaceholder
@@ -312,7 +312,6 @@ export function TimeLine(): React.ReactElement {
                 </Stage>
             </ScrollWrapper>
         </Base>
-        // </QuickPinchZoom>
     );
 }
 

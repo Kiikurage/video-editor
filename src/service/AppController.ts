@@ -26,6 +26,9 @@ type AppControllerEvents = EventEmitterEvents<{
 export class AppController extends EventEmitter implements AppControllerEvents {
     private readonly historyManager: HistoryManager<AppState>;
     private readonly _previewController = new PreviewController();
+    private _selectedObjectId: string | null = null;
+
+    private _project: Project = Project.create();
 
     constructor() {
         super();
@@ -36,13 +39,9 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         });
     }
 
-    private _selectedObjectId: string | null = null;
-
     get selectedObjectId(): string | null {
         return this._selectedObjectId;
     }
-
-    private _project: Project = Project.EMPTY;
 
     get project(): Project {
         return this._project;
@@ -80,6 +79,7 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         this.setProject({
             ...this.project,
             objects: [...this.project.objects, ...objects],
+            isSaved: false,
         });
     };
 
@@ -92,7 +92,7 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         const newObjects = project.objects.slice(0);
         newObjects.splice(i, 1, newValue);
 
-        this.setProject({ ...project, objects: newObjects });
+        this.setProject({ ...project, objects: newObjects, isSaved: false });
     };
 
     removeObject = (objectId: string): void => {
@@ -104,7 +104,7 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         const newObjects = project.objects.slice(0);
         newObjects.splice(i, 1);
 
-        this.setProject({ ...project, objects: newObjects });
+        this.setProject({ ...project, objects: newObjects, isSaved: false });
     };
 
     removeSelectedObject = (): void => {
@@ -116,12 +116,12 @@ export class AppController extends EventEmitter implements AppControllerEvents {
     exportVideo = async (): Promise<void> => {
         const project = this.project;
 
-        const snackBarMessageId = SnackBarController.showMessage('動画をエンコード中...');
+        const snackBarMessageId = SnackBarController.showMessage('動画をエンコード中...', { clearAfterInMS: -1 });
         try {
             await encodeProject(project, './output.mp4');
 
             SnackBarController.clearMessage(snackBarMessageId);
-            SnackBarController.showMessage('エンコードが完了しました', { type: 'success', clearAfterInMS: 3000 });
+            SnackBarController.showMessage('エンコードが完了しました', { type: 'success' });
         } catch (err) {
             console.error('Failed to export video', err);
 
@@ -142,9 +142,16 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         this.emit('project.open', newProject);
     };
 
-    saveProject = (): void => {
-        // TODO:
-        void this.saveAsNewProject();
+    saveProject = async (): Promise<void> => {
+        if (this.project.isSaved) return;
+        if (this.project.filePath === null) return this.saveAsNewProject();
+
+        await Project.save(this.project);
+
+        // TODO: projectはimmutableにすべき
+        this.project.isSaved = true;
+
+        SnackBarController.showMessage('保存しました', { type: 'success' });
     };
 
     saveAsNewProject = async (): Promise<void> => {
@@ -153,8 +160,13 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         if (canceled) return;
 
         assert(filePath !== undefined, 'WTF?');
+        this.setProject({
+            ...project,
+            filePath: filePath,
+            isSaved: false,
+        });
 
-        await Project.save(filePath, project);
+        return this.saveProject();
     };
 
     undo = (): void => {
