@@ -11,6 +11,7 @@ describe('isAudio', () => {
             endInMS: 100,
             srcFilePath: 'path/to/video',
             volume: 1,
+            locked: false,
         };
         expect(AudioObject.isAudio(video)).toBe(true);
 
@@ -19,6 +20,7 @@ describe('isAudio', () => {
             id: UUID(),
             startInMS: 0,
             endInMS: 100,
+            locked: false,
         };
         expect(AudioObject.isAudio(object)).toBe(false);
     });

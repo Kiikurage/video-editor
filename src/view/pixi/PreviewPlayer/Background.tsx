@@ -21,7 +21,6 @@ const Background = CustomPIXIComponent(
             const base = new PIXI.Graphics();
             base.interactive = true;
             base.buttonMode = true;
-            base.cursor = 'pointer';
 
             return base;
         },

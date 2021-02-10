@@ -112,7 +112,8 @@ export function AppShell(): React.ReactElement {
             height: 100,
             startInMS: currentTimeInMS,
             endInMS: currentTimeInMS + 5000,
-            text: '字幕',
+            text: 'テキスト',
+            locked: false,
         };
         appController.commitHistory(() => {
             appController.addObject(object);

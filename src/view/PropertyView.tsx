@@ -7,10 +7,13 @@ import { BaseObject } from '../model/objects/BaseObject';
 import { TextObject } from '../model/objects/TextObject';
 import { ImageObject } from '../model/objects/ImageObject';
 import { VideoObject } from '../model/objects/VideoObject';
+import { Project } from '../model/Project';
 import { AppController } from '../service/AppController';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
+import LockedIcon from '../icons/lock-24px.svg';
+import UnlockedIcon from '../icons/lock_open-24px.svg';
 
 const Base = styled.div`
     position: relative;
@@ -105,23 +108,6 @@ export function PropertyView(): React.ReactElement {
 
     const project = appController.project;
     const selectedObject = appController.selectedObject;
-    const onProjectFPSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        if (selectedObject !== null) return;
-        const value = Number(ev.target.value);
-
-        appController.setProject({ ...project, fps: value, isSaved: false });
-    });
-    const onProjectViewportWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        if (selectedObject !== null) return;
-        const value = Number(ev.target.value);
-
-        appController.setProject({ ...project, viewport: { ...project.viewport, width: value }, isSaved: false });
-    });
-    const onProjectViewportHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        if (selectedObject !== null) return;
-        const value = Number(ev.target.value);
-        appController.setProject({ ...project, viewport: { ...project.viewport, height: value }, isSaved: false });
-    });
 
     const onObjectRemove = useCallbackRef(() => {
         if (selectedObject !== null) {
@@ -139,33 +125,7 @@ export function PropertyView(): React.ReactElement {
                         <div>PROJECT</div>
                     </ObjectSummary>
 
-                    <PropertyGroup>
-                        <PropertyGroupName>プロジェクト設定</PropertyGroupName>
-                        <PropertyRow>
-                            <PropertyName>FPS</PropertyName>
-                            <input type="number" min={1} max={60} value={project.fps} onChange={onProjectFPSChange} />
-                        </PropertyRow>
-                        <PropertyRow>
-                            <PropertyName>幅</PropertyName>
-                            <input
-                                type="number"
-                                min={0}
-                                max={1960}
-                                value={project.viewport.width}
-                                onChange={onProjectViewportWidthChange}
-                            />
-                        </PropertyRow>
-                        <PropertyRow>
-                            <PropertyName>高さ</PropertyName>
-                            <input
-                                type="number"
-                                min={0}
-                                max={1080}
-                                value={project.viewport.height}
-                                onChange={onProjectViewportHeightChange}
-                            />
-                        </PropertyRow>
-                    </PropertyGroup>
+                    <ProjectPropertyGroup appController={appController} project={project} />
                 </Body>
             ) : (
                 <>
@@ -205,8 +165,54 @@ export function PropertyView(): React.ReactElement {
     );
 }
 
+function ProjectPropertyGroup(props: { appController: AppController; project: Project }): React.ReactElement {
+    const { appController, project } = props;
+
+    const onProjectFPSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = Number(ev.target.value);
+
+        appController.setProject({ ...project, fps: value, isSaved: false });
+    });
+    const onProjectViewportWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = Number(ev.target.value);
+
+        appController.setProject({ ...project, viewport: { ...project.viewport, width: value }, isSaved: false });
+    });
+    const onProjectViewportHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = Number(ev.target.value);
+        appController.setProject({ ...project, viewport: { ...project.viewport, height: value }, isSaved: false });
+    });
+
+    return (
+        <PropertyGroup>
+            <PropertyGroupName>プロジェクト設定</PropertyGroupName>
+            <PropertyRow>
+                <PropertyName>FPS</PropertyName>
+                <input type="number" min={1} max={60} value={project.fps} onChange={onProjectFPSChange} />
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>幅</PropertyName>
+                <input type="number" min={0} max={1960} value={project.viewport.width} onChange={onProjectViewportWidthChange} />
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>高さ</PropertyName>
+                <input type="number" min={0} max={1080} value={project.viewport.height} onChange={onProjectViewportHeightChange} />
+            </PropertyRow>
+        </PropertyGroup>
+    );
+}
+
 function BasePropertyGroup<T extends BaseObject>(props: { appController: AppController; object: T }): React.ReactElement {
     const { appController, object } = props;
+
+    const onToggleLockButtonClick = useCallbackRef(() => {
+        appController.commitHistory(() => {
+            appController.updateObject({
+                ...object,
+                locked: !object.locked,
+            });
+        });
+    });
 
     return (
         <PropertyGroup>
@@ -218,6 +224,10 @@ function BasePropertyGroup<T extends BaseObject>(props: { appController: AppCont
             <PropertyRow>
                 <PropertyName>終了</PropertyName>
                 <span>{formatTimeByQuantization(object.endInMS, appController.project.fps)}</span>
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>編集ロック</PropertyName>
+                <button onClick={onToggleLockButtonClick}>{object.locked ? <LockedIcon /> : <UnlockedIcon />}</button>
             </PropertyRow>
         </PropertyGroup>
     );
@@ -246,11 +256,11 @@ function PositionPropertyGroup<T extends BaseObject & { x: number; y: number }>(
             <PropertyGroupName>位置</PropertyGroupName>
             <PropertyRow>
                 <PropertyName>X</PropertyName>
-                <input type="number" min={0} value={object.x} onChange={onXChange} />
+                <input type="number" min={0} value={object.x} onChange={onXChange} readOnly={object.locked} />
             </PropertyRow>
             <PropertyRow>
                 <PropertyName>Y</PropertyName>
-                <input type="number" min={0} value={object.y} onChange={onYChange} />
+                <input type="number" min={0} value={object.y} onChange={onYChange} readOnly={object.locked} />
             </PropertyRow>
         </PropertyGroup>
     );
@@ -279,11 +289,11 @@ function SizePropertyGroup<T extends BaseObject & { width: number; height: numbe
             <PropertyGroupName>サイズ</PropertyGroupName>
             <PropertyRow>
                 <PropertyName>幅</PropertyName>
-                <input type="number" min={0} value={object.width} onChange={onWidthChange} />
+                <input type="number" min={0} value={object.width} onChange={onWidthChange} readOnly={object.locked} />
             </PropertyRow>
             <PropertyRow>
                 <PropertyName>高さ</PropertyName>
-                <input type="number" min={0} value={object.height} onChange={onHeightChange} />
+                <input type="number" min={0} value={object.height} onChange={onHeightChange} readOnly={object.locked} />
             </PropertyRow>
         </PropertyGroup>
     );
@@ -303,7 +313,7 @@ function TextPropertyGroup<T extends TextObject>(props: { appController: AppCont
             <PropertyGroupName>字幕</PropertyGroupName>
             <PropertyRow>
                 <PropertyName>内容</PropertyName>
-                <Textarea rows={5} defaultValue={object.text} onChange={onTextChange} />
+                <Textarea rows={5} defaultValue={object.text} onChange={onTextChange} readOnly={object.locked} />
             </PropertyRow>
         </PropertyGroup>
     );
@@ -325,7 +335,7 @@ function AudioPropertyGroup<T extends AudioObject>(props: { appController: AppCo
             <PropertyGroupName>音声</PropertyGroupName>
             <PropertyRow>
                 <PropertyName>ボリューム</PropertyName>
-                <input type="number" defaultValue={object.volume} min={0} max={1} onChange={onVolumeChange} />
+                <input type="number" defaultValue={object.volume} min={0} max={1} onChange={onVolumeChange} readOnly={object.locked} />
             </PropertyRow>
         </PropertyGroup>
     );
@@ -339,7 +349,7 @@ function SrcFilePropertyGroup<T extends BaseObject & { srcFilePath: string }>(pr
     const onFileChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         const files = ev.target.files;
         if (files?.length !== 1) return;
-        console.log(files[0].path);
+
         appController.commitHistory(() => {
             appController.updateObject({ ...object, srcFilePath: files[0].path });
         });
@@ -349,7 +359,7 @@ function SrcFilePropertyGroup<T extends BaseObject & { srcFilePath: string }>(pr
         <PropertyGroup key={object.id}>
             <PropertyRow>
                 <PropertyName>元ファイル</PropertyName>
-                <input type="file" onChange={onFileChange} />
+                <input type="file" onChange={onFileChange} readOnly={object.locked} />
             </PropertyRow>
         </PropertyGroup>
     );

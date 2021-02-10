@@ -70,6 +70,7 @@ interface PixiProps {
     width: number;
     height: number;
     selected: boolean;
+    locked: boolean;
     baseDragHandlers: PixiDragHandlers;
     resizerDragHandlers: Record<string, PixiDragHandlers>;
     object: ResizableObject;
@@ -105,32 +106,33 @@ function createResizer(name: string, cursor: string): PIXI.Graphics {
 
 const PixiResizeView = CustomPIXIComponent(
     {
-        customDisplayObject() {
+        customDisplayObject(props: PixiProps) {
             const base = new PIXI.Container();
             base.interactive = true;
             base.buttonMode = true;
-            base.cursor = 'pointer';
+            base.cursor = props.locked ? 'default' : 'move';
 
             const frame = new PIXI.Graphics();
             frame.name = 'frame';
             base.addChild(frame);
 
             for (const { name, cursor } of DIR) {
-                base.addChild(createResizer(name, cursor));
+                base.addChild(createResizer(name, props.locked ? 'default' : cursor));
             }
 
             return base;
         },
         customApplyProps(base: PIXI.Container, oldProps: PixiProps, newProps: PixiProps): void {
-            const { x, y, width, height, selected, baseDragHandlers, resizerDragHandlers } = newProps;
+            const { x, y, width, height, selected, locked, baseDragHandlers, resizerDragHandlers } = newProps;
 
-            for (const { name, x, y } of DIR) {
+            for (const { name, x, y, cursor } of DIR) {
                 const resizer = base.getChildByName(name) as PIXI.Graphics;
                 resizer.visible = selected;
                 resizer.x = x === -1 ? 0 : x === 1 ? width : width / 2;
                 resizer.y = y === -1 ? 0 : y === 1 ? height : height / 2;
                 resizer.width = RESIZER_SIZE;
                 resizer.height = RESIZER_SIZE;
+                resizer.cursor = locked ? 'default' : cursor;
                 if (oldProps.resizerDragHandlers && oldProps.resizerDragHandlers[name]) {
                     detachPixiDragHandlers(resizer, oldProps.resizerDragHandlers[name]);
                 }
@@ -153,6 +155,7 @@ const PixiResizeView = CustomPIXIComponent(
             base.y = y - (selected ? RESIZER_SIZE / 2 : 0);
             base.width = width + (selected ? RESIZER_SIZE : 0);
             base.height = height + (selected ? RESIZER_SIZE : 0);
+            base.cursor = locked ? 'default' : 'move';
             if (oldProps.baseDragHandlers) {
                 detachPixiDragHandlers(base, oldProps.baseDragHandlers);
             }
@@ -173,6 +176,11 @@ export function ResizeView<T extends ResizableObject>(props: PropsWithChildren<P
     const [height, setHeight] = useFormState(object.height);
 
     const baseDragHandlers = usePixiDragHandlers((dx, dy, type) => {
+        if (object.locked) {
+            if (type === 'start') onSelect();
+            return;
+        }
+
         const newX1 = Math.round(object.x + dx);
         const newX2 = Math.round(object.x + width + dx);
         const newY1 = Math.round(object.y + dy);
@@ -213,6 +221,7 @@ export function ResizeView<T extends ResizableObject>(props: PropsWithChildren<P
         // TODO: Don't Use react-hook inside for-loop
         // eslint-disable-next-line react-hooks/rules-of-hooks
         resizerDragHandlers[name] = usePixiDragHandlers((dx, dy, type, ev) => {
+            if (object.locked) return;
             ev.stopPropagation();
 
             const x1 = Math.round(x === -1 ? snap(object.x + dx, snapPositionXs, 30) : object.x);
@@ -246,6 +255,7 @@ export function ResizeView<T extends ResizableObject>(props: PropsWithChildren<P
             width={width}
             height={height}
             selected={selected}
+            locked={object.locked}
             baseDragHandlers={baseDragHandlers}
             resizerDragHandlers={resizerDragHandlers}
             object={object}

@@ -14,6 +14,7 @@ describe('isVideo', () => {
             height: 100,
             width: 100,
             srcFilePath: 'path/to/video',
+            locked: false,
         };
         expect(VideoObject.isVideo(video)).toBe(true);
 
@@ -22,6 +23,7 @@ describe('isVideo', () => {
             id: UUID(),
             startInMS: 0,
             endInMS: 100,
+            locked: false,
         };
         expect(VideoObject.isVideo(object)).toBe(false);
     });
