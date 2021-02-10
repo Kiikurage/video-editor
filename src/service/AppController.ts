@@ -3,6 +3,7 @@ import * as FileType from 'file-type';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { showSaveFileDialog } from '../ipc/renderer/showSaveFileDialog';
 import { encodeProject } from '../lib/ffmpeg/FFMpegCommandBuilder';
+import { getImageSize, getVideoSize } from '../lib/getAssetSpacialSize';
 import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
 import { AppState } from '../model/AppState';
@@ -185,14 +186,15 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         const currentTimeInMS = this.previewController.currentTimeInMS;
         const fileCategory = fileType.mime.split('/')[0];
         switch (fileCategory) {
-            case 'video':
+            case 'video': {
+                const { width, height } = await getVideoSize(filePath);
                 newObjects.push(
                     {
                         id: UUID(),
                         type: VideoObject.type,
                         x: 100,
                         y: 100,
-                        width: 200,
+                        width: (200 * width) / height,
                         height: 200,
                         startInMS: currentTimeInMS,
                         endInMS: currentTimeInMS + 5000,
@@ -200,22 +202,25 @@ export class AppController extends EventEmitter implements AppControllerEvents {
                     } as VideoObject /* TODO: 音声ストリームも取り込む */
                 );
                 break;
+            }
 
-            case 'image':
+            case 'image': {
+                const { width, height } = await getImageSize(filePath);
                 newObjects.push({
                     id: UUID(),
                     type: ImageObject.type,
                     x: 100,
                     y: 100,
-                    width: 200,
+                    width: (200 * width) / height,
                     height: 200,
                     startInMS: currentTimeInMS,
                     endInMS: currentTimeInMS + 5000,
                     srcFilePath: filePath,
                 } as ImageObject);
                 break;
+            }
 
-            case 'audio':
+            case 'audio': {
                 newObjects.push({
                     id: UUID(),
                     type: AudioObject.type,
@@ -225,6 +230,7 @@ export class AppController extends EventEmitter implements AppControllerEvents {
                     volume: 0.5,
                 } as AudioObject);
                 break;
+            }
 
             default:
                 SnackBarController.showMessage('このファイルは読み込むことができません', { type: 'error', clearAfterInMS: 5000 });
