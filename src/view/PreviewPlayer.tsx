@@ -4,17 +4,17 @@ import { Stage } from 'react-pixi-fiber';
 import styled from 'styled-components';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
-import { TextObject } from '../model/objects/TextObject';
 import { ImageObject } from '../model/objects/ImageObject';
 import { SizedObject } from '../model/objects/SizedObject';
+import { TextObject } from '../model/objects/TextObject';
 import { VideoObject } from '../model/objects/VideoObject';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
 import { AudioObjectView } from './pixi/PreviewPlayer/AudioObjectView';
 import { Background } from './pixi/PreviewPlayer/Background';
-import { TextObjectView } from './pixi/PreviewPlayer/TextObjectView';
 import { ImageObjectView } from './pixi/PreviewPlayer/ImageObjectView';
+import { TextObjectView } from './pixi/PreviewPlayer/TextObjectView';
 import { VideoObjectView } from './pixi/PreviewPlayer/VideoObjectView';
 
 const Base = styled.div`
@@ -22,21 +22,43 @@ const Base = styled.div`
     width: 100%;
     height: 100%;
     background: #e0e0e0;
-    padding: 16px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    grid-template:
+        'pad1 pad2 pad3' minmax(0, 1fr)
+        'pad4 main pad5' max-content
+        'pad6 pad7 pad8' minmax(0, 1fr) / minmax(0, 1fr) max-content minmax(0, 1fr);
     overflow-x: auto;
     overflow-y: auto;
-    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.05);
     box-sizing: border-box;
+    border: 1px solid transparent;
+`;
+
+const ContentWrapper = styled.div`
+    grid-area: main;
+    padding: 16px;
+    border: 1px solid transparent;
+    z-index: 0;
+`;
+
+const Shadow = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.05);
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
 `;
 
 const ContentBase = styled.div`
     position: relative;
     background: #fff;
     box-shadow: rgba(50, 50, 93, 0.25) 0 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+    flex: 0 0 auto;
 
     > canvas {
         position: relative;
@@ -178,12 +200,15 @@ export function PreviewPlayer(): React.ReactElement {
 
     return (
         <Base onClick={onBaseClick}>
-            <ContentBase style={{ width: contentBaseWidth, height: contentBaseHeight }} onClick={onContentBaseClick}>
-                <Stage options={pixiStageOption}>
-                    <Background width={project.viewport.width} height={project.viewport.height} onClick={onBackgroundClick} />
-                    {activeObjects.map((object) => renderObjectView(object, snapPositionXsBase, snapPositionYsBase))}
-                </Stage>
-            </ContentBase>
+            <ContentWrapper>
+                <ContentBase style={{ width: contentBaseWidth, height: contentBaseHeight }} onClick={onContentBaseClick}>
+                    <Stage options={pixiStageOption}>
+                        <Background width={project.viewport.width} height={project.viewport.height} onClick={onBackgroundClick} />
+                        {activeObjects.map((object) => renderObjectView(object, snapPositionXsBase, snapPositionYsBase))}
+                    </Stage>
+                </ContentBase>
+            </ContentWrapper>
+            <Shadow />
         </Base>
     );
 }

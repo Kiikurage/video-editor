@@ -9,6 +9,7 @@ import { HistoryManager } from '../model/HistoryManager';
 import { BaseObject } from '../model/objects/BaseObject';
 import { Project } from '../model/Project';
 import { PreviewController } from './PreviewController';
+import { SnackBarController } from './SnackBarController';
 
 type AppControllerEvents = EventEmitterEvents<{
     'project.open': void;
@@ -109,10 +110,18 @@ export class AppController extends EventEmitter implements AppControllerEvents {
     exportVideo = async (): Promise<void> => {
         const project = this.project;
 
+        const snackBarMessageId = SnackBarController.showMessage('動画をエンコード中...');
         try {
             await encodeProject(project, './output.mp4');
+
+            SnackBarController.clearMessage(snackBarMessageId);
+            SnackBarController.showMessage('エンコードが完了しました', { type: 'success', clearAfterInMS: 3000 });
         } catch (err) {
             console.error('Failed to export video', err);
+
+            SnackBarController.clearMessage(snackBarMessageId);
+            SnackBarController.showMessage('エンコード中にエラーが発生しました', { type: 'error' });
+
             // TODO: クリーンアップされず永遠にゴミが残る
             return;
         }

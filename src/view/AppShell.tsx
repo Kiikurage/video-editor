@@ -6,8 +6,8 @@ import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
-import { TextObject } from '../model/objects/TextObject';
 import { ImageObject } from '../model/objects/ImageObject';
+import { TextObject } from '../model/objects/TextObject';
 import { VideoObject } from '../model/objects/VideoObject';
 import { useAppController } from './AppControllerProvider';
 import { DropArea } from './DropArea';
@@ -15,6 +15,7 @@ import { useCallbackRef } from './hooks/useCallbackRef';
 import { MiddleToolBar } from './MiddleToolBar';
 import { PreviewPlayer } from './PreviewPlayer';
 import { PropertyView } from './PropertyView';
+import { SnackBarList } from './SnackBarList';
 import { SplitPane, Splitter } from './SplitPane';
 import { TimeLine } from './TimeLine';
 
@@ -25,10 +26,10 @@ const Base = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    display: grid;
-    grid-template:
-        'header' auto
-        'bodyArea' 1fr / 1fr;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
 `;
 
 const AppHeader = styled.header`
@@ -40,6 +41,7 @@ const AppHeader = styled.header`
     box-sizing: border-box;
     background: #fff;
     border-bottom: 1px solid #c0c0c0;
+    width: 100%;
 `;
 
 const BodyArea = styled.div`
@@ -49,9 +51,10 @@ const BodyArea = styled.div`
     align-items: stretch;
     justify-content: stretch;
     flex: 1;
+    width: 100%;
 
     > * {
-        flex: 1;
+        width: 100%;
     }
 `;
 
@@ -60,9 +63,11 @@ const MainArea = styled.div`
     display: flex;
     align-items: stretch;
     justify-content: stretch;
+    min-width: 0;
+    flex: 1 1 0;
 
     > * {
-        flex: 1;
+        width: 100%;
     }
 `;
 
@@ -72,6 +77,8 @@ const PreviewArea = styled.div`
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    flex: 1 1 0;
+    overflow: scroll scroll;
 `;
 
 const MiddleToolbarArea = styled.div`
@@ -80,13 +87,13 @@ const MiddleToolbarArea = styled.div`
 
 const TimeLineArea = styled.div`
     position: relative;
-    flex: 1 1 0;
     overflow-x: auto;
     overflow-y: auto;
+    flex: 0 0 auto;
 `;
 
 const PropertyArea = styled.div`
-    flex: 1 1 0;
+    flex: 0 0 auto;
 `;
 
 export function AppShell(): React.ReactElement {
@@ -144,8 +151,8 @@ export function AppShell(): React.ReactElement {
         });
     };
 
-    const [previewAreaHeight, setPreviewAreaHeight] = useState(400);
-    const [mainAreaWidth, setMainAreaWidth] = useState(900);
+    const [timelineAreaHeight, setTimelineAreaHeight] = useState(200);
+    const [propertyAreaWidth, setPropertyAreaWidth] = useState(240);
 
     const onAddNewText = useCallbackRef(() => {
         const currentTimeInMS = appController.previewController.currentTimeInMS;
@@ -241,13 +248,13 @@ export function AppShell(): React.ReactElement {
 
                 <BodyArea>
                     <SplitPane direction="row">
-                        <MainArea style={{ width: mainAreaWidth }}>
+                        <MainArea>
                             <SplitPane direction="column">
-                                <PreviewArea style={{ height: previewAreaHeight }}>
+                                <PreviewArea>
                                     <PreviewPlayer />
                                 </PreviewArea>
 
-                                <Splitter onChange={(_dx, dy) => setPreviewAreaHeight(previewAreaHeight + dy)} />
+                                <Splitter onChange={(_dx, dy) => setTimelineAreaHeight(timelineAreaHeight - dy)} />
 
                                 <MiddleToolbarArea>
                                     <MiddleToolBar
@@ -258,19 +265,21 @@ export function AppShell(): React.ReactElement {
                                     />
                                 </MiddleToolbarArea>
 
-                                <TimeLineArea>
+                                <TimeLineArea style={{ height: timelineAreaHeight }}>
                                     <TimeLine />
                                 </TimeLineArea>
                             </SplitPane>
                         </MainArea>
 
-                        <Splitter onChange={(dx, _dy) => setMainAreaWidth(mainAreaWidth + dx)} />
+                        <Splitter onChange={(dx, _dy) => setPropertyAreaWidth(propertyAreaWidth - dx)} />
 
-                        <PropertyArea>
+                        <PropertyArea style={{ width: propertyAreaWidth }}>
                             <PropertyView />
                         </PropertyArea>
                     </SplitPane>
                 </BodyArea>
+
+                <SnackBarList />
             </Base>
         </DropArea>
     );
