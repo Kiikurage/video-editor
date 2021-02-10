@@ -27,15 +27,13 @@ const Base = styled.div`
 `;
 
 interface Props {
-    onAddNewVideo: () => void;
-    onAddNewImage: () => void;
     onAddNewText: () => void;
-    onAddNewAudio: () => void;
+    onAddNewAsset: () => void;
 }
 
 export function MiddleToolBar(props: Props): React.ReactElement {
     const { previewController } = useAppController();
-    const { onAddNewVideo, onAddNewImage, onAddNewText, onAddNewAudio } = props;
+    const { onAddNewAsset, onAddNewText } = props;
     const forceUpdate = useThrottledForceUpdate();
 
     const onPlayButtonClick = useCallbackRef((ev: React.MouseEvent) => {
@@ -69,9 +67,7 @@ export function MiddleToolBar(props: Props): React.ReactElement {
                 )}
             </div>
             <div>
-                <button onClick={onAddNewVideo}>動画を追加</button>
-                <button onClick={onAddNewImage}>画像を追加</button>
-                <button onClick={onAddNewAudio}>音声を追加</button>
+                <button onClick={onAddNewAsset}>素材を追加</button>
                 <button onClick={onAddNewText}>字幕を追加</button>
             </div>
         </Base>

@@ -1,12 +1,17 @@
 import { EventEmitter } from 'events';
+import * as FileType from 'file-type';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { showSaveFileDialog } from '../ipc/renderer/showSaveFileDialog';
 import { encodeProject } from '../lib/ffmpeg/FFMpegCommandBuilder';
 import { assert } from '../lib/util';
+import { UUID } from '../lib/UUID';
 import { AppState } from '../model/AppState';
 import { EventEmitterEvents } from '../model/EventEmitterEvents';
 import { HistoryManager } from '../model/HistoryManager';
+import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
+import { ImageObject } from '../model/objects/ImageObject';
+import { VideoObject } from '../model/objects/VideoObject';
 import { Project } from '../model/Project';
 import { PreviewController } from './PreviewController';
 import { SnackBarController } from './SnackBarController';
@@ -70,10 +75,10 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         this.emit('object.select');
     };
 
-    addObject = (object: BaseObject): void => {
+    addObject = (...objects: BaseObject[]): void => {
         this.setProject({
             ...this.project,
-            objects: [...this.project.objects, object],
+            objects: [...this.project.objects, ...objects],
         });
     };
 
@@ -167,6 +172,68 @@ export class AppController extends EventEmitter implements AppControllerEvents {
 
     commitHistory = (fn: () => void): void => {
         this.historyManager.commit(fn);
+    };
+
+    importAssetFromFile = async (filePath: string): Promise<void> => {
+        const fileType = await FileType.fromFile(filePath);
+        if (fileType === undefined) {
+            SnackBarController.showMessage('このファイルは読み込むことができません', { type: 'error', clearAfterInMS: 5000 });
+            return;
+        }
+
+        const newObjects: BaseObject[] = [];
+        const currentTimeInMS = this.previewController.currentTimeInMS;
+        const fileCategory = fileType.mime.split('/')[0];
+        switch (fileCategory) {
+            case 'video':
+                newObjects.push(
+                    {
+                        id: UUID(),
+                        type: VideoObject.type,
+                        x: 100,
+                        y: 100,
+                        width: 200,
+                        height: 200,
+                        startInMS: currentTimeInMS,
+                        endInMS: currentTimeInMS + 5000,
+                        srcFilePath: filePath,
+                    } as VideoObject /* TODO: 音声ストリームも取り込む */
+                );
+                break;
+
+            case 'image':
+                newObjects.push({
+                    id: UUID(),
+                    type: ImageObject.type,
+                    x: 100,
+                    y: 100,
+                    width: 200,
+                    height: 200,
+                    startInMS: currentTimeInMS,
+                    endInMS: currentTimeInMS + 5000,
+                    srcFilePath: filePath,
+                } as ImageObject);
+                break;
+
+            case 'audio':
+                newObjects.push({
+                    id: UUID(),
+                    type: AudioObject.type,
+                    startInMS: currentTimeInMS,
+                    endInMS: currentTimeInMS + 5000,
+                    srcFilePath: filePath,
+                    volume: 0.5,
+                } as AudioObject);
+                break;
+
+            default:
+                SnackBarController.showMessage('このファイルは読み込むことができません', { type: 'error', clearAfterInMS: 5000 });
+                return;
+        }
+
+        this.commitHistory(() => {
+            this.addObject(...newObjects);
+        });
     };
 
     private getState = (): AppState => {

@@ -4,11 +4,7 @@ import styled from 'styled-components';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
-import { AudioObject } from '../model/objects/AudioObject';
-import { BaseObject } from '../model/objects/BaseObject';
-import { ImageObject } from '../model/objects/ImageObject';
 import { TextObject } from '../model/objects/TextObject';
-import { VideoObject } from '../model/objects/VideoObject';
 import { useAppController } from './AppControllerProvider';
 import { DropArea } from './DropArea';
 import { useCallbackRef } from './hooks/useCallbackRef';
@@ -97,62 +93,13 @@ const PropertyArea = styled.div`
 `;
 
 export function AppShell(): React.ReactElement {
-    const appController = useAppController();
-
-    const onFileDrop = (file: File) => {
-        let newObject: BaseObject;
-        const fileType = file.type.split('/');
-
-        switch (fileType[0]) {
-            case 'video':
-                newObject = {
-                    type: VideoObject.type,
-                    id: UUID(),
-                    srcFilePath: file.path,
-                    startInMS: appController.previewController.currentTimeInMS,
-                    endInMS: appController.previewController.currentTimeInMS + 10000,
-                    x: 0,
-                    y: 0,
-                    width: 400,
-                    height: 400,
-                } as VideoObject;
-                break;
-
-            case 'image':
-                newObject = {
-                    type: ImageObject.type,
-                    id: UUID(),
-                    srcFilePath: file.path,
-                    startInMS: appController.previewController.currentTimeInMS,
-                    endInMS: appController.previewController.currentTimeInMS + 10000,
-                    x: 0,
-                    y: 0,
-                    width: 400,
-                    height: 400,
-                } as ImageObject;
-                break;
-
-            case 'audio':
-                newObject = {
-                    type: AudioObject.type,
-                    id: UUID(),
-                    srcFilePath: file.path,
-                    startInMS: appController.previewController.currentTimeInMS,
-                    endInMS: appController.previewController.currentTimeInMS + 10000,
-                } as AudioObject;
-                break;
-
-            default:
-                return;
-        }
-
-        appController.commitHistory(() => {
-            appController.addObject(newObject);
-        });
-    };
-
     const [timelineAreaHeight, setTimelineAreaHeight] = useState(200);
     const [propertyAreaWidth, setPropertyAreaWidth] = useState(240);
+    const appController = useAppController();
+
+    const onFileDrop = useCallbackRef((file: File) => {
+        void appController.importAssetFromFile(file.path);
+    });
 
     const onAddNewText = useCallbackRef(() => {
         const currentTimeInMS = appController.previewController.currentTimeInMS;
@@ -172,67 +119,12 @@ export function AppShell(): React.ReactElement {
         });
     });
 
-    const onAddNewImage = useCallbackRef(async () => {
+    const onAddNewAsset = useCallbackRef(async () => {
         const { canceled, filePaths } = await showOpenFileDialog();
         if (canceled) return;
         assert(filePaths.length === 1, "Multi-file import isn't supported");
 
-        const currentTimeInMS = appController.previewController.currentTimeInMS;
-        const object: ImageObject = {
-            id: UUID(),
-            type: ImageObject.type,
-            x: 100,
-            y: 100,
-            width: 200,
-            height: 200,
-            startInMS: currentTimeInMS,
-            endInMS: currentTimeInMS + 5000,
-            srcFilePath: filePaths[0],
-        };
-        appController.commitHistory(() => {
-            appController.addObject(object);
-        });
-    });
-
-    const onAddNewVideo = useCallbackRef(async () => {
-        const { canceled, filePaths } = await showOpenFileDialog();
-        if (canceled) return;
-        assert(filePaths.length === 1, "Multi-file import isn't supported");
-
-        const currentTimeInMS = appController.previewController.currentTimeInMS;
-        const object: VideoObject = {
-            id: UUID(),
-            type: VideoObject.type,
-            x: 100,
-            y: 100,
-            width: 200,
-            height: 200,
-            startInMS: currentTimeInMS,
-            endInMS: currentTimeInMS + 5000,
-            srcFilePath: filePaths[0],
-        };
-        appController.commitHistory(() => {
-            appController.addObject(object);
-        });
-    });
-
-    const onAddNewAudio = useCallbackRef(async () => {
-        const { canceled, filePaths } = await showOpenFileDialog();
-        if (canceled) return;
-        assert(filePaths.length === 1, "Multi-file import isn't supported");
-
-        const currentTimeInMS = appController.previewController.currentTimeInMS;
-        const object: AudioObject = {
-            id: UUID(),
-            type: AudioObject.type,
-            startInMS: currentTimeInMS,
-            endInMS: currentTimeInMS + 5000,
-            srcFilePath: filePaths[0],
-            volume: 0.5,
-        };
-        appController.commitHistory(() => {
-            appController.addObject(object);
-        });
+        void appController.importAssetFromFile(filePaths[0]);
     });
 
     return (
@@ -257,12 +149,7 @@ export function AppShell(): React.ReactElement {
                                 <Splitter onChange={(_dx, dy) => setTimelineAreaHeight(timelineAreaHeight - dy)} />
 
                                 <MiddleToolbarArea>
-                                    <MiddleToolBar
-                                        onAddNewText={onAddNewText}
-                                        onAddNewImage={onAddNewImage}
-                                        onAddNewVideo={onAddNewVideo}
-                                        onAddNewAudio={onAddNewAudio}
-                                    />
+                                    <MiddleToolBar onAddNewText={onAddNewText} onAddNewAsset={onAddNewAsset} />
                                 </MiddleToolbarArea>
 
                                 <TimeLineArea style={{ height: timelineAreaHeight }}>
