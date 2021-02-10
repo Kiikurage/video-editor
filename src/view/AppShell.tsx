@@ -114,6 +114,14 @@ export function AppShell(): React.ReactElement {
             endInMS: currentTimeInMS + 5000,
             text: 'テキスト',
             locked: false,
+            fontStyle: {
+                fontFamily: 'Noto Sans JP',
+                fontSize: 80,
+                fontWeight: 900,
+                fill: 0x000000,
+                stroke: 0xffffff,
+                strokeThickness: 0,
+            },
         };
         appController.commitHistory(() => {
             appController.addObject(object);

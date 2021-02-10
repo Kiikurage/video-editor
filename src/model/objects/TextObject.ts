@@ -1,4 +1,5 @@
 import { BaseObject } from './BaseObject';
+import { FontStyle } from './FontStyle';
 
 function isText(object: BaseObject): object is TextObject {
     return object.type === TextObject.type;
@@ -16,4 +17,5 @@ export interface TextObject extends BaseObject {
     y: number;
     width: number;
     height: number;
+    fontStyle: FontStyle;
 }
