@@ -15,10 +15,16 @@ export interface ShapeObject extends BaseObject {
     y: number;
     width: number;
     height: number;
-    shapeType: string;
+    shapeType: ShapeType;
     anchor: number[];
 
     // TODO: Support other fill/stroke type like gradation, pattern, etc.
     fill: number;
     stroke: number;
 }
+
+export const ShapeType = {
+    RECTANGLE: 'RECTANGLE',
+    CIRCLE: 'CIRCLE',
+};
+export type ShapeType = typeof ShapeType[keyof typeof ShapeType];

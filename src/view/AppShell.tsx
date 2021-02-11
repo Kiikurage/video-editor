@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
-import { ShapeObject } from '../model/objects/ShapeObject';
+import { ShapeObject, ShapeType } from '../model/objects/ShapeObject';
 import { TextObject } from '../model/objects/TextObject';
 import { useAppController } from './AppControllerProvider';
 import { DropArea } from './DropArea';
@@ -137,7 +137,7 @@ export function AppShell(): React.ReactElement {
         void appController.importAssetFromFile(filePaths[0]);
     });
 
-    const onAddNewShape = useCallbackRef(() => {
+    const onAddNewShape = useCallbackRef((shapeType: ShapeType) => {
         const currentTimeInMS = appController.previewController.currentTimeInMS;
         const object: ShapeObject = {
             id: UUID(),
@@ -149,7 +149,7 @@ export function AppShell(): React.ReactElement {
             startInMS: currentTimeInMS,
             endInMS: currentTimeInMS + 5000,
             locked: false,
-            shapeType: 'RECTANGLE',
+            shapeType: shapeType,
             anchor: [],
             fill: 0xffffff,
             stroke: 0x000000,

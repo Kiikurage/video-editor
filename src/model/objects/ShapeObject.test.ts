@@ -1,6 +1,6 @@
 import { UUID } from '../../lib/UUID';
 import { BaseObject } from './BaseObject';
-import { ShapeObject } from './ShapeObject';
+import { ShapeObject, ShapeType } from './ShapeObject';
 
 describe('isShape', () => {
     it('Should be able to distinguish', () => {
@@ -15,7 +15,7 @@ describe('isShape', () => {
             width: 100,
             anchor: [],
             locked: false,
-            shapeType: 'CIRCLE',
+            shapeType: ShapeType.CIRCLE,
             fill: 0x000000,
             stroke: 0xffffff,
         };

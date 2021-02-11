@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { CustomPIXIComponent, CustomPIXIComponentBehaviorDefinition } from 'react-pixi-fiber';
-import { ShapeObject } from '../../../model/objects/ShapeObject';
+import { ShapeObject, ShapeType } from '../../../model/objects/ShapeObject';
 import { ResizeView } from './ResizeView/ResizeView';
 
 interface Props {
@@ -17,6 +17,30 @@ interface PixiProps {
     shape: ShapeObject;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ShapeRendererMap: Record<ShapeType, (base: PIXI.Graphics, props: PixiProps) => void> = {
+    [ShapeType.RECTANGLE]: renderRectangle,
+    [ShapeType.CIRCLE]: renderCircle,
+};
+
+function renderRectangle(base: PIXI.Graphics, props: PixiProps) {
+    const { shape } = props;
+
+    base.lineStyle(4, shape.stroke);
+    base.beginFill(shape.fill);
+    base.drawRect(0, 0, shape.width, shape.height);
+    base.endFill();
+}
+
+function renderCircle(base: PIXI.Graphics, props: PixiProps) {
+    const { shape } = props;
+
+    base.lineStyle(4, shape.stroke);
+    base.beginFill(shape.fill);
+    base.drawEllipse(shape.width / 2, shape.height / 2, shape.width / 2, shape.height / 2);
+    base.endFill();
+}
+
 function applyProps(base: PIXI.Graphics, props: PixiProps) {
     const { shape } = props;
 
@@ -25,13 +49,13 @@ function applyProps(base: PIXI.Graphics, props: PixiProps) {
     base.scale.x = 1;
     base.scale.y = 1;
     base.clear();
-    base.lineStyle(4, shape.stroke);
-    base.beginFill(shape.fill);
 
-    // TODO: 図形の形を差し替え可能にする
-    base.drawRect(0, 0, shape.width, shape.height);
-
-    base.endFill();
+    const shapeRenderer = ShapeRendererMap[shape.shapeType];
+    if (shapeRenderer === undefined) {
+        console.warn(`Unsupported shape type: ${shape.shapeType}`);
+    } else {
+        shapeRenderer(base, props);
+    }
 }
 
 export const ShapeObjectViewBehavior: CustomPIXIComponentBehaviorDefinition<PIXI.Graphics, PixiProps> = {
