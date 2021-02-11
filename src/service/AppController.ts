@@ -206,7 +206,7 @@ export class AppController extends EventEmitter implements AppControllerEvents {
                         type: VideoObject.type,
                         x: 100,
                         y: 100,
-                        width: (200 * width) / height,
+                        width: Math.round((200 * width) / height),
                         height: 200,
                         startInMS: currentTimeInMS,
                         endInMS: currentTimeInMS + 5000,

@@ -5,7 +5,7 @@ import { CustomPIXIComponent } from 'react-pixi-fiber';
 import { VideoObject } from '../../../model/objects/VideoObject';
 import { PreviewController } from '../../../service/PreviewController';
 import { useCallbackRef } from '../../hooks/useCallbackRef';
-import { ResizeView } from './ResizeView';
+import { ResizeView } from './ResizeView/ResizeView';
 
 interface Props {
     video: VideoObject;

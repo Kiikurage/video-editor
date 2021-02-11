@@ -125,13 +125,13 @@ export function PreviewPlayer(): React.ReactElement {
                 const i = snapPositionXs.indexOf(targetX);
                 if (i === -1) continue;
 
-                snapPositionXs.splice(i, i);
+                snapPositionXs.splice(i, 1);
             }
             for (const targetY of [object.y, object.y + object.height]) {
                 const i = snapPositionYs.indexOf(targetY);
                 if (i === -1) continue;
 
-                snapPositionYs.splice(i, i);
+                snapPositionYs.splice(i, 1);
             }
         }
 
