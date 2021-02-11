@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import styled from 'styled-components';
 import { convertColorFromPixiToDOM } from '../lib/convertColorFromPixiToDOM';
+import { formatTime } from '../lib/formatTime';
 import { assert } from '../lib/util';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
@@ -226,11 +227,11 @@ function BasePropertyGroup<T extends BaseObject>(props: { appController: AppCont
             <PropertyGroupName>一般</PropertyGroupName>
             <PropertyRow>
                 <PropertyName>開始</PropertyName>
-                <span>{formatTimeByQuantization(object.startInMS, appController.project.fps)}</span>
+                <span>{formatTime(object.startInMS, appController.project.fps)}</span>
             </PropertyRow>
             <PropertyRow>
                 <PropertyName>終了</PropertyName>
-                <span>{formatTimeByQuantization(object.endInMS, appController.project.fps)}</span>
+                <span>{formatTime(object.endInMS, appController.project.fps)}</span>
             </PropertyRow>
             <PropertyRow>
                 <PropertyName>編集ロック</PropertyName>
@@ -457,25 +458,4 @@ function SrcFilePropertyGroup<T extends BaseObject & { srcFilePath: string }>(pr
             </PropertyRow>
         </PropertyGroup>
     );
-}
-
-function formatTimeByQuantization(timeInMS: number, fps: number): string {
-    let rest = Math.floor(timeInMS);
-
-    const millisecond = rest % 1000;
-    rest = (rest - millisecond) / 1000;
-
-    const second = rest % 60;
-    rest = (rest - second) / 60;
-
-    const minute = rest % 60;
-    rest = (rest - minute) / 60;
-
-    const hour = rest;
-
-    const frame = Math.round((millisecond * fps) / 1000);
-
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second
-        .toString()
-        .padStart(2, '0')}.${frame.toString().padStart(2, '0')}`;
 }

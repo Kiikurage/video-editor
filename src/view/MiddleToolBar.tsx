@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useEffect } from 'react';
 import styled from 'styled-components';
+import { formatTime } from '../lib/formatTime';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
@@ -26,13 +27,15 @@ const Base = styled.div`
     }
 `;
 
+const PreviewPosition = styled.span``;
+
 interface Props {
     onAddNewText: () => void;
     onAddNewAsset: () => void;
 }
 
 export function MiddleToolBar(props: Props): React.ReactElement {
-    const { previewController } = useAppController();
+    const { previewController, project } = useAppController();
     const { onAddNewAsset, onAddNewText } = props;
     const forceUpdate = useThrottledForceUpdate();
 
@@ -50,10 +53,14 @@ export function MiddleToolBar(props: Props): React.ReactElement {
     useEffect(() => {
         previewController.on('play', forceUpdate);
         previewController.on('pause', forceUpdate);
+        previewController.on('tick', forceUpdate);
+        previewController.on('seek', forceUpdate);
 
         return () => {
             previewController.off('play', forceUpdate);
             previewController.off('pause', forceUpdate);
+            previewController.off('tick', forceUpdate);
+            previewController.off('seek', forceUpdate);
         };
     }, [previewController, forceUpdate]);
 
@@ -65,6 +72,7 @@ export function MiddleToolBar(props: Props): React.ReactElement {
                 ) : (
                     <button onClick={onPauseButtonClick}>停止</button>
                 )}
+                <PreviewPosition>{formatTime(previewController.currentTimeInMS, project.fps)}</PreviewPosition>
             </div>
             <div>
                 <button onClick={onAddNewAsset}>素材を追加</button>
