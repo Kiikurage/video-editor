@@ -246,13 +246,13 @@ function PositionPropertyGroup<T extends BaseObject & { x: number; y: number }>(
 }): React.ReactElement {
     const { appController, object } = props;
     const onXChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        const value = Number(ev.target.value);
+        const value = parseInt(ev.target.value);
         appController.commitHistory(() => {
             appController.updateObject({ ...object, x: value });
         });
     });
     const onYChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        const value = Number(ev.target.value);
+        const value = parseInt(ev.target.value);
         appController.commitHistory(() => {
             appController.updateObject({ ...object, y: value });
         });
@@ -279,13 +279,13 @@ function SizePropertyGroup<T extends BaseObject & { width: number; height: numbe
 }): React.ReactElement {
     const { appController, object } = props;
     const onWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        const value = Number(ev.target.value);
+        const value = parseInt(ev.target.value);
         appController.commitHistory(() => {
             appController.updateObject({ ...object, width: value });
         });
     });
     const onHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        const value = Number(ev.target.value);
+        const value = parseInt(ev.target.value);
         appController.commitHistory(() => {
             appController.updateObject({ ...object, height: value });
         });

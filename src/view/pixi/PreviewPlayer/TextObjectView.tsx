@@ -3,7 +3,7 @@ import * as React from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
 import { TextObject } from '../../../model/objects/TextObject';
 import { useCallbackRef } from '../../hooks/useCallbackRef';
-import { ResizeView } from './ResizeView';
+import { ResizeView } from './ResizeView/ResizeView';
 
 interface Props {
     textObject: TextObject;

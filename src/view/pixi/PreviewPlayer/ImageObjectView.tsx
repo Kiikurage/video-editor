@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { CustomPIXIComponent, CustomPIXIComponentBehaviorDefinition } from 'react-pixi-fiber';
 import { ImageObject } from '../../../model/objects/ImageObject';
-import { ResizeView } from './ResizeView';
+import { ResizeView } from './ResizeView/ResizeView';
 
 interface Props {
     image: ImageObject;
