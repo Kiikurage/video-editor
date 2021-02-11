@@ -7,6 +7,7 @@ import { assert } from '../lib/util';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
 import { FontStyle } from '../model/objects/FontStyle';
+import { ShapeObject } from '../model/objects/ShapeObject';
 import { TextObject } from '../model/objects/TextObject';
 import { ImageObject } from '../model/objects/ImageObject';
 import { VideoObject } from '../model/objects/VideoObject';
@@ -161,6 +162,9 @@ export function PropertyView(): React.ReactElement {
                             VideoObject.isVideo(selectedObject) ||
                             ImageObject.isImage(selectedObject)) && (
                             <SrcFilePropertyGroup appController={appController} object={selectedObject} />
+                        )}
+                        {ShapeObject.isShape(selectedObject) && (
+                            <ShapePropertyGroup appController={appController} object={selectedObject} />
                         )}
                     </Body>
 
@@ -455,6 +459,46 @@ function SrcFilePropertyGroup<T extends BaseObject & { srcFilePath: string }>(pr
             <PropertyRow>
                 <PropertyName>元ファイル</PropertyName>
                 <input type="file" onChange={onFileChange} readOnly={object.locked} />
+            </PropertyRow>
+        </PropertyGroup>
+    );
+}
+
+function ShapePropertyGroup<T extends ShapeObject>(props: { appController: AppController; object: T }): React.ReactElement {
+    const { appController, object } = props;
+    const onFillChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = convertColorFromDOMToPixi(ev.target.value);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, fill: value });
+        });
+    });
+    const onStrokeChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
+        const value = convertColorFromDOMToPixi(ev.target.value);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, stroke: value });
+        });
+    });
+
+    return (
+        <PropertyGroup key={object.id}>
+            <PropertyGroupName>図形</PropertyGroupName>
+            <PropertyRow>
+                <PropertyName>塗りの色</PropertyName>
+                <input
+                    type="color"
+                    defaultValue={convertColorFromPixiToDOM(object.fill)}
+                    readOnly={object.locked}
+                    onChange={onFillChange}
+                />
+            </PropertyRow>
+            <PropertyRow>
+                <PropertyName>縁取りの色</PropertyName>
+                <input
+                    type="color"
+                    defaultValue={convertColorFromPixiToDOM(object.stroke)}
+                    readOnly={object.locked}
+                    onChange={onStrokeChange}
+                />
             </PropertyRow>
         </PropertyGroup>
     );

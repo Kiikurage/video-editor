@@ -5,12 +5,14 @@ import * as tmp from 'tmp';
 import { promisify } from 'util';
 import { getFFMpegInfo } from '../../ipc/renderer/getFFMepgInfo';
 import { AudioObject } from '../../model/objects/AudioObject';
+import { ShapeObject } from '../../model/objects/ShapeObject';
 import { TextObject } from '../../model/objects/TextObject';
 import { ImageObject } from '../../model/objects/ImageObject';
 import { VideoObject } from '../../model/objects/VideoObject';
 import { Project } from '../../model/Project';
 import { assert } from '../util';
 import { createAudioObjectFFMpegStream } from './loader/createAudioObjectFFMpegStream';
+import { createShapeObjectFFMpegStream } from './loader/createShapeObjectFFMpegStream';
 import { createTextFFMpegStream } from './loader/createTextFFMpegStream';
 import { createFFMpegStream } from './loader/createFFMpegStream';
 import { createImageObjectFFMpegStream } from './loader/createImageObjectFFMpegStream';
@@ -25,6 +27,7 @@ const FFMpegStreamCreatorMap: Record<string, createFFMpegStream<any>> = {
     [VideoObject.type]: createVideoObjectFFMpegStream,
     [ImageObject.type]: createImageObjectFFMpegStream,
     [AudioObject.type]: createAudioObjectFFMpegStream,
+    [ShapeObject.type]: createShapeObjectFFMpegStream,
 };
 
 export async function encodeProject(project: Project, outputVideoPath: string): Promise<void> {

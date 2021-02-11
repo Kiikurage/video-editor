@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
+import { ShapeObject } from '../model/objects/ShapeObject';
 import { TextObject } from '../model/objects/TextObject';
 import { useAppController } from './AppControllerProvider';
 import { DropArea } from './DropArea';
@@ -136,6 +137,28 @@ export function AppShell(): React.ReactElement {
         void appController.importAssetFromFile(filePaths[0]);
     });
 
+    const onAddNewShape = useCallbackRef(() => {
+        const currentTimeInMS = appController.previewController.currentTimeInMS;
+        const object: ShapeObject = {
+            id: UUID(),
+            type: ShapeObject.type,
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 200,
+            startInMS: currentTimeInMS,
+            endInMS: currentTimeInMS + 5000,
+            locked: false,
+            shapeType: 'RECTANGLE',
+            anchor: [],
+            fill: 0xffffff,
+            stroke: 0x000000,
+        };
+        appController.commitHistory(() => {
+            appController.addObject(object);
+        });
+    });
+
     return (
         <DropArea onFileDrop={onFileDrop}>
             <Base>
@@ -158,7 +181,11 @@ export function AppShell(): React.ReactElement {
                                 <Splitter onChange={(_dx, dy) => setTimelineAreaHeight(timelineAreaHeight - dy)} />
 
                                 <MiddleToolbarArea>
-                                    <MiddleToolBar onAddNewText={onAddNewText} onAddNewAsset={onAddNewAsset} />
+                                    <MiddleToolBar
+                                        onAddNewText={onAddNewText}
+                                        onAddNewAsset={onAddNewAsset}
+                                        onAddNewShape={onAddNewShape}
+                                    />
                                 </MiddleToolbarArea>
 
                                 <TimeLineArea style={{ height: timelineAreaHeight }}>

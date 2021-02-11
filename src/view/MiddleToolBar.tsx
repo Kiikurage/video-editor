@@ -32,11 +32,12 @@ const PreviewPosition = styled.span``;
 interface Props {
     onAddNewText: () => void;
     onAddNewAsset: () => void;
+    onAddNewShape: () => void;
 }
 
 export function MiddleToolBar(props: Props): React.ReactElement {
     const { previewController, project } = useAppController();
-    const { onAddNewAsset, onAddNewText } = props;
+    const { onAddNewAsset, onAddNewText, onAddNewShape } = props;
     const forceUpdate = useThrottledForceUpdate();
 
     const onPlayButtonClick = useCallbackRef((ev: React.MouseEvent) => {
@@ -77,6 +78,7 @@ export function MiddleToolBar(props: Props): React.ReactElement {
             <div>
                 <button onClick={onAddNewAsset}>素材を追加</button>
                 <button onClick={onAddNewText}>テキストを追加</button>
+                <button onClick={onAddNewShape}>図形を追加</button>
             </div>
         </Base>
     );
