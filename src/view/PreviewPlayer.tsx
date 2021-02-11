@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
 import { ImageObject } from '../model/objects/ImageObject';
+import { ShapeObject } from '../model/objects/ShapeObject';
 import { SizedObject } from '../model/objects/SizedObject';
 import { TextObject } from '../model/objects/TextObject';
 import { VideoObject } from '../model/objects/VideoObject';
@@ -14,6 +15,7 @@ import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
 import { AudioObjectView } from './pixi/PreviewPlayer/AudioObjectView';
 import { Background } from './pixi/PreviewPlayer/Background';
 import { ImageObjectView } from './pixi/PreviewPlayer/ImageObjectView';
+import { ShapeObjectView } from './pixi/PreviewPlayer/ShapeObjectView';
 import { TextObjectView } from './pixi/PreviewPlayer/TextObjectView';
 import { VideoObjectView } from './pixi/PreviewPlayer/VideoObjectView';
 
@@ -168,6 +170,19 @@ export function PreviewPlayer(): React.ReactElement {
                     <ImageObjectView
                         key={object.id}
                         image={object as ImageObject}
+                        selected={isSelected}
+                        snapPositionXs={snapPositionXs}
+                        snapPositionYs={snapPositionYs}
+                        onSelect={() => appController.selectObject(object.id)}
+                        onObjectChange={onObjectChange}
+                    />
+                );
+
+            case ShapeObject.type:
+                return (
+                    <ShapeObjectView
+                        key={object.id}
+                        shape={object as ShapeObject}
                         selected={isSelected}
                         snapPositionXs={snapPositionXs}
                         snapPositionYs={snapPositionYs}

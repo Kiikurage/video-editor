@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import styled from 'styled-components';
 import { formatTime } from '../lib/formatTime';
+import { ShapeType } from '../model/objects/ShapeObject';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
@@ -32,11 +33,12 @@ const PreviewPosition = styled.span``;
 interface Props {
     onAddNewText: () => void;
     onAddNewAsset: () => void;
+    onAddNewShape: (shapeType: ShapeType) => void;
 }
 
 export function MiddleToolBar(props: Props): React.ReactElement {
     const { previewController, project } = useAppController();
-    const { onAddNewAsset, onAddNewText } = props;
+    const { onAddNewAsset, onAddNewText, onAddNewShape } = props;
     const forceUpdate = useThrottledForceUpdate();
 
     const onPlayButtonClick = useCallbackRef((ev: React.MouseEvent) => {
@@ -77,6 +79,8 @@ export function MiddleToolBar(props: Props): React.ReactElement {
             <div>
                 <button onClick={onAddNewAsset}>素材を追加</button>
                 <button onClick={onAddNewText}>テキストを追加</button>
+                <button onClick={() => onAddNewShape(ShapeType.RECTANGLE)}>長方形を追加</button>
+                <button onClick={() => onAddNewShape(ShapeType.CIRCLE)}>円を追加</button>
             </div>
         </Base>
     );
