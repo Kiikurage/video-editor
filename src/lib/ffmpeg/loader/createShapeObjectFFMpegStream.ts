@@ -1,12 +1,10 @@
-import { promises as fs } from 'fs';
+import * as childProcess from 'child_process';
 import * as path from 'path';
 import * as PIXI from 'pixi.js';
 import { ShapeObject } from '../../../model/objects/ShapeObject';
 import { Project } from '../../../model/Project';
 import { ShapeObjectViewBehavior } from '../../../view/pixi/PreviewPlayer/ShapeObjectView';
-import { assert } from '../../util';
 import { overlay } from '../filters/FFMpegOverlayFilter';
-import { scale } from '../filters/FFMpegScaleFilter';
 import { input } from '../stream/FFMpegInputStream';
 import { FFMpegStreamMap } from '../stream/FFMpegStream';
 import { createFFMpegStream } from './createFFMpegStream';
@@ -17,41 +15,84 @@ export const createShapeObjectFFMpegStream: createFFMpegStream<ShapeObject> = as
     project: Project,
     workspacePath: string
 ) => {
-    const blob = await renderShape(project, shapeObject);
-    assert(blob !== null, 'Failed to get shape image from canvas');
+    const tmpVideoPath = path.resolve(workspacePath, `./shape-${shapeObject.id}.mov`);
+    const ffmpegProcess = childProcess.spawn(
+        'ffmpeg',
+        [
+            ['-y'],
+            ['-f', 'rawvideo'],
+            ['-s', `${project.viewport.width}x${project.viewport.height}`],
+            ['-pix_fmt', 'rgba'],
+            ['-r', `${project.fps}`],
+            ['-i', '-'],
+            ['-vf', 'vflip'],
+            ['-an'],
+            ['-vcodec', 'qtrle'],
+            [tmpVideoPath],
+        ].flat(),
+        {
+            stdio: ['pipe', null, null],
+        }
+    );
+    ffmpegProcess.stderr.on('data', (data: string) => {
+        console.log(`FFMPEG stderr: ${data}`);
+    });
 
-    const shapeImagePath = path.resolve(workspacePath, `./shape-${shapeObject.id}.png`);
-    await fs.writeFile(shapeImagePath, new Uint8Array(await blob.arrayBuffer()));
+    const app = new PIXI.Application({
+        width: project.viewport.width,
+        height: project.viewport.height,
+        transparent: true,
+        resolution: 1,
+        autoDensity: false,
+        antialias: true,
+    });
 
-    let stream = input(shapeImagePath);
-    stream = scale(stream, { width: Math.round(shapeObject.width), height: Math.round(shapeObject.height) });
+    const startFrame = Math.round((shapeObject.startInMS * project.fps) / 1000);
+    const endFrame = Math.round((shapeObject.endInMS * project.fps) / 1000);
+    const numFrame = endFrame - startFrame;
+
+    for (let frame = 0; frame < numFrame; frame++) {
+        const timeInMS = shapeObject.startInMS * (1 - frame / endFrame) + (shapeObject.endInMS * frame) / endFrame;
+        const buffer = new Buffer(renderFrame(app, project, shapeObject, timeInMS));
+        await new Promise((r) => ffmpegProcess.stdin.write(buffer, r));
+    }
+    await new Promise((r) => ffmpegProcess.stdin.end(r));
+
+    const stream = input(tmpVideoPath);
 
     return {
         ...outputStreamMap,
         video: outputStreamMap.video
             ? overlay(outputStreamMap.video, stream, {
-                  x: Math.round(shapeObject.x),
-                  y: Math.round(shapeObject.y),
+                  x: 0,
+                  y: 0,
                   enable: `between(t,${(shapeObject.startInMS / 1000).toFixed(3)},${(shapeObject.endInMS / 1000).toFixed(3)})`,
               })
             : stream,
     };
 };
 
-async function renderShape(project: Project, shapeObject: ShapeObject): Promise<Blob | null> {
-    const app = new PIXI.Application({
-        width: shapeObject.width,
-        height: shapeObject.height,
-        transparent: true,
-    });
+const BYTE_PER_PIXEL = 4; // RGBA
 
+function renderFrame(app: PIXI.Application, project: Project, shapeObject: ShapeObject, timeInMS: number): ArrayBuffer {
     const shapeView = ShapeObjectViewBehavior.customDisplayObject({ shape: shapeObject });
+    shapeView.x = shapeObject.x;
+    shapeView.y = shapeObject.y;
+
+    app.stage.removeChildren(0, app.stage.children.length);
     app.stage.addChild(shapeView);
     app.render();
 
-    const blob = await new Promise<Blob | null>((resolve) => app.view.toBlob(resolve));
+    const buffer = new Uint8Array(project.viewport.width * project.viewport.height * BYTE_PER_PIXEL);
+    app.renderer.gl.readPixels(
+        0,
+        0,
+        project.viewport.width,
+        project.viewport.height,
+        WebGLRenderingContext.RGBA,
+        WebGLRenderingContext.UNSIGNED_BYTE,
+        buffer
+    );
 
-    app.destroy(true);
-
-    return blob;
+    return buffer;
 }

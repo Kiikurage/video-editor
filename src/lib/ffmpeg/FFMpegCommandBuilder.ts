@@ -50,7 +50,7 @@ export async function encodeProject(project: Project, outputVideoPath: string): 
     await fs.copyFile(tmpOutputVideoPath, outputVideoPath);
 
     // クリーンアップ
-    cleanUpWorkspace();
+    // cleanUpWorkspace();
     console.timeEnd('encodeProject');
     console.log('DONE');
 }
