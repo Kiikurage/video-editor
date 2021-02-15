@@ -1,3 +1,4 @@
+import { NumericAnimatableValue } from './AnimatableValue';
 import { BaseObject } from './BaseObject';
 
 function isAudio(object: BaseObject): object is AudioObject {
@@ -12,5 +13,5 @@ export const AudioObject = {
 export interface AudioObject extends BaseObject {
     type: typeof AudioObject.type;
     srcFilePath: string;
-    volume: number;
+    volume: NumericAnimatableValue;
 }

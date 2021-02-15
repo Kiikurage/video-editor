@@ -103,7 +103,11 @@ async function encode(project: Project, outputPath: string, workspacePath: strin
     if (mainStreamMap.audio) {
         commandParts.push(`-map "[${mainStreamMap.audio.id}]"`);
     }
-    commandParts.push(`-c:v h264_videotoolbox`);
+    if (process.platform === 'darwin') {
+        commandParts.push(`-c:v h264_videotoolbox`);
+    } else {
+        commandParts.push(`-c:v libx264`);
+    }
     commandParts.push(`-pix_fmt yuv420p`);
     commandParts.push(`-qmin 30`);
     commandParts.push(`-bf 0`);

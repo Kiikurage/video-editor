@@ -9,6 +9,7 @@ import { UUID } from '../lib/UUID';
 import { AppState } from '../model/AppState';
 import { EventEmitterEvents } from '../model/EventEmitterEvents';
 import { HistoryManager } from '../model/HistoryManager';
+import { AnimatableValueType } from '../model/objects/AnimatableValue';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
 import { ImageObject } from '../model/objects/ImageObject';
@@ -103,6 +104,10 @@ export class AppController extends EventEmitter implements AppControllerEvents {
 
         const newObjects = project.objects.slice(0);
         newObjects.splice(i, 1);
+
+        if (objectId === this.selectedObjectId) {
+            this.selectObject(null);
+        }
 
         this.setProject({ ...project, objects: newObjects, isSaved: false });
     };
@@ -204,13 +209,13 @@ export class AppController extends EventEmitter implements AppControllerEvents {
                     {
                         id: UUID(),
                         type: VideoObject.type,
-                        x: 100,
-                        y: 100,
-                        width: Math.round((200 * width) / height),
-                        height: 200,
                         startInMS: currentTimeInMS,
                         endInMS: currentTimeInMS + 5000,
                         srcFilePath: filePath,
+                        x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+                        y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+                        width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: Math.round((200 * width) / height) }] },
+                        height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
                     } as VideoObject /* TODO: 音声ストリームも取り込む */
                 );
                 break;
@@ -221,13 +226,13 @@ export class AppController extends EventEmitter implements AppControllerEvents {
                 newObjects.push({
                     id: UUID(),
                     type: ImageObject.type,
-                    x: 100,
-                    y: 100,
-                    width: (200 * width) / height,
-                    height: 200,
                     startInMS: currentTimeInMS,
                     endInMS: currentTimeInMS + 5000,
                     srcFilePath: filePath,
+                    x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+                    y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+                    width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: Math.round((200 * width) / height) }] },
+                    height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
                 } as ImageObject);
                 break;
             }
@@ -239,7 +244,8 @@ export class AppController extends EventEmitter implements AppControllerEvents {
                     startInMS: currentTimeInMS,
                     endInMS: currentTimeInMS + 5000,
                     srcFilePath: filePath,
-                    volume: 0.5,
+                    locked: false,
+                    volume: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 0.5 }] },
                 } as AudioObject);
                 break;
             }

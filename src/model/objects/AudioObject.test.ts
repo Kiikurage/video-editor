@@ -1,4 +1,5 @@
 import { UUID } from '../../lib/UUID';
+import { AnimatableValueType } from './AnimatableValue';
 import { AudioObject } from './AudioObject';
 import { BaseObject } from './BaseObject';
 
@@ -10,8 +11,8 @@ describe('isAudio', () => {
             startInMS: 0,
             endInMS: 100,
             srcFilePath: 'path/to/video',
-            volume: 1,
             locked: false,
+            volume: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 0.5 }] },
         };
         expect(AudioObject.isAudio(video)).toBe(true);
 

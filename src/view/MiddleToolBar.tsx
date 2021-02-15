@@ -5,7 +5,7 @@ import { formatTime } from '../lib/formatTime';
 import { ShapeType } from '../model/objects/ShapeObject';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
-import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
+import { useForceUpdate } from './hooks/useForceUpdate';
 
 const Base = styled.div`
     display: flex;
@@ -39,7 +39,7 @@ interface Props {
 export function MiddleToolBar(props: Props): React.ReactElement {
     const { previewController, project } = useAppController();
     const { onAddNewAsset, onAddNewText, onAddNewShape } = props;
-    const forceUpdate = useThrottledForceUpdate();
+    const forceUpdate = useForceUpdate();
 
     const onPlayButtonClick = useCallbackRef((ev: React.MouseEvent) => {
         ev.stopPropagation();

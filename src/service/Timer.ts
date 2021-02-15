@@ -7,7 +7,7 @@ type TimerEvents = EventEmitterEvents<{
 }>;
 
 export class Timer extends EventEmitter implements TimerEvents {
-    public durationInMS: number = 10 * 60 * 1000;
+    public durationInMS: number = 3 * 1000;
 
     private isStarted = false;
     private startedAtInMS = 0;

@@ -1,4 +1,5 @@
 import { UUID } from '../../lib/UUID';
+import { AnimatableValueType } from './AnimatableValue';
 import { BaseObject } from './BaseObject';
 import { VideoObject } from './VideoObject';
 
@@ -9,12 +10,12 @@ describe('isVideo', () => {
             id: UUID(),
             startInMS: 0,
             endInMS: 100,
-            x: 0,
-            y: 0,
-            height: 100,
-            width: 100,
             srcFilePath: 'path/to/video',
             locked: false,
+            x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+            y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+            width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+            height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
         };
         expect(VideoObject.isVideo(video)).toBe(true);
 

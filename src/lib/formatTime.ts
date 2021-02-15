@@ -14,7 +14,7 @@ export function formatTime(timeInMS: number, fps: number): string {
 
     const frame = Math.round((millisecond * fps) / 1000);
 
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second
+    return `${hour === 0 ? '' : hour.toString().padStart(2, '0') + ':'}${minute.toString().padStart(2, '0')}:${second
         .toString()
         .padStart(2, '0')}.${frame.toString().padStart(2, '0')}`;
 }

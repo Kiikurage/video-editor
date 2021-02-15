@@ -1,3 +1,4 @@
+import { NumericAnimatableValue } from './AnimatableValue';
 import { BaseObject } from './BaseObject';
 
 function isImage(object: BaseObject): object is ImageObject {
@@ -12,8 +13,8 @@ export const ImageObject = {
 export interface ImageObject extends BaseObject {
     type: typeof ImageObject.type;
     srcFilePath: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+    x: NumericAnimatableValue;
+    y: NumericAnimatableValue;
+    width: NumericAnimatableValue;
+    height: NumericAnimatableValue;
 }
