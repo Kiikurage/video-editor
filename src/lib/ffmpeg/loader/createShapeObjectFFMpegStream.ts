@@ -1,6 +1,8 @@
 import * as childProcess from 'child_process';
+import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as PIXI from 'pixi.js';
+import { promisify } from 'util';
 import { ShapeObject } from '../../../model/objects/ShapeObject';
 import { Project } from '../../../model/Project';
 import { ShapeObjectViewBehavior } from '../../../view/pixi/PreviewPlayer/ShapeObjectView';
@@ -15,28 +17,7 @@ export const createShapeObjectFFMpegStream: createFFMpegStream<ShapeObject> = as
     project: Project,
     workspacePath: string
 ) => {
-    const tmpVideoPath = path.resolve(workspacePath, `./shape-${shapeObject.id}.mov`);
-    const ffmpegProcess = childProcess.spawn(
-        'ffmpeg',
-        [
-            ['-y'],
-            ['-f', 'rawvideo'],
-            ['-s', `${project.viewport.width}x${project.viewport.height}`],
-            ['-pix_fmt', 'rgba'],
-            ['-r', `${project.fps}`],
-            ['-i', '-'],
-            ['-vf', 'vflip'],
-            ['-an'],
-            ['-vcodec', 'qtrle'],
-            [tmpVideoPath],
-        ].flat(),
-        {
-            stdio: ['pipe', null, null],
-        }
-    );
-    ffmpegProcess.stderr.on('data', (data: string) => {
-        console.log(`FFMPEG stderr: ${data}`);
-    });
+    const videoPaths: string[] = [];
 
     const app = new PIXI.Application({
         width: project.viewport.width,
@@ -47,23 +28,66 @@ export const createShapeObjectFFMpegStream: createFFMpegStream<ShapeObject> = as
         antialias: true,
     });
 
-    const startFrame = Math.round((shapeObject.startInMS * project.fps) / 1000);
+    const BATCH_SIZE = 60;
+    let startFrame = Math.round((shapeObject.startInMS * project.fps) / 1000);
     const endFrame = Math.round((shapeObject.endInMS * project.fps) / 1000);
-    const numFrame = endFrame - startFrame;
+    while (startFrame < endFrame) {
+        const batchStartFrame = startFrame;
+        const batchEndFrame = Math.min(endFrame, startFrame + BATCH_SIZE);
+        const numFrame = batchEndFrame - batchStartFrame;
 
-    for (let frame = 0; frame < numFrame; frame++) {
-        const timeInMS = shapeObject.startInMS * (1 - frame / endFrame) + (shapeObject.endInMS * frame) / endFrame;
-        const buffer = new Buffer(renderFrame(app, project, shapeObject, timeInMS));
-        await new Promise((r) => ffmpegProcess.stdin.write(buffer, r));
+        const tmpVideoPath = path.resolve(workspacePath, `./shape-${shapeObject.id}-${videoPaths.length}.mov`);
+        const ffmpegProcess = childProcess.spawn(
+            'ffmpeg',
+            [
+                ['-y'],
+                ['-f', 'rawvideo'],
+                ['-s', `${project.viewport.width}x${project.viewport.height}`],
+                ['-pix_fmt', 'rgba'],
+                ['-r', `${project.fps}`],
+                ['-i', '-'],
+                ['-vf', 'vflip'],
+                ['-an'],
+                ['-vcodec', 'qtrle'],
+                [tmpVideoPath],
+            ].flat(),
+            {
+                stdio: ['pipe', null, null],
+            }
+        );
+        ffmpegProcess.stderr.on('data', (data: string) => {
+            console.log(`FFMPEG stderr: ${data}`);
+        });
+
+        for (let frame = 0; frame < numFrame; frame++) {
+            const timeInMS = shapeObject.startInMS * (1 - frame / endFrame) + (shapeObject.endInMS * frame) / endFrame;
+            const buffer = new Buffer(renderFrame(app, project, shapeObject, timeInMS));
+            await new Promise((r) => ffmpegProcess.stdin.write(buffer, r));
+        }
+        await new Promise((r) => ffmpegProcess.stdin.end(r));
+
+        videoPaths.push(tmpVideoPath);
+        startFrame += BATCH_SIZE;
     }
-    await new Promise((r) => ffmpegProcess.stdin.end(r));
+
+    const concatFileListPath = path.resolve(workspacePath, `./concat-shape-${shapeObject.id}.txt`);
+    await fs.writeFile(concatFileListPath, videoPaths.map((videoPath) => `file ${videoPath}`).join('\n'), 'utf-8');
+
+    const tmpVideoPath = path.resolve(workspacePath, `./concat-shape-${shapeObject.id}.mov`);
+    await promisify(childProcess.exec)(
+        [['ffmpeg'], ['-f', 'concat'], ['-safe', '0'], ['-i', concatFileListPath], ['-an'], ['-vcodec', 'copy'], [tmpVideoPath]]
+            .flat()
+            .join(' ')
+    );
 
     const stream = input(tmpVideoPath);
 
+    const outputVideoStream = outputStreamMap.video;
+
     return {
         ...outputStreamMap,
-        video: outputStreamMap.video
-            ? overlay(outputStreamMap.video, stream, {
+        video: outputVideoStream
+            ? overlay(outputVideoStream, stream, {
                   x: 0,
                   y: 0,
                   enable: `between(t,${(shapeObject.startInMS / 1000).toFixed(3)},${(shapeObject.endInMS / 1000).toFixed(3)})`,
@@ -74,7 +98,7 @@ export const createShapeObjectFFMpegStream: createFFMpegStream<ShapeObject> = as
 
 const BYTE_PER_PIXEL = 4; // RGBA
 
-function renderFrame(app: PIXI.Application, project: Project, shapeObject: ShapeObject, timeInMS: number): ArrayBuffer {
+function renderFrame(app: PIXI.Application, project: Project, shapeObject: ShapeObject, _timeInMS: number): ArrayBuffer {
     const shapeView = ShapeObjectViewBehavior.customDisplayObject({ shape: shapeObject });
     shapeView.x = shapeObject.x;
     shapeView.y = shapeObject.y;
