@@ -50,6 +50,10 @@ export class PreviewController extends EventEmitter implements PreviewController
     play(): void {
         if (!this.paused) return;
 
+        if (this.currentTimeInMS >= this.durationInMS) {
+            this.currentTimeInMS = 0;
+        }
+
         this.timer.start();
         this.emit('play');
     }

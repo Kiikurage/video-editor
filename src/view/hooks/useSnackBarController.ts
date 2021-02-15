@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { SnackBarController, SnackBarMessage } from '../../service/SnackBarController';
-import { useThrottledForceUpdate } from './useThrottledForceUpdate';
+import { useForceUpdate } from './useForceUpdate';
 
 export function useSnackBarController(): SnackBarMessage[] {
-    const forceUpdate = useThrottledForceUpdate();
+    const forceUpdate = useForceUpdate();
     const controller = SnackBarController.getInstance();
 
     useEffect(() => {

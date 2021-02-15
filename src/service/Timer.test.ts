@@ -31,6 +31,7 @@ it('Should be stopped by stop()', () => {
 it('Should be able to seek when timer is stopped', () => {
     fixDateNow(0);
     const timer = new Timer();
+    timer.durationInMS = 5000;
 
     timer.seek(3000);
     const t1 = timer.currentTimeInMS;
@@ -45,6 +46,7 @@ it('Should be able to seek when timer is stopped', () => {
 it('Should be able to seek when timer is running', () => {
     fixDateNow(0);
     const timer = new Timer();
+    timer.durationInMS = 5000;
 
     timer.start();
 

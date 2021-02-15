@@ -3,7 +3,7 @@ import { useContext, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { noop } from '../lib/util';
 import { useCallbackRef } from './hooks/useCallbackRef';
-import { useThrottledForceUpdate } from './hooks/useThrottledForceUpdate';
+import { useForceUpdate } from './hooks/useForceUpdate';
 
 const Base = styled.div<{ direction: 'row' | 'column' }>`
     display: flex;
@@ -66,7 +66,7 @@ const context = React.createContext<{
 
 export function SplitPane(props: React.PropsWithChildren<Props>): React.ReactElement {
     const { children, direction } = props;
-    const forceUpdate = useThrottledForceUpdate();
+    const forceUpdate = useForceUpdate();
     const dragPositionRef = useRef({
         startX: 0,
         startY: 0,

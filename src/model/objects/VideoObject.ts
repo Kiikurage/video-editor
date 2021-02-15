@@ -1,3 +1,4 @@
+import { NumericAnimatableValue } from './AnimatableValue';
 import { BaseObject } from './BaseObject';
 
 function isVideo(object: BaseObject): object is VideoObject {
@@ -12,8 +13,8 @@ export const VideoObject = {
 export interface VideoObject extends BaseObject {
     type: typeof VideoObject.type;
     srcFilePath: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+    x: NumericAnimatableValue;
+    y: NumericAnimatableValue;
+    width: NumericAnimatableValue;
+    height: NumericAnimatableValue;
 }

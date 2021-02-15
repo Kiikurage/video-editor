@@ -1,3 +1,4 @@
+import { ColorAnimatableValue, NumericAnimatableValue } from './AnimatableValue';
 import { BaseObject } from './BaseObject';
 
 function isShape(object: BaseObject): object is ShapeObject {
@@ -11,16 +12,16 @@ export const ShapeObject = {
 
 export interface ShapeObject extends BaseObject {
     type: typeof ShapeObject.type;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
     shapeType: ShapeType;
-    anchor: number[];
+    x: NumericAnimatableValue;
+    y: NumericAnimatableValue;
+    width: NumericAnimatableValue;
+    height: NumericAnimatableValue;
+    anchor: NumericAnimatableValue[];
 
     // TODO: Support other fill/stroke type like gradation, pattern, etc.
-    fill: number;
-    stroke: number;
+    fill: ColorAnimatableValue;
+    stroke: ColorAnimatableValue;
 }
 
 export const ShapeType = {

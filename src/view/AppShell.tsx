@@ -4,17 +4,18 @@ import styled from 'styled-components';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
+import { AnimatableValueType } from '../model/objects/AnimatableValue';
 import { ShapeObject, ShapeType } from '../model/objects/ShapeObject';
 import { TextObject } from '../model/objects/TextObject';
 import { useAppController } from './AppControllerProvider';
 import { DropArea } from './DropArea';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { MiddleToolBar } from './MiddleToolBar';
-import { PreviewPlayer } from './PreviewPlayer';
+import { PreviewPlayer } from './PreviewPlayer/PreviewPlayer';
 import { PropertyView } from './PropertyView';
 import { SnackBarList } from './SnackBarList';
 import { SplitPane, Splitter } from './SplitPane';
-import { TimeLine } from './TimeLine';
+import { TimeLine } from './TimeLine/TimeLine';
 
 const Base = styled.div`
     background: #fafafa;
@@ -107,10 +108,6 @@ export function AppShell(): React.ReactElement {
         const object: TextObject = {
             id: UUID(),
             type: TextObject.type,
-            x: 100,
-            y: 100,
-            width: 200,
-            height: 100,
             startInMS: currentTimeInMS,
             endInMS: currentTimeInMS + 5000,
             text: 'テキスト',
@@ -123,6 +120,10 @@ export function AppShell(): React.ReactElement {
                 stroke: 0xffffff,
                 strokeThickness: 0,
             },
+            x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
+            y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
+            width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+            height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
         };
         appController.commitHistory(() => {
             appController.addObject(object);
@@ -142,17 +143,17 @@ export function AppShell(): React.ReactElement {
         const object: ShapeObject = {
             id: UUID(),
             type: ShapeObject.type,
-            x: 100,
-            y: 100,
-            width: 200,
-            height: 200,
             startInMS: currentTimeInMS,
             endInMS: currentTimeInMS + 5000,
             locked: false,
             shapeType: shapeType,
+            x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
+            y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
+            width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+            height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+            fill: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 0xfcfcfc }] },
+            stroke: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 0xffffff }] },
             anchor: [],
-            fill: 0xffffff,
-            stroke: 0x000000,
         };
         appController.commitHistory(() => {
             appController.addObject(object);

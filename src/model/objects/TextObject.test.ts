@@ -1,4 +1,5 @@
 import { UUID } from '../../lib/UUID';
+import { AnimatableValueType } from './AnimatableValue';
 import { BaseObject } from './BaseObject';
 import { TextObject } from './TextObject';
 
@@ -9,10 +10,6 @@ describe('isText', () => {
             id: UUID(),
             startInMS: 0,
             endInMS: 100,
-            x: 0,
-            y: 0,
-            height: 100,
-            width: 100,
             text: 'This is text',
             locked: false,
             fontStyle: {
@@ -23,6 +20,10 @@ describe('isText', () => {
                 stroke: 0xffffff,
                 strokeThickness: 10,
             },
+            x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+            y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+            width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+            height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
         };
         expect(TextObject.isText(textObject)).toBe(true);
 

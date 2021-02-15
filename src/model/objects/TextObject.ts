@@ -1,3 +1,4 @@
+import { NumericAnimatableValue } from './AnimatableValue';
 import { BaseObject } from './BaseObject';
 import { FontStyle } from './FontStyle';
 
@@ -13,9 +14,9 @@ export const TextObject = {
 export interface TextObject extends BaseObject {
     type: typeof TextObject.type;
     text: string;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
     fontStyle: FontStyle;
+    x: NumericAnimatableValue;
+    y: NumericAnimatableValue;
+    width: NumericAnimatableValue;
+    height: NumericAnimatableValue;
 }
