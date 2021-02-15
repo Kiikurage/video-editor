@@ -13,7 +13,7 @@ interface Props {
     selected: boolean;
     snapPositionXs: number[];
     snapPositionYs: number[];
-    onSelect: () => void;
+    onSelect: (ev: PIXI.InteractionEvent) => void;
     onObjectChange: (oldObject: ShapeObject, x: number, y: number, width: number, height: number) => void;
 }
 

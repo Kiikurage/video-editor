@@ -1,3 +1,4 @@
+import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { PropsWithChildren } from 'react';
 import { useCallbackRef } from '../../hooks/useCallbackRef';
@@ -14,7 +15,7 @@ interface Props {
     snapPositionXs: number[];
     snapPositionYs: number[];
     onChange: (x: number, y: number, width: number, height: number) => void;
-    onSelect: () => void;
+    onSelect: (ev: PIXI.InteractionEvent) => void;
 }
 
 export function ResizeView(props: PropsWithChildren<Props>): React.ReactElement {

@@ -13,7 +13,7 @@ interface Props {
     selected: boolean;
     snapPositionXs: number[];
     snapPositionYs: number[];
-    onSelect: () => void;
+    onSelect: (ev: PIXI.InteractionEvent) => void;
     onObjectChange: (oldObject: TextObject, x: number, y: number, width: number, height: number) => void;
 }
 
@@ -61,10 +61,6 @@ const TextObjectView = CustomPIXIComponent(TextObjectViewBehavior, 'TextObjectVi
 function TextObjectViewWrapper(props: Props): React.ReactElement {
     const { textObject, previewController, selected, snapPositionXs, snapPositionYs, onSelect, onObjectChange } = props;
 
-    const onClick = useCallbackRef(() => {
-        onSelect();
-    });
-
     const onChange = useCallbackRef((x: number, y: number, width: number, height: number) => {
         onObjectChange(textObject, x, y, width, height);
     });
@@ -94,7 +90,7 @@ function TextObjectViewWrapper(props: Props): React.ReactElement {
             snapPositionXs={snapPositionXs}
             snapPositionYs={snapPositionYs}
             onChange={onChange}
-            onSelect={onClick}
+            onSelect={onSelect}
             selected={selected}
         >
             <TextObjectView object={textObject} width={width} height={height} />

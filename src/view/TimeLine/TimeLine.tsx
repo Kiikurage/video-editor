@@ -193,13 +193,18 @@ export function TimeLine(): React.ReactElement {
     const onTimelineBaseClick = useCallbackRef((ev: PIXI.InteractionEvent) => {
         ev.stopPropagation();
         appController.previewController.currentTimeInMS = ev.data.global.x / pixelPerMS + leftInMS;
-        appController.selectObject(null);
+        appController.setSelectedObjects([]);
     });
 
     const onTimelineObjectClick = useCallbackRef((ev: PIXI.InteractionEvent, object: BaseObject) => {
         ev.stopPropagation();
         appController.previewController.currentTimeInMS = ev.data.global.x / pixelPerMS + leftInMS;
-        appController.selectObject(object.id);
+
+        if (ev.data.originalEvent.shiftKey) {
+            appController.addObjectToSelection(object.id);
+        } else {
+            appController.setSelectedObjects([object.id]);
+        }
     });
 
     const onTimelineObjectChange = useCallbackRef((object: BaseObject, newX: number, newWidth: number) => {
@@ -215,7 +220,12 @@ export function TimeLine(): React.ReactElement {
     const onTimelineObjectKeyframeClick = useCallbackRef((ev: PIXI.InteractionEvent, object: BaseObject, keyframeTiming: number) => {
         ev.stopPropagation();
         appController.previewController.currentTimeInMS = object.startInMS + (object.endInMS - object.startInMS) * keyframeTiming;
-        appController.selectObject(object.id);
+
+        if (ev.data.originalEvent.shiftKey) {
+            appController.addObjectToSelection(object.id);
+        } else {
+            appController.setSelectedObjects([object.id]);
+        }
     });
 
     useEffect(() => {
@@ -260,7 +270,7 @@ export function TimeLine(): React.ReactElement {
                 object={layoutData.object}
                 key={layoutData.object.id}
                 snapPositionXs={snapPositionXs}
-                isSelected={appController.selectedObjectId === layoutData.object.id}
+                isSelected={appController.selectedObjectIds.has(layoutData.object.id)}
                 onClick={onTimelineObjectClick}
                 onChange={onTimelineObjectChange}
                 onKeyframeClick={onTimelineObjectKeyframeClick}

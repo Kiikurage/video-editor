@@ -75,7 +75,7 @@ export function PropertyView(): React.ReactElement {
     }, [appController, forceUpdate]);
 
     const project = appController.project;
-    const selectedObject = appController.selectedObject;
+    const selectedObjects = appController.selectedObjects;
 
     const onObjectRemove = useCallbackRef(() => {
         if (selectedObject !== null) {
@@ -84,6 +84,18 @@ export function PropertyView(): React.ReactElement {
             });
         }
     });
+
+    if (selectedObjects.size >= 2) {
+        return (
+            <Base>
+                <Body>
+                    <ObjectSummary>複数のオブジェクトを選択中</ObjectSummary>
+                </Body>
+            </Base>
+        );
+    }
+
+    const selectedObject = selectedObjects.size === 0 ? null : [...selectedObjects][0];
 
     return (
         <Base>

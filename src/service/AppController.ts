@@ -27,7 +27,7 @@ type AppControllerEvents = EventEmitterEvents<{
 export class AppController extends EventEmitter implements AppControllerEvents {
     private readonly historyManager: HistoryManager<AppState>;
     private readonly _previewController = new PreviewController();
-    private _selectedObjectId: string | null = null;
+    private _selectedObjectIds: ReadonlySet<string> = new Set<string>();
 
     private _project: Project = Project.create();
 
@@ -40,8 +40,8 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         });
     }
 
-    get selectedObjectId(): string | null {
-        return this._selectedObjectId;
+    get selectedObjectIds(): ReadonlySet<string> {
+        return this._selectedObjectIds;
     }
 
     get project(): Project {
@@ -52,10 +52,8 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         return this._previewController;
     }
 
-    get selectedObject(): BaseObject | null {
-        if (this.selectedObjectId === null) return null;
-
-        return this.project.objects.find((object) => object.id === this.selectedObjectId) ?? null;
+    get selectedObjects(): ReadonlySet<BaseObject> {
+        return new Set(this.project.objects.filter((object) => this.selectedObjectIds.has(object.id)));
     }
 
     togglePreviewPlay = (): void => {
@@ -71,8 +69,25 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         this.emit('project.change');
     };
 
-    selectObject = (id: string | null): void => {
-        this._selectedObjectId = id;
+    addObjectToSelection = (id: string): void => {
+        if (this._selectedObjectIds.has(id)) return;
+
+        this._selectedObjectIds = new Set([...this._selectedObjectIds, id]);
+        this.emit('object.select');
+    };
+
+    removeObjectFromSelection = (id: string): void => {
+        if (!this._selectedObjectIds.has(id)) return;
+
+        const newSelectedObjectIds = new Set(this._selectedObjectIds);
+        newSelectedObjectIds.delete(id);
+
+        this._selectedObjectIds = newSelectedObjectIds;
+        this.emit('object.select');
+    };
+
+    setSelectedObjects = (ids: string[]): void => {
+        this._selectedObjectIds = new Set(ids);
         this.emit('object.select');
     };
 
@@ -105,17 +120,15 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         const newObjects = project.objects.slice(0);
         newObjects.splice(i, 1);
 
-        if (objectId === this.selectedObjectId) {
-            this.selectObject(null);
+        if (this.selectedObjectIds.has(objectId)) {
+            this.removeObjectFromSelection(objectId);
         }
 
         this.setProject({ ...project, objects: newObjects, isSaved: false });
     };
 
     removeSelectedObject = (): void => {
-        if (this.selectedObjectId === null) return;
-
-        this.removeObject(this.selectedObjectId);
+        this.selectedObjectIds.forEach(this.removeObject);
     };
 
     exportVideo = async (): Promise<void> => {
@@ -264,13 +277,13 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         return {
             previewTimeInMS: this.previewController.currentTimeInMS,
             project: this.project,
-            selectedObjectId: this.selectedObjectId,
+            selectedObjectIds: this.selectedObjectIds,
         };
     };
 
     private restoreFromState(state: AppState): void {
         this.setProject(state.project);
-        this.selectObject(state.selectedObjectId);
+        this._selectedObjectIds = state.selectedObjectIds;
         this.previewController.currentTimeInMS = state.previewTimeInMS;
     }
 }

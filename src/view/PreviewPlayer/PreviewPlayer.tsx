@@ -73,7 +73,7 @@ const ContentBase = styled.div`
 
 export function PreviewPlayer(): React.ReactElement {
     const appController = useAppController();
-    const { previewController, project, selectedObject } = appController;
+    const { previewController, project, selectedObjects } = appController;
 
     const forceUpdate = useForceUpdate();
     useEffect(() => {
@@ -131,7 +131,7 @@ export function PreviewPlayer(): React.ReactElement {
     });
 
     function renderObjectView(object: BaseObject, snapPositionXsBase: number[], snapPositionYsBase: number[]): React.ReactNode {
-        const isSelected = selectedObject === object;
+        const isSelected = selectedObjects.has(object);
 
         const snapPositionXs = snapPositionXsBase.slice();
         const snapPositionYs = snapPositionYsBase.slice();
@@ -160,7 +160,13 @@ export function PreviewPlayer(): React.ReactElement {
                         selected={isSelected}
                         snapPositionXs={snapPositionXs}
                         snapPositionYs={snapPositionYs}
-                        onSelect={() => appController.selectObject(object.id)}
+                        onSelect={(ev) => {
+                            if (ev.data.originalEvent.shiftKey) {
+                                appController.addObjectToSelection(object.id);
+                            } else {
+                                appController.setSelectedObjects([object.id]);
+                            }
+                        }}
                         onObjectChange={onObjectChange}
                     />
                 );
@@ -174,7 +180,13 @@ export function PreviewPlayer(): React.ReactElement {
                         selected={isSelected}
                         snapPositionXs={snapPositionXs}
                         snapPositionYs={snapPositionYs}
-                        onSelect={() => appController.selectObject(object.id)}
+                        onSelect={(ev) => {
+                            if (ev.data.originalEvent.shiftKey) {
+                                appController.addObjectToSelection(object.id);
+                            } else {
+                                appController.setSelectedObjects([object.id]);
+                            }
+                        }}
                         onObjectChange={onObjectChange}
                     />
                 );
@@ -188,7 +200,13 @@ export function PreviewPlayer(): React.ReactElement {
                         selected={isSelected}
                         snapPositionXs={snapPositionXs}
                         snapPositionYs={snapPositionYs}
-                        onSelect={() => appController.selectObject(object.id)}
+                        onSelect={(ev) => {
+                            if (ev.data.originalEvent.shiftKey) {
+                                appController.addObjectToSelection(object.id);
+                            } else {
+                                appController.setSelectedObjects([object.id]);
+                            }
+                        }}
                         onObjectChange={onObjectChange}
                     />
                 );
@@ -202,7 +220,13 @@ export function PreviewPlayer(): React.ReactElement {
                         selected={isSelected}
                         snapPositionXs={snapPositionXs}
                         snapPositionYs={snapPositionYs}
-                        onSelect={() => appController.selectObject(object.id)}
+                        onSelect={(ev) => {
+                            if (ev.data.originalEvent.shiftKey) {
+                                appController.addObjectToSelection(object.id);
+                            } else {
+                                appController.setSelectedObjects([object.id]);
+                            }
+                        }}
                         onObjectChange={onObjectChange}
                     />
                 );
@@ -216,13 +240,17 @@ export function PreviewPlayer(): React.ReactElement {
         }
     }
 
-    const onBaseClick = useCallbackRef(() => appController.selectObject(null));
+    const onBaseClick = useCallbackRef(() => {
+        appController.setSelectedObjects([]);
+    });
 
     const onContentBaseClick = useCallbackRef((ev: React.MouseEvent) => {
         ev.stopPropagation();
     });
 
-    const onBackgroundClick = useCallbackRef(() => appController.selectObject(null));
+    const onBackgroundClick = useCallbackRef(() => {
+        appController.setSelectedObjects([]);
+    });
 
     // const boxFrames = activeObjects
     //     .filter(Box.isBox)
