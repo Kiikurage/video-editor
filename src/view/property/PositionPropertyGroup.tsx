@@ -48,13 +48,29 @@ export function PositionPropertyGroup<T extends BaseObject & { x: NumericAnimata
     const onXChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         const value = parseInt(ev.target.value);
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, x: value });
+            const newFrameTiming = Math.min(
+                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                1
+            );
+            const newObject = {
+                ...object,
+                x: AnimatableValue.set(object.x, newFrameTiming, value),
+            };
+            appController.updateObject(newObject);
         });
     });
     const onYChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         const value = parseInt(ev.target.value);
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, y: value });
+            const newFrameTiming = Math.min(
+                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                1
+            );
+            const newObject = {
+                ...object,
+                y: AnimatableValue.set(object.y, newFrameTiming, value),
+            };
+            appController.updateObject(newObject);
         });
     });
 

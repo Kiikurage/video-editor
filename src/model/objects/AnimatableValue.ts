@@ -57,8 +57,21 @@ export const AnimatableValue = {
         switch (value.type) {
             case AnimatableValueType.Numeric:
                 return prevFrame.value * (1 - easeInQuad(t)) + nextFrame.value * easeInQuad(t);
-            case AnimatableValueType.Color:
-                return prevFrame.value;
+            case AnimatableValueType.Color: {
+                const r1 = (prevFrame.value & 0xff0000) >> 16;
+                const g1 = (prevFrame.value & 0x00ff00) >> 8;
+                const b1 = prevFrame.value & 0x0000ff;
+
+                const r2 = (nextFrame.value & 0xff0000) >> 16;
+                const g2 = (nextFrame.value & 0x00ff00) >> 8;
+                const b2 = nextFrame.value & 0x0000ff;
+
+                console.log(r1, g1, b1, r2, g2, b2);
+                const r = Math.round(r1 * (1 - easeInQuad(t)) + r2 * easeInQuad(t));
+                const g = Math.round(g1 * (1 - easeInQuad(t)) + g2 * easeInQuad(t));
+                const b = Math.round(b1 * (1 - easeInQuad(t)) + b2 * easeInQuad(t));
+                return (r << 16) | (g << 8) | b;
+            }
             default:
                 throw new Error(`Unsupported animatable value type: ${value.type}`);
         }

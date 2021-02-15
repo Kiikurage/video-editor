@@ -1,24 +1,25 @@
-import { AnimatableValue } from '../../../model/objects/AnimatableValue';
 import { ImageObject } from '../../../model/objects/ImageObject';
+import { Project } from '../../../model/Project';
+import { ImageObjectViewBehavior } from '../../../view/PreviewPlayer/ImageObjectView';
 import { overlay } from '../filters/FFMpegOverlayFilter';
-import { scale } from '../filters/FFMpegScaleFilter';
-import { input } from '../stream/FFMpegInputStream';
 import { FFMpegStreamMap } from '../stream/FFMpegStream';
 import { createFFMpegStream } from './createFFMpegStream';
+import { createFrameObjectFFMpegStream } from './createFrameBasedObjectFFMpegStream';
 
-export const createImageObjectFFMpegStream: createFFMpegStream<ImageObject> = (image: ImageObject, outputStreamMap: FFMpegStreamMap) => {
-    let stream = input(image.srcFilePath);
-    stream = scale(stream, {
-        width: Math.round(AnimatableValue.interpolate(image.width, image.startInMS, image.endInMS, image.startInMS)),
-        height: Math.round(AnimatableValue.interpolate(image.height, image.startInMS, image.endInMS, image.startInMS)),
-    });
+export const createImageObjectFFMpegStream: createFFMpegStream<ImageObject> = async (
+    image: ImageObject,
+    outputStreamMap: FFMpegStreamMap,
+    project: Project,
+    workspacePath: string
+) => {
+    const stream = await createFrameObjectFFMpegStream(image, ImageObjectViewBehavior.customDisplayObject, project, workspacePath);
 
     return Promise.resolve({
         ...outputStreamMap,
         video: outputStreamMap.video
             ? overlay(outputStreamMap.video, stream, {
-                  x: Math.round(AnimatableValue.interpolate(image.x, image.startInMS, image.endInMS, image.startInMS)),
-                  y: Math.round(AnimatableValue.interpolate(image.y, image.startInMS, image.endInMS, image.startInMS)),
+                  x: 0,
+                  y: 0,
                   enable: `between(t,${(image.startInMS / 1000).toFixed(3)},${(image.endInMS / 1000).toFixed(3)})`,
               })
             : stream,

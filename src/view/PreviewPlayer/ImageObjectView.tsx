@@ -18,16 +18,19 @@ interface Props {
 }
 
 interface PixiProps {
-    srcFilePath: string;
-    width: number;
-    height: number;
+    object: ImageObject;
+    timeInMS: number;
 }
 
 function applyProps(base: PIXI.Sprite, props: PixiProps) {
-    const { width, height } = props;
+    const { object, timeInMS } = props;
+    const x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, timeInMS);
+    const y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, timeInMS);
+    const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, timeInMS);
+    const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, timeInMS);
 
-    base.x = 0;
-    base.y = 0;
+    base.x = x;
+    base.y = y;
     base.width = width;
     base.height = height;
 }
@@ -37,15 +40,15 @@ export const ImageObjectViewBehavior: CustomPIXIComponentBehaviorDefinition<PIXI
         const base = new PIXI.Sprite();
 
         applyProps(base, props);
-        base.texture = PIXI.Texture.from(props.srcFilePath);
+        base.texture = PIXI.Texture.from(props.object.srcFilePath);
 
         return base;
     },
     customApplyProps(base: PIXI.Sprite, oldProps: PixiProps, newProps: PixiProps) {
         applyProps(base, newProps);
 
-        if (oldProps.srcFilePath !== newProps.srcFilePath) {
-            base.texture = PIXI.Texture.from(newProps.srcFilePath);
+        if (oldProps.object?.srcFilePath !== newProps.object.srcFilePath) {
+            base.texture = PIXI.Texture.from(newProps.object.srcFilePath);
         }
     },
 };
@@ -59,26 +62,19 @@ function ImageObjectViewWrapper(props: Props): React.ReactElement {
         onObjectChange(image, x, y, width, height);
     });
 
-    const x = AnimatableValue.interpolate(image.x, image.startInMS, image.endInMS, previewController.currentTimeInMS);
-    const y = AnimatableValue.interpolate(image.y, image.startInMS, image.endInMS, previewController.currentTimeInMS);
-    const width = AnimatableValue.interpolate(image.width, image.startInMS, image.endInMS, previewController.currentTimeInMS);
-    const height = AnimatableValue.interpolate(image.height, image.startInMS, image.endInMS, previewController.currentTimeInMS);
-
     return (
-        <ResizeView
-            x={x}
-            y={y}
-            width={width}
-            height={height}
-            locked={image.locked}
-            snapPositionXs={snapPositionXs}
-            snapPositionYs={snapPositionYs}
-            onChange={onChange}
-            onSelect={onSelect}
-            selected={selected}
-        >
-            <ImageObjectView srcFilePath={image.srcFilePath} width={width} height={height} />
-        </ResizeView>
+        <>
+            <ImageObjectView object={image} timeInMS={previewController.currentTimeInMS} />
+            <ResizeView
+                object={image}
+                previewController={previewController}
+                snapPositionXs={snapPositionXs}
+                snapPositionYs={snapPositionYs}
+                onChange={onChange}
+                onSelect={onSelect}
+                selected={selected}
+            />
+        </>
     );
 }
 

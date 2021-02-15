@@ -151,8 +151,8 @@ export function AppShell(): React.ReactElement {
             y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
             width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
             height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-            fill: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 0xfcfcfc }] },
-            stroke: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 0xffffff }] },
+            fill: { type: AnimatableValueType.Color, keyframes: [{ timing: 0, value: 0xfcfcfc }] },
+            stroke: { type: AnimatableValueType.Color, keyframes: [{ timing: 0, value: 0xffffff }] },
             anchor: [],
         };
         appController.commitHistory(() => {

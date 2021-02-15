@@ -20,16 +20,20 @@ interface Props {
 
 interface PixiProps {
     texture: PIXI.Texture;
-    width: number;
-    height: number;
+    object: VideoObject;
+    timeInMS: number;
 }
 
 function applyProps(base: PIXI.Sprite, props: PixiProps) {
-    const { texture, width, height } = props;
+    const { texture, object, timeInMS } = props;
+    const x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, timeInMS);
+    const y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, timeInMS);
+    const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, timeInMS);
+    const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, timeInMS);
 
     base.texture = texture;
-    base.x = 0;
-    base.y = 0;
+    base.x = x;
+    base.y = y;
     base.width = width;
     base.height = height;
 }
@@ -138,29 +142,21 @@ function VideoObjectViewWrapper(props: Props): React.ReactElement {
         });
     }, [onPreviewControllerSeek, video.srcFilePath]);
 
-    const x = AnimatableValue.interpolate(video.x, video.startInMS, video.endInMS, previewController.currentTimeInMS);
-    const y = AnimatableValue.interpolate(video.y, video.startInMS, video.endInMS, previewController.currentTimeInMS);
-    const width = AnimatableValue.interpolate(video.width, video.startInMS, video.endInMS, previewController.currentTimeInMS);
-    const height = AnimatableValue.interpolate(video.height, video.startInMS, video.endInMS, previewController.currentTimeInMS);
-
     const onChange = useCallbackRef((x: number, y: number, width: number, height: number) => {
         onObjectChange(video, x, y, width, height);
     });
 
     return (
         <ResizeView
-            x={x}
-            y={y}
-            width={width}
-            height={height}
-            locked={video.locked}
+            object={video}
+            previewController={previewController}
             snapPositionXs={snapPositionXs}
             snapPositionYs={snapPositionYs}
             onChange={onChange}
             onSelect={onSelect}
             selected={selected}
         >
-            <VideoObjectView texture={texture} width={width} height={height} />
+            <VideoObjectView texture={texture} object={video} timeInMS={previewController.currentTimeInMS} />
         </ResizeView>
     );
 }
