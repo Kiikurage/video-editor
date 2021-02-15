@@ -44,11 +44,19 @@ const PropertyName = styled.header`
 export function AudioPropertyGroup<T extends AudioObject>(props: { appController: AppController; object: T }): React.ReactElement {
     const { appController, object } = props;
     const onVolumeChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        const value = parseFloat(ev.target.value);
+        const value = parseInt(ev.target.value);
         assert(0 <= value && value <= 1, `Invalid volume value: ${value}`);
 
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, volume: value });
+            const newFrameTiming = Math.min(
+                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                1
+            );
+            const newObject = {
+                ...object,
+                volume: AnimatableValue.set(object.volume, newFrameTiming, value),
+            };
+            appController.updateObject(newObject);
         });
     });
 

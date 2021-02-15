@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { CustomPIXIComponent } from 'react-pixi-fiber';
+import { CustomPIXIComponent, CustomPIXIComponentBehaviorDefinition } from 'react-pixi-fiber';
 import { AnimatableValue } from '../../model/objects/AnimatableValue';
 import { TextObject } from '../../model/objects/TextObject';
 import { PreviewController } from '../../service/PreviewController';
@@ -19,15 +19,18 @@ interface Props {
 
 interface PixiProps {
     object: TextObject;
-    width: number;
-    height: number;
+    timeInMS: number;
 }
 
 function applyProps(base: PIXI.Text, props: PixiProps) {
-    const { object, width, height } = props;
+    const { object, timeInMS } = props;
+    const x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, timeInMS);
+    const y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, timeInMS);
+    const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, timeInMS);
+    const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, timeInMS);
 
-    base.x = 0;
-    base.y = 0;
+    base.x = x;
+    base.y = y;
     base.width = width;
     base.height = height;
     base.text = object.text;
@@ -43,7 +46,7 @@ function applyProps(base: PIXI.Text, props: PixiProps) {
     return base;
 }
 
-export const TextObjectViewBehavior = {
+export const TextObjectViewBehavior: CustomPIXIComponentBehaviorDefinition<PIXI.Text, PixiProps> = {
     customDisplayObject(props: PixiProps): PIXI.Text {
         const base = new PIXI.Text('');
 
@@ -65,36 +68,19 @@ function TextObjectViewWrapper(props: Props): React.ReactElement {
         onObjectChange(textObject, x, y, width, height);
     });
 
-    const x = AnimatableValue.interpolate(textObject.x, textObject.startInMS, textObject.endInMS, previewController.currentTimeInMS);
-    const y = AnimatableValue.interpolate(textObject.y, textObject.startInMS, textObject.endInMS, previewController.currentTimeInMS);
-    const width = AnimatableValue.interpolate(
-        textObject.width,
-        textObject.startInMS,
-        textObject.endInMS,
-        previewController.currentTimeInMS
-    );
-    const height = AnimatableValue.interpolate(
-        textObject.height,
-        textObject.startInMS,
-        textObject.endInMS,
-        previewController.currentTimeInMS
-    );
-
     return (
-        <ResizeView
-            x={x}
-            y={y}
-            width={width}
-            height={height}
-            locked={textObject.locked}
-            snapPositionXs={snapPositionXs}
-            snapPositionYs={snapPositionYs}
-            onChange={onChange}
-            onSelect={onSelect}
-            selected={selected}
-        >
-            <TextObjectView object={textObject} width={width} height={height} />
-        </ResizeView>
+        <>
+            <TextObjectView object={textObject} timeInMS={previewController.currentTimeInMS} />
+            <ResizeView
+                object={textObject}
+                previewController={previewController}
+                snapPositionXs={snapPositionXs}
+                snapPositionYs={snapPositionYs}
+                onChange={onChange}
+                onSelect={onSelect}
+                selected={selected}
+            />
+        </>
     );
 }
 

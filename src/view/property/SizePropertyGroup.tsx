@@ -48,13 +48,29 @@ export function SizePropertyGroup<T extends BaseObject & { width: NumericAnimata
     const onWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         const value = parseInt(ev.target.value);
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, width: value });
+            const newFrameTiming = Math.min(
+                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                1
+            );
+            const newObject = {
+                ...object,
+                width: AnimatableValue.set(object.width, newFrameTiming, value),
+            };
+            appController.updateObject(newObject);
         });
     });
     const onHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         const value = parseInt(ev.target.value);
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, height: value });
+            const newFrameTiming = Math.min(
+                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                1
+            );
+            const newObject = {
+                ...object,
+                height: AnimatableValue.set(object.height, newFrameTiming, value),
+            };
+            appController.updateObject(newObject);
         });
     });
 

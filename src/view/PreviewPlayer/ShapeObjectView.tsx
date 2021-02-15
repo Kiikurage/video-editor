@@ -18,11 +18,8 @@ interface Props {
 }
 
 interface PixiProps {
-    shapeType: string;
-    width: number;
-    height: number;
-    stroke: number;
-    fill: number;
+    object: ShapeObject;
+    timeInMS: number;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,7 +29,11 @@ const ShapeRendererMap: Record<ShapeType, (base: PIXI.Graphics, props: PixiProps
 };
 
 function renderRectangle(base: PIXI.Graphics, props: PixiProps) {
-    const { width, height, stroke, fill } = props;
+    const { object, timeInMS } = props;
+    const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, timeInMS);
+    const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, timeInMS);
+    const fill = AnimatableValue.interpolate(object.fill, object.startInMS, object.endInMS, timeInMS);
+    const stroke = AnimatableValue.interpolate(object.stroke, object.startInMS, object.endInMS, timeInMS);
 
     base.lineStyle(4, stroke);
     base.beginFill(fill);
@@ -41,7 +42,11 @@ function renderRectangle(base: PIXI.Graphics, props: PixiProps) {
 }
 
 function renderCircle(base: PIXI.Graphics, props: PixiProps) {
-    const { width, height, stroke, fill } = props;
+    const { object, timeInMS } = props;
+    const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, timeInMS);
+    const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, timeInMS);
+    const fill = AnimatableValue.interpolate(object.fill, object.startInMS, object.endInMS, timeInMS);
+    const stroke = AnimatableValue.interpolate(object.stroke, object.startInMS, object.endInMS, timeInMS);
 
     base.lineStyle(4, stroke);
     base.beginFill(fill);
@@ -50,17 +55,17 @@ function renderCircle(base: PIXI.Graphics, props: PixiProps) {
 }
 
 function applyProps(base: PIXI.Graphics, props: PixiProps) {
-    const { shapeType } = props;
+    const { object, timeInMS } = props;
 
-    base.x = 0;
-    base.y = 0;
+    base.x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, timeInMS);
+    base.y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, timeInMS);
     base.scale.x = 1;
     base.scale.y = 1;
     base.clear();
 
-    const shapeRenderer = ShapeRendererMap[shapeType];
+    const shapeRenderer = ShapeRendererMap[object.shapeType];
     if (shapeRenderer === undefined) {
-        console.warn(`Unsupported shape type: ${shapeType}`);
+        console.warn(`Unsupported shape type: ${object.shapeType}`);
     } else {
         shapeRenderer(base, props);
     }
@@ -88,28 +93,19 @@ function ShapeObjectViewWrapper(props: Props): React.ReactElement {
         onObjectChange(shape, x, y, width, height);
     });
 
-    const x = AnimatableValue.interpolate(shape.x, shape.startInMS, shape.endInMS, previewController.currentTimeInMS);
-    const y = AnimatableValue.interpolate(shape.y, shape.startInMS, shape.endInMS, previewController.currentTimeInMS);
-    const width = AnimatableValue.interpolate(shape.width, shape.startInMS, shape.endInMS, previewController.currentTimeInMS);
-    const height = AnimatableValue.interpolate(shape.height, shape.startInMS, shape.endInMS, previewController.currentTimeInMS);
-    const fill = AnimatableValue.interpolate(shape.fill, shape.startInMS, shape.endInMS, previewController.currentTimeInMS);
-    const stroke = AnimatableValue.interpolate(shape.stroke, shape.startInMS, shape.endInMS, previewController.currentTimeInMS);
-
     return (
-        <ResizeView
-            x={x}
-            y={y}
-            width={width}
-            height={height}
-            locked={shape.locked}
-            snapPositionXs={snapPositionXs}
-            snapPositionYs={snapPositionYs}
-            onChange={onChange}
-            onSelect={onSelect}
-            selected={selected}
-        >
-            <ShapeObjectView width={width} height={height} fill={fill} stroke={stroke} shapeType={shape.shapeType} />
-        </ResizeView>
+        <>
+            <ShapeObjectView object={shape} timeInMS={previewController.currentTimeInMS} />
+            <ResizeView
+                object={shape}
+                previewController={previewController}
+                snapPositionXs={snapPositionXs}
+                snapPositionYs={snapPositionYs}
+                onChange={onChange}
+                onSelect={onSelect}
+                selected={selected}
+            />
+        </>
     );
 }
 
