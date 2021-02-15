@@ -2,6 +2,6 @@ import { Project } from '../model/Project';
 
 export interface AppState {
     project: Project;
-    selectedObjectId: string | null;
+    selectedObjectIds: ReadonlySet<string>;
     previewTimeInMS: number;
 }

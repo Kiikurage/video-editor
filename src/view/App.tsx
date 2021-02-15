@@ -25,7 +25,7 @@ export function App(): React.ReactElement {
                 appController.removeSelectedObject();
             });
         });
-        Mousetrap.bind('esc', () => appController.selectObject(null));
+        Mousetrap.bind('esc', () => appController.setSelectedObjects([]));
         Mousetrap.bind('command+z', appController.undo);
         Mousetrap.bind('command+shift+z', appController.redo);
         // eslint-disable-next-line react-hooks/exhaustive-deps

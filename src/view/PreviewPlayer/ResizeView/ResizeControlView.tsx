@@ -16,7 +16,7 @@ interface Props {
     locked: boolean;
     snapPositionXs: number[];
     snapPositionYs: number[];
-    onSelect: () => void;
+    onSelect: (ev: PIXI.InteractionEvent) => void;
     onChange: (dx: number, dy: number, dw: number, dh: number) => void;
 }
 
@@ -29,7 +29,7 @@ interface PixiProps {
     locked: boolean;
     frameDragHandlers: PixiDragHandlers;
     resizerDragHandlers: Record<string, PixiDragHandlers>;
-    onClick: () => void;
+    onClick: (ev: PIXI.InteractionEvent) => void;
 }
 
 function applyProps(base: PIXI.Container, props: PixiProps) {
