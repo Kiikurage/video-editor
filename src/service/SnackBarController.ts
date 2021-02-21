@@ -1,6 +1,6 @@
+import { EventEmitter } from 'events';
 import { Counter } from '../lib/Counter';
 import { EventEmitterEvents } from '../model/EventEmitterEvents';
-import { EventEmitter } from 'events';
 
 export type SnackBarMessageType = 'info' | 'success' | 'error';
 

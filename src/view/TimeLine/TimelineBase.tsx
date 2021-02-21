@@ -39,19 +39,19 @@ function applyGridProps(base: PIXI.Graphics, props: PixiGridProps) {
     base.drawRect(0, 0, width, height);
     base.endFill();
 
-    base.beginFill(0xf0f0f0, 1);
-    base.drawRect(0, 0, width, 28);
+    base.beginFill(0xffffff, 1);
+    base.drawRect(0, 0, width, 20);
     base.endFill();
 
     base.lineStyle(1, 0xc0c0c0, 1);
-    base.moveTo(0, 28);
-    base.lineTo(width, 28);
+    base.moveTo(0, 20);
+    base.lineTo(width, 20);
 
     base.interactive = true;
 
     for (const { x, labeled } of data) {
         base.lineStyle(1, labeled ? 0xd0d0d0 : 0xe8e8e8, 1);
-        base.moveTo(x, labeled ? 22 : 28);
+        base.moveTo(x, labeled ? 12 : 20 - 2);
         base.lineTo(x, height);
     }
 }
@@ -81,11 +81,11 @@ function applyLabelProps(base: PIXI.Text, props: PixiLabelProps) {
     base.anchor.x = 0.5;
     base.anchor.y = 0;
     base.x = x;
-    base.y = 5;
+    base.y = 2;
     base.scale.x = 1;
     base.scale.y = 1;
     base.style = {
-        fontSize: 14,
+        fontSize: 12,
         fill: 0x808080,
         fontWeight: '100',
     };
@@ -145,7 +145,7 @@ export function TimelineBase(props: React.PropsWithChildren<Props>): React.React
                 .map(({ x, label }, i) => (
                     <Label x={x} label={label} key={i} />
                 ))}
-            <ChildrenContainer x={0} y={28} width={width} height={height - 28}>
+            <ChildrenContainer x={0} y={20} width={width} height={height - 20}>
                 {children}
             </ChildrenContainer>
         </>

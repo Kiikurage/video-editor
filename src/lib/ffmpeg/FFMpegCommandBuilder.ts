@@ -1,8 +1,8 @@
 import * as childProcess from 'child_process';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import * as tmp from 'tmp';
 import { promisify } from 'util';
+import * as tmp from 'tmp';
 import { getFFMpegInfo } from '../../ipc/renderer/getFFMepgInfo';
 import { AudioObject } from '../../model/objects/AudioObject';
 import { ShapeObject } from '../../model/objects/ShapeObject';

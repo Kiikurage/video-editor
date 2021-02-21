@@ -18,3 +18,5 @@ export interface VideoObject extends BaseObject {
     width: NumericAnimatableValue;
     height: NumericAnimatableValue;
 }
+
+BaseObject.register({ type: VideoObject.type });

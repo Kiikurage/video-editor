@@ -87,6 +87,7 @@
     "lint-staged": "^10.5.3",
     "mousetrap": "^1.6.5",
     "parallelshell": "3.0.1",
+    "pixi-filters": "^3.2.2",
     "pixi-sound": "^3.0.5",
     "pixi.js": "^5.3.7",
     "polished": "^4.0.5",

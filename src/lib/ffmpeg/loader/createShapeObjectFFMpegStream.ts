@@ -1,6 +1,6 @@
 import { ShapeObject } from '../../../model/objects/ShapeObject';
 import { Project } from '../../../model/Project';
-import { ShapeObjectViewBehavior } from '../../../view/PreviewPlayer/ShapeObjectView';
+import { ShapeObjectViewRenderer } from '../../../view/Renderer/ShapeObjectViewRenderer';
 import { overlay } from '../filters/FFMpegOverlayFilter';
 import { FFMpegStreamMap } from '../stream/FFMpegStream';
 import { createFFMpegStream } from './createFFMpegStream';
@@ -12,7 +12,7 @@ export const createShapeObjectFFMpegStream: createFFMpegStream<ShapeObject> = as
     project: Project,
     workspacePath: string
 ) => {
-    const stream = await createFrameObjectFFMpegStream(shapeObject, ShapeObjectViewBehavior.customDisplayObject, project, workspacePath);
+    const stream = await createFrameObjectFFMpegStream(shapeObject, ShapeObjectViewRenderer.customDisplayObject, project, workspacePath);
 
     return {
         ...outputStreamMap,

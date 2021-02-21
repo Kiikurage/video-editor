@@ -8,7 +8,8 @@
     "moduleResolution": "Node",
     "target": "ES6",
     "jsx": "react",
-    "outDir": "build"
+    "outDir": "build",
+    "skipLibCheck": true
   },
   "include": [
     "./src/**/*.ts",

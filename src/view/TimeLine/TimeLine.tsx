@@ -11,9 +11,9 @@ import { TextObject } from '../../model/objects/TextObject';
 import { VideoObject } from '../../model/objects/VideoObject';
 import { Project } from '../../model/Project';
 import { useAppController } from '../AppControllerProvider';
+import { CustomStage } from '../CustomStage';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { useForceUpdate } from '../hooks/useForceUpdate';
-import { CustomStage } from '../CustomStage';
 import { CurrentTimeIndicator } from './CurrentTimeIndicator';
 import { MouseTimeIndicator } from './MouseTimeIndicator';
 import { TimelineAudioObjectView } from './TimelineAudioObjectView';
@@ -28,7 +28,6 @@ const Base = styled.div`
     position: relative;
     width: 100%;
     height: 100%;
-    background: #fff;
     transform: translateX(0);
 `;
 
@@ -187,7 +186,7 @@ export function TimeLine(): React.ReactElement {
     });
 
     const onMouseMove = useCallbackRef((ev: React.MouseEvent) => {
-        setMouseX(ev.clientX);
+        setMouseX(ev.nativeEvent.offsetX);
     });
 
     const onTimelineBaseClick = useCallbackRef((ev: PIXI.InteractionEvent) => {
@@ -333,6 +332,7 @@ function computeTimelineNodeLayoutData(
 } {
     const layoutItems: TimelineNodeLayoutData[] = [];
     let y = 10 - canvasTop;
+    const SPACE_Y = 24;
     for (const object of objects) {
         let height: number;
         if (VideoObject.isVideo(object)) {
@@ -351,7 +351,7 @@ function computeTimelineNodeLayoutData(
                 rect: { x: x, y: y, width: width, height: height },
             });
         }
-        y += height;
+        y += height + SPACE_Y;
     }
     const canvasScrollHeight = y;
 

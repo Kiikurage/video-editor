@@ -1,3 +1,7 @@
+export function linear(t: number): number {
+    return t;
+}
+
 export const easeInQuad = cubicBezier(0, 0.5, 0.3, 1);
 
 export function easeOutQuad(t: number): number {

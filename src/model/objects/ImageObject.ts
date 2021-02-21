@@ -18,3 +18,5 @@ export interface ImageObject extends BaseObject {
     width: NumericAnimatableValue;
     height: NumericAnimatableValue;
 }
+
+BaseObject.register({ type: ImageObject.type });

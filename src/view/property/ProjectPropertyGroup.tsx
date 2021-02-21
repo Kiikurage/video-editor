@@ -1,74 +1,48 @@
 import * as React from 'react';
-import styled from 'styled-components';
 import { Project } from '../../model/Project';
 import { AppController } from '../../service/AppController';
+import { ColorInput } from '../ColorInput';
+import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
-
-const PropertyGroup = styled.div`
-    padding: 16px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-    justify-content: stretch;
-
-    & + & {
-        border-top: 1px solid #c0c0c0;
-    }
-`;
-
-const PropertyGroupName = styled.header`
-    font-size: 12px;
-    font-weight: bold;
-    letter-spacing: 0.1em;
-    color: #888;
-    line-height: 1;
-`;
-
-const PropertyRow = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: stretch;
-`;
-
-const PropertyName = styled.header`
-    font-size: 12px;
-    color: #444;
-`;
+import { NumberInput } from '../NumberInput';
+import { PropertyGroup, PropertyGroupName, PropertyRow } from './PropertyGroup';
 
 export function ProjectPropertyGroup(props: { appController: AppController; project: Project }): React.ReactElement {
     const { appController, project } = props;
 
-    const onProjectFPSChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        const value = Number(ev.target.value);
-
+    const onProjectFPSChange = useCallbackRef((value: number) => {
         appController.setProject({ ...project, fps: value, isSaved: false });
     });
-    const onProjectViewportWidthChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        const value = Number(ev.target.value);
-
+    const onProjectViewportWidthChange = useCallbackRef((value: number) => {
         appController.setProject({ ...project, viewport: { ...project.viewport, width: value }, isSaved: false });
     });
-    const onProjectViewportHeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
-        const value = Number(ev.target.value);
+    const onProjectViewportHeightChange = useCallbackRef((value: number) => {
         appController.setProject({ ...project, viewport: { ...project.viewport, height: value }, isSaved: false });
+    });
+    const onProjectViewportBackgroundColorChange = useCallbackRef((value: number) => {
+        appController.setProject({ ...project, viewport: { ...project.viewport, backgroundColor: value }, isSaved: false });
     });
 
     return (
         <PropertyGroup>
             <PropertyGroupName>プロジェクト設定</PropertyGroupName>
             <PropertyRow>
-                <PropertyName>FPS</PropertyName>
-                <input type="number" min={1} max={60} value={project.fps} onChange={onProjectFPSChange} />
+                <FormControl label="FPS">
+                    <NumberInput min={1} max={60} value={project.fps} onChange={onProjectFPSChange} />
+                </FormControl>
             </PropertyRow>
             <PropertyRow>
-                <PropertyName>幅</PropertyName>
-                <input type="number" min={0} max={1960} value={project.viewport.width} onChange={onProjectViewportWidthChange} />
+                <FormControl label="幅">
+                    <NumberInput min={0} max={1960} value={project.viewport.width} onChange={onProjectViewportWidthChange} />
+                </FormControl>
+                <FormControl label="高さ">
+                    <NumberInput min={0} max={1080} value={project.viewport.height} onChange={onProjectViewportHeightChange} />
+                </FormControl>
             </PropertyRow>
             <PropertyRow>
-                <PropertyName>高さ</PropertyName>
-                <input type="number" min={0} max={1080} value={project.viewport.height} onChange={onProjectViewportHeightChange} />
+                <FormControl label="背景の色">
+                    <ColorInput value={project.viewport.backgroundColor} onChange={onProjectViewportBackgroundColorChange} />
+                </FormControl>
             </PropertyRow>
         </PropertyGroup>
     );

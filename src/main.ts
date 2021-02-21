@@ -1,7 +1,7 @@
+import * as path from 'path';
 import * as ffmpeg from '@ffmpeg-installer/ffmpeg';
 import * as ffprobe from '@ffprobe-installer/ffprobe';
 import { app, BrowserWindow, dialog } from 'electron';
-import * as path from 'path';
 import { assert } from './lib/util';
 import { IPCMain } from './ipc/IPCMain';
 import { IPCMessage } from './model/IPCMessage';

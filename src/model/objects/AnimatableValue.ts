@@ -1,4 +1,4 @@
-import { easeInQuad } from '../../lib/easing';
+import { linear } from '../../lib/easing';
 
 export const AnimatableValueType = {
     Numeric: 'NUMERIC',
@@ -10,6 +10,8 @@ export interface AnimatableValue<T extends AnimatableValueType = AnimatableValue
     type: T;
     keyframes: AnimatableValueKeyframe[];
 }
+
+const easingFunction = linear;
 
 export const AnimatableValue = {
     set: (value: AnimatableValue, newFrameTiming: number, newFrameValue: number): AnimatableValue => {
@@ -56,7 +58,8 @@ export const AnimatableValue = {
 
         switch (value.type) {
             case AnimatableValueType.Numeric:
-                return prevFrame.value * (1 - easeInQuad(t)) + nextFrame.value * easeInQuad(t);
+                return prevFrame.value * (1 - easingFunction(t)) + nextFrame.value * easingFunction(t);
+
             case AnimatableValueType.Color: {
                 const r1 = (prevFrame.value & 0xff0000) >> 16;
                 const g1 = (prevFrame.value & 0x00ff00) >> 8;
@@ -66,10 +69,9 @@ export const AnimatableValue = {
                 const g2 = (nextFrame.value & 0x00ff00) >> 8;
                 const b2 = nextFrame.value & 0x0000ff;
 
-                console.log(r1, g1, b1, r2, g2, b2);
-                const r = Math.round(r1 * (1 - easeInQuad(t)) + r2 * easeInQuad(t));
-                const g = Math.round(g1 * (1 - easeInQuad(t)) + g2 * easeInQuad(t));
-                const b = Math.round(b1 * (1 - easeInQuad(t)) + b2 * easeInQuad(t));
+                const r = Math.round(r1 * (1 - easingFunction(t)) + r2 * easingFunction(t));
+                const g = Math.round(g1 * (1 - easingFunction(t)) + g2 * easingFunction(t));
+                const b = Math.round(b1 * (1 - easingFunction(t)) + b2 * easingFunction(t));
                 return (r << 16) | (g << 8) | b;
             }
             default:

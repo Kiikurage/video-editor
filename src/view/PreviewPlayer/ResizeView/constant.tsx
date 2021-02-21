@@ -1,4 +1,4 @@
-export const RESIZER_SIZE = 40;
+export const RESIZER_SIZE = 10;
 
 export const DIR: {
     name: string;

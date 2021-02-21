@@ -2,8 +2,8 @@ import * as childProcess from 'child_process';
 import { EventEmitter } from 'events';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import * as tmp from 'tmp';
 import { promisify } from 'util';
+import * as tmp from 'tmp';
 import { getFFMpegInfo } from '../ipc/renderer/getFFMepgInfo';
 import { getFFProbeInfo } from '../ipc/renderer/getFFProbeInfo';
 import { noop } from '../lib/util';
@@ -46,16 +46,17 @@ export class KeyframeLoader extends EventEmitter implements KeyframeLoaderEvents
     }
 
     async start(): Promise<void> {
-        if (this.cleanUpFunction === noop) return;
-
-        const BATCH_SIZE_IN_MS = 1000;
-        let currentBatchStartInMS = 0;
-        const videoDuration = await this.loadVideoDurationInMS();
-
-        while (currentBatchStartInMS < videoDuration) {
-            await this.extractKeyframeMainLoop(currentBatchStartInMS, Math.min(currentBatchStartInMS + BATCH_SIZE_IN_MS, videoDuration), 2);
-            currentBatchStartInMS += BATCH_SIZE_IN_MS;
-        }
+        // if (this.cleanUpFunction === noop) return;
+        //
+        // const BATCH_SIZE_IN_MS = 1000;
+        // let currentBatchStartInMS = 0;
+        // const videoDuration = await this.loadVideoDurationInMS();
+        //
+        // while (currentBatchStartInMS < videoDuration) {
+        //     await this.extractKeyframeMainLoop(currentBatchStartInMS, Math.min(currentBatchStartInMS + BATCH_SIZE_IN_MS, videoDuration), 2);
+        //     await new Promise((r) => setTimeout(r, 1000));
+        //     currentBatchStartInMS += BATCH_SIZE_IN_MS;
+        // }
     }
 
     clearAllCache(): void {
