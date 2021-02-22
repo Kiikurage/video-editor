@@ -1,9 +1,11 @@
 import { EventEmitter } from 'events';
+import { clipboard } from 'electron';
 import * as FileType from 'file-type';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { showSaveFileDialog } from '../ipc/renderer/showSaveFileDialog';
 import { encodeProject } from '../lib/ffmpeg/FFMpegCommandBuilder';
 import { getImageSize, getVideoSize } from '../lib/getAssetSpacialSize';
+import { isNonNull } from '../lib/isNonNull';
 import { assert } from '../lib/util';
 import { UUID } from '../lib/UUID';
 import { AppState } from '../model/AppState';
@@ -27,9 +29,6 @@ type AppControllerEvents = EventEmitterEvents<{
 export class AppController extends EventEmitter implements AppControllerEvents {
     private readonly historyManager: HistoryManager<AppState>;
     private readonly _previewController = new PreviewController();
-    private _selectedObjectIds: ReadonlySet<string> = new Set<string>();
-
-    private _project: Project = Project.create();
 
     constructor() {
         super();
@@ -40,9 +39,13 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         });
     }
 
+    private _selectedObjectIds: ReadonlySet<string> = new Set<string>();
+
     get selectedObjectIds(): ReadonlySet<string> {
         return this._selectedObjectIds;
     }
+
+    private _project: Project = Project.create();
 
     get project(): Project {
         return this._project;
@@ -91,6 +94,10 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         this.emit('object.select');
     };
 
+    selectAll = (): void => {
+        this.setSelectedObjects(this.project.objects.map((object) => object.id));
+    };
+
     addObject = (...objects: BaseObject[]): void => {
         this.setProject({
             ...this.project,
@@ -127,7 +134,7 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         this.setProject({ ...project, objects: newObjects, isSaved: false });
     };
 
-    removeSelectedObject = (): void => {
+    removeSelectedObjects = (): void => {
         this.selectedObjectIds.forEach(this.removeObject);
     };
 
@@ -145,8 +152,6 @@ export class AppController extends EventEmitter implements AppControllerEvents {
 
             SnackBarController.clearMessage(snackBarMessageId);
             SnackBarController.showMessage('エンコード中にエラーが発生しました', { type: 'error' });
-
-            // TODO: クリーンアップされず永遠にゴミが残る
             return;
         }
     };
@@ -199,6 +204,31 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         if (state === undefined) return;
 
         this.restoreFromState(state);
+    };
+
+    cut = (): void => {
+        this.commitHistory(() => {
+            this.copy();
+            this.removeSelectedObjects();
+        });
+    };
+
+    copy = (): void => {
+        clipboard.writeText(JSON.stringify([...this.selectedObjects].map(BaseObject.serialize)));
+    };
+
+    paste = (): void => {
+        try {
+            const objects = (JSON.parse(clipboard.readText()) as string[]).map(BaseObject.deserialize);
+            this.commitHistory(() => {
+                const clonedObjects = objects.map(BaseObject.clone);
+                this.addObject(...clonedObjects);
+                this.setSelectedObjects(clonedObjects.map((object) => object.id));
+            });
+        } catch (e) {
+            console.error(e);
+            return;
+        }
     };
 
     commitHistory = (fn: () => void): void => {
@@ -271,6 +301,22 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         this.commitHistory(() => {
             this.addObject(...newObjects);
         });
+    };
+
+    modifySelectedObjects = (modifier: (object: BaseObject) => BaseObject | null, commitHistory = true): void => {
+        const newObjects: BaseObject[] = [...this.selectedObjects].map(modifier).filter(isNonNull);
+
+        if (commitHistory && newObjects.length > 0) {
+            this.commitHistory(() => {
+                for (const object of newObjects) {
+                    this.updateObject(object);
+                }
+            });
+        } else {
+            for (const object of newObjects) {
+                this.updateObject(object);
+            }
+        }
     };
 
     private getState = (): AppState => {

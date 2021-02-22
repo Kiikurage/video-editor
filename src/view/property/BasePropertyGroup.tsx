@@ -1,44 +1,12 @@
 import * as React from 'react';
-import styled from 'styled-components';
 import LockedIcon from '../../icons/lock-24px.svg';
 import UnlockedIcon from '../../icons/lock_open-24px.svg';
-import { formatTime } from '../../lib/formatTime';
 import { BaseObject } from '../../model/objects/BaseObject';
 import { AppController } from '../../service/AppController';
+import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
-
-const PropertyGroup = styled.div`
-    padding: 16px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-    justify-content: stretch;
-
-    & + & {
-        border-top: 1px solid #c0c0c0;
-    }
-`;
-
-const PropertyGroupName = styled.header`
-    font-size: 12px;
-    font-weight: bold;
-    letter-spacing: 0.1em;
-    color: #888;
-    line-height: 1;
-`;
-
-const PropertyRow = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: stretch;
-`;
-
-const PropertyName = styled.header`
-    font-size: 12px;
-    color: #444;
-`;
+import { TimePositionInput } from '../TimePositionInput';
+import { PropertyColumn, PropertyGroup, PropertyGroupName, PropertyRow } from './PropertyGroup';
 
 export function BasePropertyGroup<T extends BaseObject>(props: { appController: AppController; object: T }): React.ReactElement {
     const { appController, object } = props;
@@ -52,20 +20,38 @@ export function BasePropertyGroup<T extends BaseObject>(props: { appController: 
         });
     });
 
+    const onStartInMSChange = useCallbackRef((timeInMS: number) => {
+        console.log(timeInMS);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, startInMS: timeInMS });
+        });
+    });
+    const onEndInMSChange = useCallbackRef((timeInMS: number) => {
+        console.log(timeInMS);
+        appController.commitHistory(() => {
+            appController.updateObject({ ...object, endInMS: timeInMS });
+        });
+    });
+
     return (
         <PropertyGroup>
             <PropertyGroupName>一般</PropertyGroupName>
             <PropertyRow>
-                <PropertyName>開始</PropertyName>
-                <span>{formatTime(object.startInMS, appController.project.fps)}</span>
+                <PropertyColumn>
+                    <FormControl label="開始">
+                        <TimePositionInput value={object.startInMS} fps={appController.project.fps} onChange={onStartInMSChange} />
+                    </FormControl>
+                </PropertyColumn>
+                <PropertyColumn>
+                    <FormControl label="終了">
+                        <TimePositionInput value={object.endInMS} fps={appController.project.fps} onChange={onEndInMSChange} />
+                    </FormControl>
+                </PropertyColumn>
             </PropertyRow>
             <PropertyRow>
-                <PropertyName>終了</PropertyName>
-                <span>{formatTime(object.endInMS, appController.project.fps)}</span>
-            </PropertyRow>
-            <PropertyRow>
-                <PropertyName>編集ロック</PropertyName>
-                <button onClick={onToggleLockButtonClick}>{object.locked ? <LockedIcon /> : <UnlockedIcon />}</button>
+                <FormControl label="編集ロック">
+                    <button onClick={onToggleLockButtonClick}>{object.locked ? <LockedIcon /> : <UnlockedIcon />}</button>
+                </FormControl>
             </PropertyRow>
         </PropertyGroup>
     );

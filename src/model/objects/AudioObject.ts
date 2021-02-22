@@ -15,3 +15,5 @@ export interface AudioObject extends BaseObject {
     srcFilePath: string;
     volume: NumericAnimatableValue;
 }
+
+BaseObject.register({ type: AudioObject.type });

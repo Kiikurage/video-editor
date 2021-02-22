@@ -20,3 +20,5 @@ export interface TextObject extends BaseObject {
     width: NumericAnimatableValue;
     height: NumericAnimatableValue;
 }
+
+BaseObject.register({ type: TextObject.type });

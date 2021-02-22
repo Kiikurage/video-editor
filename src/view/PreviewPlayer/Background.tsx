@@ -1,62 +1,62 @@
+import { DropShadowFilter } from '@pixi/filter-drop-shadow';
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
-import { useCallbackRef } from '../hooks/useCallbackRef';
+import { Project } from '../../model/Project';
+
+import { PreviewCanvasViewportInfo, usePreviewCanvasViewportInfo } from './PreviewPlayer';
 
 interface Props {
-    width: number;
-    height: number;
-    onClick: () => void;
+    project: Project;
 }
 
 interface PixiProps {
-    width: number;
-    height: number;
-    onClick: (ev: PIXI.InteractionEvent) => void;
+    project: Project;
+    canvasContext: PreviewCanvasViewportInfo;
 }
 
 function applyProps(base: PIXI.Graphics, props: PixiProps) {
-    const { width, height } = props;
+    const { project, canvasContext } = props;
 
-    base.interactive = true;
-    base.buttonMode = true;
-    base.x = 0;
-    base.y = 0;
-    base.width = width;
-    base.height = height;
+    base.x = (0 - canvasContext.left) * canvasContext.scale;
+    base.y = (0 - canvasContext.top) * canvasContext.scale;
+    base.width = project.viewport.width * canvasContext.scale;
+    base.height = project.viewport.height * canvasContext.scale;
+    base.scale.x = 1;
+    base.scale.y = 1;
 
     base.clear();
-    base.beginFill(0x000000, 1);
-    base.drawRect(0, 0, width, height);
+    base.beginFill(project.viewport.backgroundColor, 1);
+    base.drawRect(0, 0, project.viewport.width * canvasContext.scale, project.viewport.height * canvasContext.scale);
     base.endFill();
 }
 
-const Background = CustomPIXIComponent(
+const PixiBackground = CustomPIXIComponent(
     {
         customDisplayObject(props: PixiProps) {
             const base = new PIXI.Graphics();
+
+            const dropShadowFilter = new DropShadowFilter();
+            dropShadowFilter.color = 0x000000;
+            dropShadowFilter.alpha = 0.1;
+            dropShadowFilter.blur = 3;
+            dropShadowFilter.distance = 5;
+            base.filters = [dropShadowFilter];
 
             applyProps(base, props);
 
             return base;
         },
         customApplyProps(base: PIXI.Graphics, oldProps: PixiProps, newProps: PixiProps): void {
-            base.off('mousedown', oldProps.onClick);
-            base.on('mousedown', newProps.onClick);
+            applyProps(base, newProps);
         },
     },
-    'Background'
+    'PixiBackground'
 );
 
-function BackgroundWrapper(props: Props): React.ReactElement {
-    const { width, height } = props;
+export function Background(props: Props): React.ReactElement {
+    const { project } = props;
+    const canvasContext = usePreviewCanvasViewportInfo();
 
-    const onClick = useCallbackRef((ev: PIXI.InteractionEvent) => {
-        ev.stopPropagation();
-        props.onClick();
-    });
-
-    return <Background width={width} height={height} onClick={onClick} />;
+    return <PixiBackground project={project} canvasContext={canvasContext} />;
 }
-
-export { BackgroundWrapper as Background };

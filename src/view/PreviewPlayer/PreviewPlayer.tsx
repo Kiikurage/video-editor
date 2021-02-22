@@ -1,21 +1,23 @@
+import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useMemo } from 'react';
-import { Stage } from 'react-pixi-fiber';
+import { ComponentType, useContext, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { AnimatableValue } from '../../model/objects/AnimatableValue';
 import { AudioObject } from '../../model/objects/AudioObject';
 import { BaseObject } from '../../model/objects/BaseObject';
-import { Box } from '../../model/objects/Box';
 import { ImageObject } from '../../model/objects/ImageObject';
 import { ShapeObject } from '../../model/objects/ShapeObject';
 import { TextObject } from '../../model/objects/TextObject';
 import { VideoObject } from '../../model/objects/VideoObject';
+import { Project } from '../../model/Project';
 import { useAppController } from '../AppControllerProvider';
+import { CustomStage } from '../CustomStage';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { useForceUpdate } from '../hooks/useForceUpdate';
 import { AudioObjectView } from './AudioObjectView';
 import { Background } from './Background';
 import { ImageObjectView } from './ImageObjectView';
+import { PreviewPlayerObjectViewProps } from './PreviewPlayerObjectView';
 import { ResizableObject } from './ResizeView/ResizableObejct';
 import { ShapeObjectView } from './ShapeObjectView';
 import { TextObjectView } from './TextObjectView';
@@ -25,57 +27,31 @@ const Base = styled.div`
     position: relative;
     width: 100%;
     height: 100%;
-    background: #e0e0e0;
-    display: grid;
-    grid-template:
-        'pad1 pad2 pad3' minmax(0, 1fr)
-        'pad4 main pad5' max-content
-        'pad6 pad7 pad8' minmax(0, 1fr) / minmax(0, 1fr) max-content minmax(0, 1fr);
     overflow-x: auto;
     overflow-y: auto;
-    box-sizing: border-box;
-    border: 1px solid transparent;
 `;
 
-const ContentWrapper = styled.div`
-    grid-area: main;
-    padding: 16px;
-    border: 1px solid transparent;
-    z-index: 0;
-`;
+const options: PIXI.ApplicationOptions = {
+    width: 300,
+    height: 300,
+    transparent: true,
+    antialias: true,
+};
 
-const Shadow = styled.div`
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.05);
-    z-index: 1;
-    pointer-events: none;
-    user-select: none;
-`;
-
-const ContentBase = styled.div`
-    position: relative;
-    background: #fff;
-    box-shadow: rgba(50, 50, 93, 0.25) 0 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
-    flex: 0 0 auto;
-
-    > canvas {
-        position: relative;
-        width: 100% !important;
-        height: 100% !important;
-    }
-`;
+const ObjectViewMap: Record<string, ComponentType<PreviewPlayerObjectViewProps<never>>> = {
+    [VideoObject.type]: VideoObjectView,
+    [TextObject.type]: TextObjectView,
+    [ImageObject.type]: ImageObjectView,
+    [ShapeObject.type]: ShapeObjectView,
+    [AudioObject.type]: AudioObjectView,
+};
 
 export function PreviewPlayer(): React.ReactElement {
     const appController = useAppController();
-    const { previewController, project, selectedObjects } = appController;
-
+    const { previewController, project } = appController;
+    const [info, setContainer] = useViewportInfo(project);
     const forceUpdate = useForceUpdate();
+
     useEffect(() => {
         appController.on('project.change', forceUpdate);
         appController.on('object.select', forceUpdate);
@@ -96,190 +72,163 @@ export function PreviewPlayer(): React.ReactElement {
         };
     }, [previewController, forceUpdate]);
 
-    const contentBaseWidth = 640;
-    const contentBaseHeight = (contentBaseWidth * project.viewport.height) / project.viewport.width;
-
-    const pixiStageOption = useMemo(() => {
-        return {
-            backgroundColor: 0xffffff,
-            width: project.viewport.width,
-            height: project.viewport.height,
-        };
-    }, [project.viewport.height, project.viewport.width]);
-
-    const currentTimeInMS = previewController.currentTimeInMS;
-
     const activeObjects = project.objects.filter(
-        (object) => AudioObject.isAudio(object) || (object.startInMS <= currentTimeInMS && currentTimeInMS <= object.endInMS)
+        (object) => object.startInMS <= previewController.currentTimeInMS && previewController.currentTimeInMS <= object.endInMS
     );
 
-    const onObjectChange = useCallbackRef((object: ResizableObject, x: number, y: number, width: number, height: number) => {
+    const onObjectViewChange = useCallbackRef((object: ResizableObject, dx: number, dy: number, dw: number, dh: number) => {
         appController.commitHistory(() => {
+            const x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, previewController.currentTimeInMS);
+            const y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, previewController.currentTimeInMS);
+            const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, previewController.currentTimeInMS);
+            const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, previewController.currentTimeInMS);
+
             const newFrameTiming = Math.min(
                 Math.max(0, (previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
                 1
             );
-            const newObject: ResizableObject = {
+
+            appController.updateObject({
                 ...object,
-                x: AnimatableValue.set(object.x, newFrameTiming, x),
-                y: AnimatableValue.set(object.y, newFrameTiming, y),
-                width: AnimatableValue.set(object.width, newFrameTiming, width),
-                height: AnimatableValue.set(object.height, newFrameTiming, height),
-            };
-            appController.updateObject(newObject);
+                x: AnimatableValue.set(object.x, newFrameTiming, x + dx),
+                y: AnimatableValue.set(object.y, newFrameTiming, y + dy),
+                width: AnimatableValue.set(object.width, newFrameTiming, width + dw),
+                height: AnimatableValue.set(object.height, newFrameTiming, height + dh),
+            } as ShapeObject);
         });
     });
 
-    function renderObjectView(object: BaseObject, snapPositionXsBase: number[], snapPositionYsBase: number[]): React.ReactNode {
-        const isSelected = selectedObjects.has(object);
-
-        const snapPositionXs = snapPositionXsBase.slice();
-        const snapPositionYs = snapPositionYsBase.slice();
-        if (Box.isBox(object)) {
-            for (const targetX of [object.x, object.x + object.width]) {
-                const i = snapPositionXs.indexOf(targetX);
-                if (i === -1) continue;
-
-                snapPositionXs.splice(i, 1);
-            }
-            for (const targetY of [object.y, object.y + object.height]) {
-                const i = snapPositionYs.indexOf(targetY);
-                if (i === -1) continue;
-
-                snapPositionYs.splice(i, 1);
-            }
+    const onObjectViewSelect = useCallbackRef((ev: PIXI.InteractionEvent, object: BaseObject) => {
+        ev.stopPropagation();
+        ev.data.originalEvent.preventDefault();
+        if (ev.data.originalEvent.shiftKey) {
+            appController.addObjectToSelection(object.id);
+        } else {
+            appController.setSelectedObjects([object.id]);
         }
+    });
 
-        switch (object.type) {
-            case VideoObject.type:
-                return (
-                    <VideoObjectView
-                        key={object.id}
-                        video={object as VideoObject}
-                        previewController={previewController}
-                        selected={isSelected}
-                        snapPositionXs={snapPositionXs}
-                        snapPositionYs={snapPositionYs}
-                        onSelect={(ev) => {
-                            if (ev.data.originalEvent.shiftKey) {
-                                appController.addObjectToSelection(object.id);
-                            } else {
-                                appController.setSelectedObjects([object.id]);
-                            }
-                        }}
-                        onObjectChange={onObjectChange}
-                    />
-                );
+    const onStageMouseDown = useCallbackRef(() => {
+        appController.setSelectedObjects([]);
+    });
 
-            case TextObject.type:
-                return (
-                    <TextObjectView
-                        key={object.id}
-                        textObject={object as TextObject}
-                        previewController={previewController}
-                        selected={isSelected}
-                        snapPositionXs={snapPositionXs}
-                        snapPositionYs={snapPositionYs}
-                        onSelect={(ev) => {
-                            if (ev.data.originalEvent.shiftKey) {
-                                appController.addObjectToSelection(object.id);
-                            } else {
-                                appController.setSelectedObjects([object.id]);
-                            }
-                        }}
-                        onObjectChange={onObjectChange}
-                    />
-                );
+    function renderObjectView(object: BaseObject): React.ReactNode {
+        const Renderer = ObjectViewMap[object.type];
 
-            case ImageObject.type:
-                return (
-                    <ImageObjectView
-                        key={object.id}
-                        image={object as ImageObject}
-                        previewController={previewController}
-                        selected={isSelected}
-                        snapPositionXs={snapPositionXs}
-                        snapPositionYs={snapPositionYs}
-                        onSelect={(ev) => {
-                            if (ev.data.originalEvent.shiftKey) {
-                                appController.addObjectToSelection(object.id);
-                            } else {
-                                appController.setSelectedObjects([object.id]);
-                            }
-                        }}
-                        onObjectChange={onObjectChange}
-                    />
-                );
-
-            case ShapeObject.type:
-                return (
-                    <ShapeObjectView
-                        key={object.id}
-                        previewController={previewController}
-                        shape={object as ShapeObject}
-                        selected={isSelected}
-                        snapPositionXs={snapPositionXs}
-                        snapPositionYs={snapPositionYs}
-                        onSelect={(ev) => {
-                            if (ev.data.originalEvent.shiftKey) {
-                                appController.addObjectToSelection(object.id);
-                            } else {
-                                appController.setSelectedObjects([object.id]);
-                            }
-                        }}
-                        onObjectChange={onObjectChange}
-                    />
-                );
-
-            case AudioObject.type:
-                return <AudioObjectView key={object.id} audio={object as AudioObject} previewController={previewController} />;
-
-            default:
-                console.warn(`Unknown object type: ${object.type}`);
-                return undefined;
+        if (Renderer === undefined) {
+            console.warn(`Unknown object type: ${object.type}`);
+        } else {
+            return (
+                <Renderer
+                    key={object.id}
+                    object={object as never}
+                    selected={appController.selectedObjectIds.has(object.id)}
+                    previewController={previewController}
+                    onChange={(dx, dy, dw, dh) => onObjectViewChange(object as ResizableObject, dx, dy, dw, dh)}
+                    onSelect={(ev) => onObjectViewSelect(ev, object)}
+                />
+            );
         }
     }
 
-    const onBaseClick = useCallbackRef(() => {
-        appController.setSelectedObjects([]);
-    });
-
-    const onContentBaseClick = useCallbackRef((ev: React.MouseEvent) => {
-        ev.stopPropagation();
-    });
-
-    const onBackgroundClick = useCallbackRef(() => {
-        appController.setSelectedObjects([]);
-    });
-
-    // const boxFrames = activeObjects
-    //     .filter(Box.isBox)
-    //     .map((object) => {
-    //         return {
-    //             x: AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, previewController.currentTimeInMS),
-    //             y: AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, previewController.currentTimeInMS),
-    //             width: AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, previewController.currentTimeInMS),
-    //             height: AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, previewController.currentTimeInMS),
-    //         };
-    //     })
-    //     .filter(isNonNull);
-    //
-    //
-    // const snapPositionXsBase = [0, project.viewport.width, ...boxFrames.map((frame) => [frame.x, frame.x + frame.width]).flat()];
-    // const snapPositionYsBase = [0, project.viewport.height, ...boxFrames.map((frame) => [frame.y, frame.y + frame.height]).flat()];
-    const snapPositionXsBase: number[] = [];
-    const snapPositionYsBase: number[] = [];
     return (
-        <Base onClick={onBaseClick}>
-            <ContentWrapper>
-                <ContentBase style={{ width: contentBaseWidth, height: contentBaseHeight }} onClick={onContentBaseClick}>
-                    <Stage options={pixiStageOption}>
-                        <Background width={project.viewport.width} height={project.viewport.height} onClick={onBackgroundClick} />
-                        {activeObjects.map((object) => renderObjectView(object, snapPositionXsBase, snapPositionYsBase))}
-                    </Stage>
-                </ContentBase>
-            </ContentWrapper>
-            <Shadow />
+        <Base ref={setContainer} onClick={(ev) => ev.nativeEvent}>
+            <CustomStage options={options} onMouseDown={onStageMouseDown}>
+                <PreviewCanvasViewportInfo.Provider value={info}>
+                    <Background project={project} />
+                    {activeObjects.map(renderObjectView)}
+                </PreviewCanvasViewportInfo.Provider>
+            </CustomStage>
         </Base>
     );
+}
+
+function useViewportInfo(project: Project): [info: PreviewCanvasViewportInfo, setContainer: (container: HTMLElement | null) => void] {
+    const forceUpdate = useForceUpdate();
+
+    const baseRef = useRef<HTMLElement | null>(null);
+    const info = useRef<PreviewCanvasViewportInfo>({ scale: 0.1, top: 0, left: 0 });
+
+    const PADDING = 16 * 2;
+
+    const onWheel = useCallbackRef((ev: WheelEvent) => {
+        ev.stopPropagation();
+
+        if (ev.ctrlKey) {
+            const MIN_SCALE = Math.log2(0.1);
+            const MAX_SCALE = Math.log2(2);
+
+            const oldScale = info.current.scale;
+            const oldScaleInLogScale = Math.log2(oldScale);
+            const newScaleInLogScale = Math.min(Math.max(MIN_SCALE, oldScaleInLogScale - ev.deltaY / 100), MAX_SCALE);
+            const newScale = 2 ** newScaleInLogScale;
+
+            info.current.scale = newScale;
+            info.current.left += ev.offsetX / oldScale - ev.offsetX / newScale;
+            info.current.top += ev.offsetY / oldScale - ev.offsetY / newScale;
+        } else {
+            info.current.left += ev.deltaX / info.current.scale;
+            info.current.top += ev.deltaY / info.current.scale;
+        }
+
+        if (baseRef.current) {
+            const bcr = baseRef.current.getBoundingClientRect();
+            info.current.left = Math.max(
+                -bcr.width / info.current.scale + 2 * PADDING,
+                Math.min(info.current.left, project.viewport.width - 2 * PADDING)
+            );
+            info.current.top = Math.max(
+                -bcr.height / info.current.scale + 2 * PADDING,
+                Math.min(info.current.top, project.viewport.height - 2 * PADDING)
+            );
+        }
+
+        forceUpdate();
+    });
+
+    const setContainer = useCallbackRef((base: HTMLElement | null) => {
+        baseRef.current = base;
+        if (base) {
+            base.addEventListener('wheel', onWheel, { passive: true });
+            const bcr = base.getBoundingClientRect();
+
+            const scale = Math.min((bcr.width - PADDING) / project.viewport.width, (bcr.height - PADDING) / project.viewport.height);
+            const left = -(bcr.width / scale - project.viewport.width) / 2;
+            const top = -(bcr.height / scale - project.viewport.height) / 2;
+
+            info.current = { scale, left, top };
+
+            const canvasWidth = project.viewport.width * info.current.scale + PADDING;
+            const canvasHeight = project.viewport.height * info.current.scale + PADDING;
+            info.current.left = Math.max(-canvasWidth + 2 * PADDING, Math.min(info.current.left, canvasWidth - 2 * PADDING));
+            info.current.top = Math.max(-canvasHeight + 2 * PADDING, Math.min(info.current.top, canvasHeight - 2 * PADDING));
+
+            forceUpdate();
+        }
+    });
+
+    return [
+        {
+            left: info.current.left,
+            top: info.current.top,
+            scale: info.current.scale,
+        },
+        setContainer,
+    ];
+}
+
+export interface PreviewCanvasViewportInfo {
+    scale: number;
+    left: number;
+    top: number;
+}
+
+const PreviewCanvasViewportInfo = React.createContext<PreviewCanvasViewportInfo>({
+    scale: 1,
+    left: 0,
+    top: 0,
+});
+
+export function usePreviewCanvasViewportInfo(): PreviewCanvasViewportInfo {
+    return useContext(PreviewCanvasViewportInfo);
 }

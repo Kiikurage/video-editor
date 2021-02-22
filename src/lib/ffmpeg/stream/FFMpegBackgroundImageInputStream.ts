@@ -20,7 +20,13 @@ export async function backgroundImageInput(project: Project, workspacePath: stri
 }
 
 async function renderBackground(project: Project): Promise<Blob | null> {
-    const app = new PIXI.Application({ width: project.viewport.width, height: project.viewport.height, transparent: true });
+    const app = new PIXI.Application({
+        width: project.viewport.width,
+        height: project.viewport.height,
+        backgroundColor: project.viewport.backgroundColor,
+    });
+    app.render();
+
     const blob = await new Promise<Blob | null>((resolve) => app.view.toBlob(resolve));
     app.destroy(true);
 

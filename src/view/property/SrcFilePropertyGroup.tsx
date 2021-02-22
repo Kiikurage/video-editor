@@ -1,33 +1,9 @@
 import * as React from 'react';
-import styled from 'styled-components';
 import { BaseObject } from '../../model/objects/BaseObject';
 import { AppController } from '../../service/AppController';
+import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
-
-const PropertyGroup = styled.div`
-    padding: 16px 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: stretch;
-    justify-content: stretch;
-
-    & + & {
-        border-top: 1px solid #c0c0c0;
-    }
-`;
-
-const PropertyRow = styled.div`
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: stretch;
-`;
-
-const PropertyName = styled.header`
-    font-size: 12px;
-    color: #444;
-`;
+import { PropertyGroup, PropertyRow } from './PropertyGroup';
 
 export function SrcFilePropertyGroup<T extends BaseObject & { srcFilePath: string }>(props: {
     appController: AppController;
@@ -46,8 +22,9 @@ export function SrcFilePropertyGroup<T extends BaseObject & { srcFilePath: strin
     return (
         <PropertyGroup key={object.id}>
             <PropertyRow>
-                <PropertyName>元ファイル</PropertyName>
-                <input type="file" onChange={onFileChange} readOnly={object.locked} />
+                <FormControl label="元ファイル">
+                    <input type="file" onChange={onFileChange} readOnly={object.locked} />
+                </FormControl>
             </PropertyRow>
         </PropertyGroup>
     );

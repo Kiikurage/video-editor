@@ -9,26 +9,26 @@ import { VideoObject } from '../model/objects/VideoObject';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 import { useForceUpdate } from './hooks/useForceUpdate';
+import { Pane } from './Pane';
 import { AudioPropertyGroup } from './property/AudioPropertyGroup';
 import { BasePropertyGroup } from './property/BasePropertyGroup';
 import { FontStylePropertyGroup } from './property/FontStylePropertyGroup';
 import { PositionPropertyGroup } from './property/PositionPropertyGroup';
 import { ProjectPropertyGroup } from './property/ProjectPropertyGroup';
 import { ShapePropertyGroup } from './property/ShapePropertyGroup';
-import { SizePropertyGroup } from './property/SizePropertyGroup';
 import { SrcFilePropertyGroup } from './property/SrcFilePropertyGroup';
 import { TextPropertyGroup } from './property/TextPropertyGroup';
 
 const Base = styled.div`
     position: relative;
-    width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
     align-items: stretch;
     justify-content: stretch;
-    border-left: 1px solid #c0c0c0;
-    background: #fff;
+    min-width: 200px;
+    overflow-y: auto;
+    overflow-x: auto;
 `;
 
 const Body = styled.div`
@@ -37,7 +37,7 @@ const Body = styled.div`
 `;
 
 const ObjectSummary = styled.div`
-    padding: 16px 24px;
+    padding: 16px 16px;
 `;
 
 const Footer = styled.footer`
@@ -46,7 +46,7 @@ const Footer = styled.footer`
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    padding: 16px 24px;
+    padding: 16px 16px;
     border-top: 1px solid #c0c0c0;
 `;
 
@@ -60,7 +60,7 @@ const DeleteButton = styled.button`
     cursor: pointer;
 `;
 
-export function PropertyView(): React.ReactElement {
+export function PropertyPane(): React.ReactElement {
     const appController = useAppController();
 
     const forceUpdate = useForceUpdate();
@@ -98,51 +98,50 @@ export function PropertyView(): React.ReactElement {
     const selectedObject = selectedObjects.size === 0 ? null : [...selectedObjects][0];
 
     return (
-        <Base>
-            <Body>
-                <ObjectSummary>{selectedObject === null ? <div>PROJECT</div> : <div>{selectedObject.type}</div>}</ObjectSummary>
+        <Pane title="オブジェクトの詳細" tabPosition="right">
+            <Base>
+                <Body>
+                    <ObjectSummary>{selectedObject === null ? <div>PROJECT</div> : <div>{selectedObject.type}</div>}</ObjectSummary>
 
-                {selectedObject === null ? (
-                    <ProjectPropertyGroup appController={appController} project={project} />
-                ) : (
-                    <BasePropertyGroup appController={appController} object={selectedObject} />
-                )}
-
-                {selectedObject !== null &&
-                    (ShapeObject.isShape(selectedObject) ||
-                        VideoObject.isVideo(selectedObject) ||
-                        TextObject.isText(selectedObject) ||
-                        ImageObject.isImage(selectedObject)) && (
-                        <PositionPropertyGroup appController={appController} object={selectedObject} />
+                    {selectedObject === null ? (
+                        <ProjectPropertyGroup appController={appController} project={project} />
+                    ) : (
+                        <BasePropertyGroup appController={appController} object={selectedObject} />
                     )}
-                {selectedObject !== null &&
-                    (ShapeObject.isShape(selectedObject) ||
-                        VideoObject.isVideo(selectedObject) ||
-                        TextObject.isText(selectedObject) ||
-                        ImageObject.isImage(selectedObject)) && <SizePropertyGroup appController={appController} object={selectedObject} />}
-                {selectedObject !== null && TextObject.isText(selectedObject) && (
-                    <FontStylePropertyGroup appController={appController} object={selectedObject} />
-                )}
-                {selectedObject !== null && TextObject.isText(selectedObject) && (
-                    <TextPropertyGroup appController={appController} object={selectedObject} />
-                )}
-                {selectedObject !== null && AudioObject.isAudio(selectedObject) && (
-                    <AudioPropertyGroup appController={appController} object={selectedObject} />
-                )}
-                {selectedObject !== null &&
-                    (AudioObject.isAudio(selectedObject) || VideoObject.isVideo(selectedObject) || ImageObject.isImage(selectedObject)) && (
-                        <SrcFilePropertyGroup appController={appController} object={selectedObject} />
-                    )}
-                {selectedObject !== null && ShapeObject.isShape(selectedObject) && (
-                    <ShapePropertyGroup appController={appController} object={selectedObject} />
-                )}
-            </Body>
 
-            {selectedObject !== null && (
-                <Footer>
-                    <DeleteButton onClick={onObjectRemove}>削除</DeleteButton>
-                </Footer>
-            )}
-        </Base>
+                    {selectedObject !== null &&
+                        (ShapeObject.isShape(selectedObject) ||
+                            VideoObject.isVideo(selectedObject) ||
+                            TextObject.isText(selectedObject) ||
+                            ImageObject.isImage(selectedObject)) && (
+                            <PositionPropertyGroup appController={appController} object={selectedObject} />
+                        )}
+                    {selectedObject !== null && TextObject.isText(selectedObject) && (
+                        <FontStylePropertyGroup appController={appController} object={selectedObject} />
+                    )}
+                    {selectedObject !== null && TextObject.isText(selectedObject) && (
+                        <TextPropertyGroup appController={appController} object={selectedObject} />
+                    )}
+                    {selectedObject !== null && AudioObject.isAudio(selectedObject) && (
+                        <AudioPropertyGroup appController={appController} object={selectedObject} />
+                    )}
+                    {selectedObject !== null &&
+                        (AudioObject.isAudio(selectedObject) ||
+                            VideoObject.isVideo(selectedObject) ||
+                            ImageObject.isImage(selectedObject)) && (
+                            <SrcFilePropertyGroup appController={appController} object={selectedObject} />
+                        )}
+                    {selectedObject !== null && ShapeObject.isShape(selectedObject) && (
+                        <ShapePropertyGroup appController={appController} object={selectedObject} />
+                    )}
+                </Body>
+
+                {selectedObject !== null && (
+                    <Footer>
+                        <DeleteButton onClick={onObjectRemove}>削除</DeleteButton>
+                    </Footer>
+                )}
+            </Base>
+        </Pane>
     );
 }

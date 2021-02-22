@@ -2,8 +2,10 @@ import { EventEmitter } from 'events';
 import { EventEmitterEvents } from '../model/EventEmitterEvents';
 
 type TimerEvents = EventEmitterEvents<{
+    play: void;
     tick: void;
     seek: void;
+    pause: void;
 }>;
 
 export class Timer extends EventEmitter implements TimerEvents {
@@ -37,6 +39,7 @@ export class Timer extends EventEmitter implements TimerEvents {
         this.isStarted = true;
 
         this.runMainLoop();
+        this.emit('play');
     }
 
     stop(): void {
@@ -44,6 +47,7 @@ export class Timer extends EventEmitter implements TimerEvents {
 
         this.lastPausedPositionInMS = this.currentTimeInMS;
         this.isStarted = false;
+        this.emit('pause');
     }
 
     seek(timeInMS: number): void {

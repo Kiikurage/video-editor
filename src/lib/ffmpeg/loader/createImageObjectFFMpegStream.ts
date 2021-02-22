@@ -1,6 +1,6 @@
 import { ImageObject } from '../../../model/objects/ImageObject';
 import { Project } from '../../../model/Project';
-import { ImageObjectViewBehavior } from '../../../view/PreviewPlayer/ImageObjectView';
+import { ImageObjectViewRenderer } from '../../../view/Renderer/ImageObjectViewRenderer';
 import { overlay } from '../filters/FFMpegOverlayFilter';
 import { FFMpegStreamMap } from '../stream/FFMpegStream';
 import { createFFMpegStream } from './createFFMpegStream';
@@ -12,7 +12,7 @@ export const createImageObjectFFMpegStream: createFFMpegStream<ImageObject> = as
     project: Project,
     workspacePath: string
 ) => {
-    const stream = await createFrameObjectFFMpegStream(image, ImageObjectViewBehavior.customDisplayObject, project, workspacePath);
+    const stream = await createFrameObjectFFMpegStream(image, ImageObjectViewRenderer.customDisplayObject, project, workspacePath);
 
     return Promise.resolve({
         ...outputStreamMap,

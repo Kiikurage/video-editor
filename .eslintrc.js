@@ -33,6 +33,7 @@ module.exports = {
         'react/jsx-uses-vars': 'error',
         'react/react-in-jsx-scope': 'error',
         'react-hooks/exhaustive-deps': 'error',
+        'import/order': 'error',
     },
     overrides: [
         {

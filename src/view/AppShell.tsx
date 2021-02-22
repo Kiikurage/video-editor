@@ -1,24 +1,20 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useRef } from 'react';
 import styled from 'styled-components';
-import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
-import { assert } from '../lib/util';
-import { UUID } from '../lib/UUID';
-import { AnimatableValueType } from '../model/objects/AnimatableValue';
-import { ShapeObject, ShapeType } from '../model/objects/ShapeObject';
-import { TextObject } from '../model/objects/TextObject';
 import { useAppController } from './AppControllerProvider';
+import { AppToolbar } from './AppToolbar';
+import { SceneListPane } from './SceneListPane';
 import { DropArea } from './DropArea';
 import { useCallbackRef } from './hooks/useCallbackRef';
-import { MiddleToolBar } from './MiddleToolBar';
+import { useForceUpdate } from './hooks/useForceUpdate';
 import { PreviewPlayer } from './PreviewPlayer/PreviewPlayer';
-import { PropertyView } from './PropertyView';
+import { PropertyPane } from './PropertyPane';
 import { SnackBarList } from './SnackBarList';
 import { SplitPane, Splitter } from './SplitPane';
-import { TimeLine } from './TimeLine/TimeLine';
+import { TimelinePane } from './TimelinePane';
 
 const Base = styled.div`
-    background: #fafafa;
+    background: #a0a0a0;
     position: fixed;
     top: 0;
     left: 0;
@@ -28,22 +24,15 @@ const Base = styled.div`
     flex-direction: column;
     align-items: stretch;
     justify-content: stretch;
+    user-select: none;
+    pointer-events: none;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', 'Noto Sans CJK JP', 'Original Yu Gothic',
+        'Yu Gothic', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Sans Emoji';
 `;
 
-const AppHeader = styled.header`
-    grid-area: header;
-    padding: 4px 32px;
-    display: flex;
-    justify-content: space-between;
-    min-height: 32px;
-    box-sizing: border-box;
-    background: #fff;
-    border-bottom: 1px solid #c0c0c0;
-    width: 100%;
-`;
+const AppToolbarArea = styled.div``;
 
 const BodyArea = styled.div`
-    grid-area: bodyArea;
     position: relative;
     display: flex;
     align-items: stretch;
@@ -61,12 +50,19 @@ const MainArea = styled.div`
     display: flex;
     align-items: stretch;
     justify-content: stretch;
+    min-height: 0;
     min-width: 0;
     flex: 1 1 0;
 
     > * {
         width: 100%;
     }
+`;
+
+const LeftPaneArea = styled.div`
+    flex: 0 0 auto;
+    border-right: 1px solid #a0a0a0;
+    width: var(--AppShell-leftPaneWidth);
 `;
 
 const PreviewArea = styled.div`
@@ -79,127 +75,76 @@ const PreviewArea = styled.div`
     overflow: scroll scroll;
 `;
 
-const MiddleToolbarArea = styled.div`
-    position: relative;
+const RightArea = styled.div`
+    flex: 0 0 auto;
+    border-left: 1px solid #a0a0a0;
 `;
 
-const TimeLineArea = styled.div`
+const BottomArea = styled.div`
     position: relative;
     overflow-x: auto;
     overflow-y: auto;
     flex: 0 0 auto;
-`;
-
-const PropertyArea = styled.div`
-    flex: 0 0 auto;
+    border-top: 1px solid #a0a0a0;
 `;
 
 export function AppShell(): React.ReactElement {
-    const [timelineAreaHeight, setTimelineAreaHeight] = useState(200);
-    const [propertyAreaWidth, setPropertyAreaWidth] = useState(240);
+    const bottomAreaHeightRef = useRef(240);
+    const leftAreaWidthRef = useRef(0);
+    const rightAreaWidthRef = useRef(240);
     const appController = useAppController();
+    const forceUpdate = useForceUpdate();
+
+    const onBottomAreaHeightChange = useCallbackRef((dx: number, dy: number) => {
+        bottomAreaHeightRef.current -= dy;
+        forceUpdate();
+    });
+    const onLeftAreaWidthChange = useCallbackRef((dx: number) => {
+        leftAreaWidthRef.current += dx;
+        forceUpdate();
+    });
+    const onRightAreaWidthChange = useCallbackRef((dx: number) => {
+        rightAreaWidthRef.current -= dx;
+        forceUpdate();
+    });
 
     const onFileDrop = useCallbackRef((file: File) => {
         void appController.importAssetFromFile(file.path);
     });
 
-    const onAddNewText = useCallbackRef(() => {
-        const currentTimeInMS = appController.previewController.currentTimeInMS;
-        const object: TextObject = {
-            id: UUID(),
-            type: TextObject.type,
-            startInMS: currentTimeInMS,
-            endInMS: currentTimeInMS + 5000,
-            text: 'テキスト',
-            locked: false,
-            fontStyle: {
-                fontFamily: 'Noto Sans JP',
-                fontSize: 80,
-                fontWeight: '900',
-                fill: 0x000000,
-                stroke: 0xffffff,
-                strokeThickness: 0,
-            },
-            x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
-            y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
-            width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-            height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-        };
-        appController.commitHistory(() => {
-            appController.addObject(object);
-        });
-    });
-
-    const onAddNewAsset = useCallbackRef(async () => {
-        const { canceled, filePaths } = await showOpenFileDialog();
-        if (canceled) return;
-        assert(filePaths.length === 1, "Multi-file import isn't supported");
-
-        void appController.importAssetFromFile(filePaths[0]);
-    });
-
-    const onAddNewShape = useCallbackRef((shapeType: ShapeType) => {
-        const currentTimeInMS = appController.previewController.currentTimeInMS;
-        const object: ShapeObject = {
-            id: UUID(),
-            type: ShapeObject.type,
-            startInMS: currentTimeInMS,
-            endInMS: currentTimeInMS + 5000,
-            locked: false,
-            shapeType: shapeType,
-            x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
-            y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
-            width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-            height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-            fill: { type: AnimatableValueType.Color, keyframes: [{ timing: 0, value: 0xfcfcfc }] },
-            stroke: { type: AnimatableValueType.Color, keyframes: [{ timing: 0, value: 0xffffff }] },
-            anchor: [],
-        };
-        appController.commitHistory(() => {
-            appController.addObject(object);
-        });
-    });
-
     return (
         <DropArea onFileDrop={onFileDrop}>
             <Base>
-                <AppHeader>
-                    <div>
-                        <button onClick={appController.saveProject}>保存</button>
-                        <button onClick={appController.openProject}>開く</button>
-                    </div>
-                    <button onClick={appController.exportVideo}>動画出力</button>
-                </AppHeader>
-
+                <AppToolbarArea>
+                    <AppToolbar />
+                </AppToolbarArea>
                 <BodyArea>
-                    <SplitPane direction="row">
+                    <SplitPane direction="column">
                         <MainArea>
-                            <SplitPane direction="column">
+                            <SplitPane direction="row">
+                                <LeftPaneArea style={{ width: leftAreaWidthRef.current }}>
+                                    <SceneListPane />
+                                </LeftPaneArea>
+
+                                <Splitter onChange={onLeftAreaWidthChange} />
+
                                 <PreviewArea>
                                     <PreviewPlayer />
                                 </PreviewArea>
 
-                                <Splitter onChange={(_dx, dy) => setTimelineAreaHeight(timelineAreaHeight - dy)} />
+                                <Splitter onChange={onRightAreaWidthChange} />
 
-                                <MiddleToolbarArea>
-                                    <MiddleToolBar
-                                        onAddNewText={onAddNewText}
-                                        onAddNewAsset={onAddNewAsset}
-                                        onAddNewShape={onAddNewShape}
-                                    />
-                                </MiddleToolbarArea>
-
-                                <TimeLineArea style={{ height: timelineAreaHeight }}>
-                                    <TimeLine />
-                                </TimeLineArea>
+                                <RightArea style={{ width: rightAreaWidthRef.current }}>
+                                    <PropertyPane />
+                                </RightArea>
                             </SplitPane>
                         </MainArea>
 
-                        <Splitter onChange={(dx, _dy) => setPropertyAreaWidth(propertyAreaWidth - dx)} />
+                        <Splitter onChange={onBottomAreaHeightChange} />
 
-                        <PropertyArea style={{ width: propertyAreaWidth }}>
-                            <PropertyView />
-                        </PropertyArea>
+                        <BottomArea style={{ height: bottomAreaHeightRef.current }}>
+                            <TimelinePane />
+                        </BottomArea>
                     </SplitPane>
                 </BodyArea>
 

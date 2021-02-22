@@ -29,3 +29,5 @@ export const ShapeType = {
     CIRCLE: 'CIRCLE',
 };
 export type ShapeType = typeof ShapeType[keyof typeof ShapeType];
+
+BaseObject.register({ type: ShapeObject.type });

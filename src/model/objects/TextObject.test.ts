@@ -19,6 +19,8 @@ describe('isText', () => {
                 fill: 0xaa66ff,
                 stroke: 0xffffff,
                 strokeThickness: 10,
+                horizontalAlign: 'left',
+                verticalAlign: 'top',
             },
             x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
             y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },

@@ -3,50 +3,45 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { AnimatableValue } from '../../model/objects/AnimatableValue';
 import { AudioObject } from '../../model/objects/AudioObject';
-import { PreviewController } from '../../service/PreviewController';
 import { useCallbackRef } from '../hooks/useCallbackRef';
+import { PreviewPlayerObjectViewProps } from './PreviewPlayerObjectView';
 
-interface Props {
-    audio: AudioObject;
-    previewController: PreviewController;
-}
-
-export function AudioObjectView(props: Props): React.ReactElement {
-    const { audio, previewController } = props;
+export function AudioObjectView(props: PreviewPlayerObjectViewProps<AudioObject>): React.ReactElement {
+    const { object, previewController } = props;
 
     const [sound, setSound] = useState<PIXISound.Sound | null>(null);
     useEffect(() => {
         setSound(
             PIXISound.Sound.from({
-                url: audio.srcFilePath,
+                url: object.srcFilePath,
                 preload: true,
                 autoPlay: false,
             })
         );
-    }, [audio.srcFilePath]);
+    }, [object.srcFilePath]);
 
     useEffect(() => {
         if (sound === null) return;
-        sound.volume = AnimatableValue.interpolate(audio.volume, audio.startInMS, audio.endInMS, previewController.currentTimeInMS);
-    }, [audio.endInMS, audio.startInMS, audio.volume, previewController.currentTimeInMS, sound]);
+        sound.volume = AnimatableValue.interpolate(object.volume, object.startInMS, object.endInMS, previewController.currentTimeInMS);
+    }, [object.endInMS, object.startInMS, object.volume, previewController.currentTimeInMS, sound]);
 
     const onPreviewPlay = useCallbackRef(() => {
-        if (previewController.currentTimeInMS < audio.startInMS || previewController.currentTimeInMS >= audio.endInMS) {
+        if (previewController.currentTimeInMS < object.startInMS || previewController.currentTimeInMS >= object.endInMS) {
             return;
         }
-        void sound?.play({ start: (previewController.currentTimeInMS - audio.startInMS) / 1000 });
+        void sound?.play({ start: (previewController.currentTimeInMS - object.startInMS) / 1000 });
     });
 
     const onPreviewSeek = useCallbackRef(() => {
         if (!sound) return;
         if (previewController.paused) return;
 
-        if (previewController.currentTimeInMS < audio.startInMS || previewController.currentTimeInMS >= audio.endInMS) {
+        if (previewController.currentTimeInMS < object.startInMS || previewController.currentTimeInMS >= object.endInMS) {
             sound.stop();
         } else {
             sound.stop();
             void sound.play({
-                start: (previewController.currentTimeInMS - audio.startInMS) / 1000,
+                start: (previewController.currentTimeInMS - object.startInMS) / 1000,
             });
         }
     });
@@ -55,14 +50,14 @@ export function AudioObjectView(props: Props): React.ReactElement {
         if (!sound) return;
         if (previewController.paused) return;
 
-        if (previewController.currentTimeInMS < audio.startInMS || previewController.currentTimeInMS >= audio.endInMS) {
+        if (previewController.currentTimeInMS < object.startInMS || previewController.currentTimeInMS >= object.endInMS) {
             if (sound.isPlaying) {
                 sound.stop();
             }
         } else {
             if (!sound.isPlaying) {
                 void sound.play({
-                    start: (previewController.currentTimeInMS - audio.startInMS) / 1000,
+                    start: (previewController.currentTimeInMS - object.startInMS) / 1000,
                 });
             }
         }

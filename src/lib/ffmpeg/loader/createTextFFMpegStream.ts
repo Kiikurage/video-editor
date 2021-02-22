@@ -1,6 +1,6 @@
 import { TextObject } from '../../../model/objects/TextObject';
 import { Project } from '../../../model/Project';
-import { TextObjectViewBehavior } from '../../../view/PreviewPlayer/TextObjectView';
+import { TextObjectViewRenderer } from '../../../view/Renderer/TextObjectViewRenderer';
 import { overlay } from '../filters/FFMpegOverlayFilter';
 import { FFMpegStreamMap } from '../stream/FFMpegStream';
 import { createFFMpegStream } from './createFFMpegStream';
@@ -12,7 +12,7 @@ export const createTextFFMpegStream: createFFMpegStream<TextObject> = async (
     project: Project,
     workspacePath: string
 ) => {
-    const stream = await createFrameObjectFFMpegStream(textObject, TextObjectViewBehavior.customDisplayObject, project, workspacePath);
+    const stream = await createFrameObjectFFMpegStream(textObject, TextObjectViewRenderer.customDisplayObject, project, workspacePath);
 
     return {
         ...outputStreamMap,

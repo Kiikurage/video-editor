@@ -7,6 +7,7 @@ interface SerializedProject {
     viewport: {
         width: number;
         height: number;
+        backgroundColor: number;
     };
     objects: BaseObject[];
 }
@@ -18,6 +19,7 @@ export interface Project {
     viewport: {
         width: number;
         height: number;
+        backgroundColor: number;
     };
     objects: BaseObject[];
 }
@@ -27,7 +29,7 @@ export const Project = {
         filePath: null,
         isSaved: false,
         fps: 60,
-        viewport: { width: 1920, height: 1080 },
+        viewport: { width: 1920, height: 1080, backgroundColor: 0xffffff },
         objects: [],
     }),
     async save(project: Project): Promise<void> {
