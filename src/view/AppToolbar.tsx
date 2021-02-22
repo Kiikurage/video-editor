@@ -73,15 +73,17 @@ export function AppToolbar(): React.ReactElement {
             locked: false,
             fontStyle: {
                 fontFamily: 'Noto Sans JP',
-                fontSize: 80,
-                fontWeight: '900',
+                fontSize: 60,
+                fontWeight: '500',
                 fill: 0x000000,
                 stroke: 0xffffff,
                 strokeThickness: 0,
+                horizontalAlign: 'left',
+                verticalAlign: 'top',
             },
             x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
             y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
-            width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
+            width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 400 }] },
             height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
         };
         appController.commitHistory(() => {
