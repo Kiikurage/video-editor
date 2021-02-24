@@ -1,7 +1,5 @@
-import { PreviewCanvasViewportInfo } from '../PreviewPlayer/PreviewPlayer';
+import { Frame } from '../../model/frame/Frame';
 
-export interface RendererProps<T> {
-    object: T;
-    canvasContext: PreviewCanvasViewportInfo;
-    timeInMS: number;
+export interface RendererProps<T extends Frame> {
+    frame: T;
 }

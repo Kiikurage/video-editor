@@ -14,6 +14,9 @@ export interface AnimatableValue<T extends AnimatableValueType = AnimatableValue
 const easingFunction = linear;
 
 export const AnimatableValue = {
+    constant: (value: number, type: AnimatableValueType): AnimatableValue => {
+        return { type, keyframes: [{ timing: 0, value: value }] };
+    },
     set: (value: AnimatableValue, newFrameTiming: number, newFrameValue: number): AnimatableValue => {
         const i = value.keyframes.findIndex((frame) => frame.timing === newFrameTiming);
         if (i === -1) {

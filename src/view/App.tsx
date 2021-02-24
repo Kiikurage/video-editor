@@ -2,9 +2,9 @@ import * as Mousetrap from 'mousetrap';
 import * as React from 'react';
 import { useEffect } from 'react';
 import { AnimatableValue } from '../model/objects/AnimatableValue';
+import { isResizable } from '../model/objects/ResizableObejct';
 import { useAppController } from './AppControllerProvider';
 import { AppShell } from './AppShell';
-import { isResizable } from './PreviewPlayer/ResizeView/ResizableObejct';
 
 export function App(): React.ReactElement {
     const appController = useAppController();
@@ -37,81 +37,76 @@ export function App(): React.ReactElement {
             .bind('up', () => {
                 appController.modifySelectedObjects((object) => {
                     if (!isResizable(object)) return null;
+                    const clone = object.clone();
 
-                    return {
-                        ...object,
-                        y: AnimatableValue.set(
+                    clone.y = AnimatableValue.set(
+                        object.y,
+                        (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
+                        AnimatableValue.interpolate(
                             object.y,
-                            (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
-                            AnimatableValue.interpolate(
-                                object.y,
-                                object.startInMS,
-                                object.endInMS,
-                                appController.previewController.currentTimeInMS
-                            ) - 10
-                        ),
-                    };
+                            object.startInMS,
+                            object.endInMS,
+                            appController.previewController.currentTimeInMS
+                        ) - 10
+                    );
+                    return clone;
                 });
             })
             .bind('down', () => {
                 appController.modifySelectedObjects((object) => {
                     if (!isResizable(object)) return null;
+                    const clone = object.clone();
 
-                    return {
-                        ...object,
-                        y: AnimatableValue.set(
+                    clone.y = AnimatableValue.set(
+                        object.y,
+                        (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
+                        AnimatableValue.interpolate(
                             object.y,
-                            (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
-                            AnimatableValue.interpolate(
-                                object.y,
-                                object.startInMS,
-                                object.endInMS,
-                                appController.previewController.currentTimeInMS
-                            ) + 10
-                        ),
-                    };
+                            object.startInMS,
+                            object.endInMS,
+                            appController.previewController.currentTimeInMS
+                        ) + 10
+                    );
+                    return clone;
                 });
             })
             .bind('left', () => {
                 appController.modifySelectedObjects((object) => {
                     if (!isResizable(object)) return null;
+                    const clone = object.clone();
 
-                    return {
-                        ...object,
-                        x: AnimatableValue.set(
+                    clone.x = AnimatableValue.set(
+                        object.x,
+                        (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
+                        AnimatableValue.interpolate(
                             object.x,
-                            (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
-                            AnimatableValue.interpolate(
-                                object.x,
-                                object.startInMS,
-                                object.endInMS,
-                                appController.previewController.currentTimeInMS
-                            ) - 10
-                        ),
-                    };
+                            object.startInMS,
+                            object.endInMS,
+                            appController.previewController.currentTimeInMS
+                        ) - 10
+                    );
+                    return clone;
                 });
             })
             .bind('right', () => {
                 appController.modifySelectedObjects((object) => {
                     if (!isResizable(object)) return null;
+                    const clone = object.clone();
 
-                    return {
-                        ...object,
-                        x: AnimatableValue.set(
+                    clone.x = AnimatableValue.set(
+                        object.x,
+                        (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
+                        AnimatableValue.interpolate(
                             object.x,
-                            (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
-                            AnimatableValue.interpolate(
-                                object.x,
-                                object.startInMS,
-                                object.endInMS,
-                                appController.previewController.currentTimeInMS
-                            ) + 10
-                        ),
-                    };
+                            object.startInMS,
+                            object.endInMS,
+                            appController.previewController.currentTimeInMS
+                        ) + 10
+                    );
+                    return clone;
                 });
             });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [appController]);
 
     return <AppShell />;
 }

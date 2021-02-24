@@ -7,14 +7,14 @@ import { encodeProject } from '../lib/ffmpeg/FFMpegCommandBuilder';
 import { getImageSize, getVideoSize } from '../lib/getAssetSpacialSize';
 import { isNonNull } from '../lib/isNonNull';
 import { assert } from '../lib/util';
-import { UUID } from '../lib/UUID';
 import { AppState } from '../model/AppState';
 import { EventEmitterEvents } from '../model/EventEmitterEvents';
 import { HistoryManager } from '../model/HistoryManager';
-import { AnimatableValueType } from '../model/objects/AnimatableValue';
+import { AnimatableValue, AnimatableValueType } from '../model/objects/AnimatableValue';
 import { AudioObject } from '../model/objects/AudioObject';
 import { BaseObject } from '../model/objects/BaseObject';
 import { ImageObject } from '../model/objects/ImageObject';
+import { ObjectParser } from '../model/objects/ObjectParser';
 import { VideoObject } from '../model/objects/VideoObject';
 import { Project } from '../model/Project';
 import { PreviewController } from './PreviewController';
@@ -214,14 +214,14 @@ export class AppController extends EventEmitter implements AppControllerEvents {
     };
 
     copy = (): void => {
-        clipboard.writeText(JSON.stringify([...this.selectedObjects].map(BaseObject.serialize)));
+        clipboard.writeText(JSON.stringify([...this.selectedObjects].map((object) => object.serialize())));
     };
 
     paste = (): void => {
         try {
-            const objects = (JSON.parse(clipboard.readText()) as string[]).map(BaseObject.deserialize);
+            const objects = (JSON.parse(clipboard.readText()) as string[]).map(ObjectParser.parse);
             this.commitHistory(() => {
-                const clonedObjects = objects.map(BaseObject.clone);
+                const clonedObjects = objects.map((object) => object.clone());
                 this.addObject(...clonedObjects);
                 this.setSelectedObjects(clonedObjects.map((object) => object.id));
             });
@@ -249,47 +249,39 @@ export class AppController extends EventEmitter implements AppControllerEvents {
             case 'video': {
                 const { width, height } = await getVideoSize(filePath);
                 newObjects.push(
-                    {
-                        id: UUID(),
-                        type: VideoObject.type,
+                    new VideoObject({
                         startInMS: currentTimeInMS,
                         endInMS: currentTimeInMS + 5000,
                         srcFilePath: filePath,
-                        x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-                        y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-                        width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: Math.round((200 * width) / height) }] },
-                        height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-                    } as VideoObject /* TODO: 音声ストリームも取り込む */
+                        width: AnimatableValue.constant(Math.round((200 * width) / height), AnimatableValueType.Numeric),
+                        height: AnimatableValue.constant(200, AnimatableValueType.Numeric),
+                    })
                 );
                 break;
             }
 
             case 'image': {
                 const { width, height } = await getImageSize(filePath);
-                newObjects.push({
-                    id: UUID(),
-                    type: ImageObject.type,
-                    startInMS: currentTimeInMS,
-                    endInMS: currentTimeInMS + 5000,
-                    srcFilePath: filePath,
-                    x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-                    y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-                    width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: Math.round((200 * width) / height) }] },
-                    height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-                } as ImageObject);
+                newObjects.push(
+                    new ImageObject({
+                        startInMS: currentTimeInMS,
+                        endInMS: currentTimeInMS + 5000,
+                        srcFilePath: filePath,
+                        width: AnimatableValue.constant(Math.round((200 * width) / height), AnimatableValueType.Numeric),
+                        height: AnimatableValue.constant(200, AnimatableValueType.Numeric),
+                    })
+                );
                 break;
             }
 
             case 'audio': {
-                newObjects.push({
-                    id: UUID(),
-                    type: AudioObject.type,
-                    startInMS: currentTimeInMS,
-                    endInMS: currentTimeInMS + 5000,
-                    srcFilePath: filePath,
-                    locked: false,
-                    volume: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 0.5 }] },
-                } as AudioObject);
+                newObjects.push(
+                    new AudioObject({
+                        startInMS: currentTimeInMS,
+                        endInMS: currentTimeInMS + 5000,
+                        srcFilePath: filePath,
+                    })
+                );
                 break;
             }
 

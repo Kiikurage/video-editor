@@ -3,13 +3,13 @@ import { useEffect, useReducer, useRef } from 'react';
 import { VideoObject } from '../../model/objects/VideoObject';
 import { KeyframeLoader } from '../../service/KeyFrameLoader';
 import { ThumbnailList } from './ThumbnailList';
-import { useTimelineContext } from './TimeLine';
+import { useTimelineCanvasViewportInfo } from './Timeline';
 import { TimelineObjectViewProps } from './TimelineBaseObjectView';
 import { TimelineNodeBase, TimelineNodeResizeContext } from './TimelineNodeBase';
 
 export function TimelineVideoObjectView(props: TimelineObjectViewProps<VideoObject>): React.ReactElement {
     const { x, y, width, height, object, isSelected, snapPositionXs, onClick, onChange, onKeyframeClick } = props;
-    const { pixelPerMS } = useTimelineContext();
+    const { pixelPerMS } = useTimelineCanvasViewportInfo();
 
     const [forceRerenderCounter, forceRerender] = useReducer((x: number) => x + 1, 0);
     const keyframeLoader = useRef<KeyframeLoader | null>(null);

@@ -5,30 +5,31 @@ import { promisify } from 'util';
 import * as tmp from 'tmp';
 import { getFFMpegInfo } from '../../ipc/renderer/getFFMepgInfo';
 import { AudioObject } from '../../model/objects/AudioObject';
+import { BaseObject } from '../../model/objects/BaseObject';
+import { ImageObject } from '../../model/objects/ImageObject';
 import { ShapeObject } from '../../model/objects/ShapeObject';
 import { TextObject } from '../../model/objects/TextObject';
-import { ImageObject } from '../../model/objects/ImageObject';
 import { VideoObject } from '../../model/objects/VideoObject';
 import { Project } from '../../model/Project';
 import { assert } from '../util';
 import { createAudioObjectFFMpegStream } from './loader/createAudioObjectFFMpegStream';
-import { createShapeObjectFFMpegStream } from './loader/createShapeObjectFFMpegStream';
-import { createTextFFMpegStream } from './loader/createTextFFMpegStream';
 import { createFFMpegStream } from './loader/createFFMpegStream';
 import { createImageObjectFFMpegStream } from './loader/createImageObjectFFMpegStream';
+import { createShapeObjectFFMpegStream } from './loader/createShapeObjectFFMpegStream';
+import { createTextFFMpegStream } from './loader/createTextFFMpegStream';
 import { createVideoObjectFFMpegStream } from './loader/createVideoObjectFFMpegStream';
 import { backgroundImageInput } from './stream/FFMpegBackgroundImageInputStream';
 import { FFMpegInputStream } from './stream/FFMpegInputStream';
 import { FFMpegStream, FFMpegStreamMap } from './stream/FFMpegStream';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const FFMpegStreamCreatorMap: Record<string, createFFMpegStream<any>> = {
-    [TextObject.type]: createTextFFMpegStream,
-    [VideoObject.type]: createVideoObjectFFMpegStream,
-    [ImageObject.type]: createImageObjectFFMpegStream,
-    [AudioObject.type]: createAudioObjectFFMpegStream,
-    [ShapeObject.type]: createShapeObjectFFMpegStream,
-};
+const FFMpegStreamCreatorMap = new Map<Constructor<BaseObject>, createFFMpegStream<any>>([
+    [TextObject, createTextFFMpegStream],
+    [VideoObject, createVideoObjectFFMpegStream],
+    [ImageObject, createImageObjectFFMpegStream],
+    [AudioObject, createAudioObjectFFMpegStream],
+    [ShapeObject, createShapeObjectFFMpegStream],
+]);
 
 export async function encodeProject(project: Project, outputVideoPath: string): Promise<void> {
     console.time('encodeProject');
@@ -63,9 +64,9 @@ async function encode(project: Project, outputPath: string, workspacePath: strin
         audio: null,
     };
     for (const object of project.objects) {
-        const ffmpegStreamCreator = FFMpegStreamCreatorMap[object.type];
+        const ffmpegStreamCreator = FFMpegStreamCreatorMap.get(object.constructor as Constructor<BaseObject>);
         if (ffmpegStreamCreator === undefined) {
-            assert(false, `Unsupported object type: ${object.type}`);
+            assert(false, `Unsupported object type: ${object.constructor.name}`);
         }
 
         mainStreamMap = await ffmpegStreamCreator(object, mainStreamMap, project, workspacePath);

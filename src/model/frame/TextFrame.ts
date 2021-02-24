@@ -1,7 +1,9 @@
-export type HorizontalAlign = 'left' | 'center' | 'right';
-export type VerticalAlign = 'top' | 'center' | 'bottom';
+import { HorizontalAlign, VerticalAlign } from '../objects/TextObject';
+import { Frame } from './Frame';
 
-export interface FontStyle {
+export interface TextFrame extends Frame {
+    type: 'TEXT';
+    text: string;
     fontFamily: string;
     fontSize: number;
     fontWeight: string;

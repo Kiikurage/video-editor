@@ -2,16 +2,14 @@ import * as React from 'react';
 import styled from 'styled-components';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { assert } from '../lib/util';
-import { UUID } from '../lib/UUID';
-import { AnimatableValueType } from '../model/objects/AnimatableValue';
-import { ShapeObject, ShapeType } from '../model/objects/ShapeObject';
+import { ShapeObject } from '../model/objects/ShapeObject';
 import { TextObject } from '../model/objects/TextObject';
 import ShapesIcon from '../static/icons/category-24px.svg';
-import MediaIcon from '../static/icons/perm_media-24px.svg';
-import TextIcon from '../static/icons/title-24px.svg';
-import SaveIcon from '../static/icons/save-24px.svg';
 import OpenIcon from '../static/icons/folder_open-24px.svg';
+import MediaIcon from '../static/icons/perm_media-24px.svg';
 import PublishIcon from '../static/icons/publish-24px.svg';
+import SaveIcon from '../static/icons/save-24px.svg';
+import TextIcon from '../static/icons/title-24px.svg';
 import { useAppController } from './AppControllerProvider';
 import { useCallbackRef } from './hooks/useCallbackRef';
 
@@ -54,6 +52,7 @@ const Button = styled.button`
     &:hover {
         background: rgba(0, 0, 0, 0.08);
     }
+
     &:active {
         background: rgba(0, 0, 0, 0.2);
     }
@@ -64,30 +63,8 @@ export function AppToolbar(): React.ReactElement {
 
     const onAddNewText = useCallbackRef(() => {
         const currentTimeInMS = appController.previewController.currentTimeInMS;
-        const object: TextObject = {
-            id: UUID(),
-            type: TextObject.type,
-            startInMS: currentTimeInMS,
-            endInMS: currentTimeInMS + 5000,
-            text: 'テキスト',
-            locked: false,
-            fontStyle: {
-                fontFamily: 'Noto Sans JP',
-                fontSize: 60,
-                fontWeight: '500',
-                fill: 0x000000,
-                stroke: 0xffffff,
-                strokeThickness: 0,
-                horizontalAlign: 'left',
-                verticalAlign: 'top',
-            },
-            x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
-            y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
-            width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 400 }] },
-            height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-        };
         appController.commitHistory(() => {
-            appController.addObject(object);
+            appController.addObject(new TextObject({ startInMS: currentTimeInMS, endInMS: currentTimeInMS + 5000 }));
         });
     });
 
@@ -99,25 +76,16 @@ export function AppToolbar(): React.ReactElement {
         void appController.importAssetFromFile(filePaths[0]);
     });
 
-    const onAddNewShape = useCallbackRef((shapeType: ShapeType) => {
+    const onAddNewShape = useCallbackRef((shapeType: string) => {
         const currentTimeInMS = appController.previewController.currentTimeInMS;
-        const object: ShapeObject = {
-            id: UUID(),
-            type: ShapeObject.type,
-            startInMS: currentTimeInMS,
-            endInMS: currentTimeInMS + 5000,
-            locked: false,
-            shapeType: shapeType,
-            x: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
-            y: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 100 }] },
-            width: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-            height: { type: AnimatableValueType.Numeric, keyframes: [{ timing: 0, value: 200 }] },
-            fill: { type: AnimatableValueType.Color, keyframes: [{ timing: 0, value: 0xf0f0f0 }] },
-            stroke: { type: AnimatableValueType.Color, keyframes: [{ timing: 0, value: 0x000000 }] },
-            anchor: [],
-        };
         appController.commitHistory(() => {
-            appController.addObject(object);
+            appController.addObject(
+                new ShapeObject({
+                    startInMS: currentTimeInMS,
+                    endInMS: currentTimeInMS + 5000,
+                    shapeType: shapeType,
+                })
+            );
         });
     });
 
@@ -136,10 +104,10 @@ export function AppToolbar(): React.ReactElement {
                 <Button onClick={onAddNewText}>
                     <TextIcon width={16} height={16} />
                 </Button>
-                <Button onClick={() => onAddNewShape(ShapeType.RECTANGLE)}>
+                <Button onClick={() => onAddNewShape('RECTANGLE')}>
                     <ShapesIcon width={16} height={16} />
                 </Button>
-                <Button onClick={() => onAddNewShape(ShapeType.CIRCLE)}>
+                <Button onClick={() => onAddNewShape('CIRCLE')}>
                     <ShapesIcon width={16} height={16} />
                 </Button>
             </ItemGroup>
