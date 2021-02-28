@@ -37,3 +37,6 @@ interface FFmpegModule {
 }
 
 declare const FFmpeg: FFmpegModule;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare type Constructor<T> = { new (...args: any[]): T; prototype: T };

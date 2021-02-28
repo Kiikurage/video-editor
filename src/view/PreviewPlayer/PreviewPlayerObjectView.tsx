@@ -1,11 +1,7 @@
-import * as PIXI from 'pixi.js';
-import { BaseObject } from '../../model/objects/BaseObject';
+import { Frame } from '../../model/frame/Frame';
 import { PreviewController } from '../../service/PreviewController';
 
-export interface PreviewPlayerObjectViewProps<T extends BaseObject> {
-    object: T;
-    selected: boolean;
+export interface PreviewPlayerObjectViewProps<T extends Frame> {
+    frame: T;
     previewController: PreviewController;
-    onSelect: (ev: PIXI.InteractionEvent) => void;
-    onChange: (dx: number, dy: number, dw: number, dh: number) => void;
 }

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { Pane } from './Pane';
-import { TimeLine } from './TimeLine/TimeLine';
+import { Timeline } from './Timeline/Timeline';
 import { TimelinePaneToolBar } from './TimelinePaneToolBar';
 
 const Base = styled.div`
@@ -28,7 +28,7 @@ export function TimelinePane(): React.ReactElement {
         <Pane title="タイムライン" tabPosition="bottom">
             <Base>
                 <TimelinePaneToolBar />
-                <TimeLine />
+                <Timeline />
             </Base>
         </Pane>
     );

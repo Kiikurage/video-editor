@@ -1,5 +1,3 @@
-export const RESIZER_SIZE = 10;
-
 export const DIR: {
     name: string;
     cursor: string;

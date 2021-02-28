@@ -25,7 +25,7 @@ export function TimelineBaseObjectView(props: TimelineObjectViewProps): React.Re
             width={width}
             height={height}
             object={object}
-            text={object.type}
+            text={object.constructor.name}
             isSelected={isSelected}
             snapPositionXs={snapPositionXs}
             keyframeTimings={[]}

@@ -3,16 +3,17 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
 import { getFFMpegInfo } from '../../../ipc/renderer/getFFMepgInfo';
+import { Frame } from '../../../model/frame/Frame';
 import { BaseObject } from '../../../model/objects/BaseObject';
 import { Project } from '../../../model/Project';
-import { PreviewCanvasViewportInfo } from '../../../view/PreviewPlayer/PreviewPlayer';
+import { RendererProps } from '../../../view/Renderer/RendererProps';
 import { input } from '../stream/FFMpegInputStream';
 import { FFMpegStream } from '../stream/FFMpegStream';
 import { renderObject } from './util';
 
-export async function createFrameObjectFFMpegStream<T extends BaseObject>(
+export async function createFrameObjectFFMpegStream<T extends BaseObject, F extends Frame>(
     object: T,
-    displayObjectFactory: (props: { object: T; timeInMS: number; canvasContext: PreviewCanvasViewportInfo }) => PIXI.DisplayObject,
+    renderer: (props: RendererProps<F>) => PIXI.DisplayObject,
     project: Project,
     workspacePath: string
 ): Promise<FFMpegStream> {
@@ -25,14 +26,12 @@ export async function createFrameObjectFFMpegStream<T extends BaseObject>(
     const batchVideoPath: string[] = [];
 
     for (let batchStartFrame = startFrame; batchStartFrame < endFrame; batchStartFrame += batchSize) {
-        const canvasContext: PreviewCanvasViewportInfo = { scale: 1, left: 0, top: 0 };
         const batchEndFrame = Math.min(batchStartFrame + batchSize, endFrame);
         const buffers: Buffer[] = [];
         for (let frame = batchStartFrame; frame < batchEndFrame; frame++) {
             const timing = (frame - startFrame) / (endFrame - startFrame);
             const timeInMS = object.startInMS * (1 - timing) + object.endInMS * timing;
-
-            const displayObject = displayObjectFactory({ object, timeInMS, canvasContext });
+            const displayObject = renderer({ frame: object.getFrame(timeInMS) as F });
             const arrayBuffer = renderObject(project, displayObject);
             const buffer = new Buffer(arrayBuffer);
             buffers.push(buffer);

@@ -8,7 +8,7 @@ import { AppController } from '../../service/AppController';
 import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { useForceUpdate } from '../hooks/useForceUpdate';
-import { ResizableObject } from '../PreviewPlayer/ResizeView/ResizableObejct';
+import { ResizableObject } from '../../model/objects/ResizableObejct';
 import { PropertyGroup, PropertyGroupName, PropertyRow } from './PropertyGroup';
 
 export function ShapePropertyGroup<T extends ShapeObject>(props: { appController: AppController; object: T }): React.ReactElement {

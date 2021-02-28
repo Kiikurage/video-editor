@@ -1,48 +1,43 @@
 import PIXISound from 'pixi-sound';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import { AnimatableValue } from '../../model/objects/AnimatableValue';
-import { AudioObject } from '../../model/objects/AudioObject';
+import { AudioFrame } from '../../model/frame/AudioFrame';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { PreviewPlayerObjectViewProps } from './PreviewPlayerObjectView';
 
-export function AudioObjectView(props: PreviewPlayerObjectViewProps<AudioObject>): React.ReactElement {
-    const { object, previewController } = props;
+export function AudioObjectView(props: PreviewPlayerObjectViewProps<AudioFrame>): React.ReactElement {
+    const { frame, previewController } = props;
 
     const [sound, setSound] = useState<PIXISound.Sound | null>(null);
     useEffect(() => {
         setSound(
             PIXISound.Sound.from({
-                url: object.srcFilePath,
+                url: frame.srcFilePath,
                 preload: true,
                 autoPlay: false,
             })
         );
-    }, [object.srcFilePath]);
+    }, [frame.srcFilePath]);
 
     useEffect(() => {
         if (sound === null) return;
-        sound.volume = AnimatableValue.interpolate(object.volume, object.startInMS, object.endInMS, previewController.currentTimeInMS);
-    }, [object.endInMS, object.startInMS, object.volume, previewController.currentTimeInMS, sound]);
+        sound.volume = frame.volume;
+    }, [frame.volume, sound]);
 
     const onPreviewPlay = useCallbackRef(() => {
-        if (previewController.currentTimeInMS < object.startInMS || previewController.currentTimeInMS >= object.endInMS) {
-            return;
-        }
-        void sound?.play({ start: (previewController.currentTimeInMS - object.startInMS) / 1000 });
+        if (frame.timeInMS < 0 || frame.timeInMS >= frame.duration) return;
+        void sound?.play({ start: frame.timeInMS / 1000 });
     });
 
     const onPreviewSeek = useCallbackRef(() => {
         if (!sound) return;
         if (previewController.paused) return;
 
-        if (previewController.currentTimeInMS < object.startInMS || previewController.currentTimeInMS >= object.endInMS) {
+        if (frame.timeInMS < 0 || frame.timeInMS >= frame.duration) {
             sound.stop();
         } else {
             sound.stop();
-            void sound.play({
-                start: (previewController.currentTimeInMS - object.startInMS) / 1000,
-            });
+            void sound.play({ start: frame.timeInMS / 1000 });
         }
     });
 
@@ -50,15 +45,13 @@ export function AudioObjectView(props: PreviewPlayerObjectViewProps<AudioObject>
         if (!sound) return;
         if (previewController.paused) return;
 
-        if (previewController.currentTimeInMS < object.startInMS || previewController.currentTimeInMS >= object.endInMS) {
+        if (frame.timeInMS < 0 || frame.timeInMS >= frame.duration) {
             if (sound.isPlaying) {
                 sound.stop();
             }
         } else {
             if (!sound.isPlaying) {
-                void sound.play({
-                    start: (previewController.currentTimeInMS - object.startInMS) / 1000,
-                });
+                void sound.play({ start: frame.timeInMS / 1000 });
             }
         }
     });

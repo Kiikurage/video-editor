@@ -101,7 +101,9 @@ export function PropertyPane(): React.ReactElement {
         <Pane title="オブジェクトの詳細" tabPosition="right">
             <Base>
                 <Body>
-                    <ObjectSummary>{selectedObject === null ? <div>PROJECT</div> : <div>{selectedObject.type}</div>}</ObjectSummary>
+                    <ObjectSummary>
+                        {selectedObject === null ? <div>PROJECT</div> : <div>{selectedObject.constructor.name}</div>}
+                    </ObjectSummary>
 
                     {selectedObject === null ? (
                         <ProjectPropertyGroup appController={appController} project={project} />
@@ -110,28 +112,28 @@ export function PropertyPane(): React.ReactElement {
                     )}
 
                     {selectedObject !== null &&
-                        (ShapeObject.isShape(selectedObject) ||
-                            VideoObject.isVideo(selectedObject) ||
-                            TextObject.isText(selectedObject) ||
-                            ImageObject.isImage(selectedObject)) && (
+                        (selectedObject instanceof ShapeObject ||
+                            selectedObject instanceof VideoObject ||
+                            selectedObject instanceof TextObject ||
+                            selectedObject instanceof ImageObject) && (
                             <PositionPropertyGroup appController={appController} object={selectedObject} />
                         )}
-                    {selectedObject !== null && TextObject.isText(selectedObject) && (
+                    {selectedObject !== null && selectedObject instanceof TextObject && (
                         <FontStylePropertyGroup appController={appController} object={selectedObject} />
                     )}
-                    {selectedObject !== null && TextObject.isText(selectedObject) && (
+                    {selectedObject !== null && selectedObject instanceof TextObject && (
                         <TextPropertyGroup appController={appController} object={selectedObject} />
                     )}
-                    {selectedObject !== null && AudioObject.isAudio(selectedObject) && (
+                    {selectedObject !== null && selectedObject instanceof AudioObject && (
                         <AudioPropertyGroup appController={appController} object={selectedObject} />
                     )}
                     {selectedObject !== null &&
-                        (AudioObject.isAudio(selectedObject) ||
-                            VideoObject.isVideo(selectedObject) ||
-                            ImageObject.isImage(selectedObject)) && (
+                        (selectedObject instanceof AudioObject ||
+                            selectedObject instanceof VideoObject ||
+                            selectedObject instanceof ImageObject) && (
                             <SrcFilePropertyGroup appController={appController} object={selectedObject} />
                         )}
-                    {selectedObject !== null && ShapeObject.isShape(selectedObject) && (
+                    {selectedObject !== null && selectedObject instanceof ShapeObject && (
                         <ShapePropertyGroup appController={appController} object={selectedObject} />
                     )}
                 </Body>

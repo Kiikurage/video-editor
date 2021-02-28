@@ -1,46 +1,42 @@
 import * as React from 'react';
 import { convertColorFromDOMToPixi } from '../../lib/convertColorFromDOMToPixi';
 import { convertColorFromPixiToDOM } from '../../lib/convertColorFromPixiToDOM';
-import { BaseObject } from '../../model/objects/BaseObject';
-import { FontStyle } from '../../model/objects/FontStyle';
+import { TextObject } from '../../model/objects/TextObject';
 import { AppController } from '../../service/AppController';
 import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { NumberInput } from '../NumberInput';
 import { PropertyGroup, PropertyGroupName, PropertyRow } from './PropertyGroup';
 
-export function FontStylePropertyGroup<T extends BaseObject & { fontStyle: FontStyle }>(props: {
-    appController: AppController;
-    object: T;
-}): React.ReactElement {
+export function FontStylePropertyGroup<T extends TextObject>(props: { appController: AppController; object: T }): React.ReactElement {
     const { appController, object } = props;
     const onFontFamilyChange = useCallbackRef((ev: React.ChangeEvent<HTMLSelectElement>) => {
         const value = ev.target.value;
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, fontStyle: { ...object.fontStyle, fontFamily: value } });
+            appController.updateObject({ ...object, fontFamily: value });
         });
     });
     const onFontWeightChange = useCallbackRef((ev: React.ChangeEvent<HTMLSelectElement>) => {
         const value = ev.target.value;
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, fontStyle: { ...object.fontStyle, fontWeight: value } });
+            appController.updateObject({ ...object, fontWeight: value });
         });
     });
     const onFillChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         const value = convertColorFromDOMToPixi(ev.target.value);
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, fontStyle: { ...object.fontStyle, fill: value } });
+            appController.updateObject({ ...object, fill: value });
         });
     });
     const onStrokeChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         const value = convertColorFromDOMToPixi(ev.target.value);
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, fontStyle: { ...object.fontStyle, stroke: value } });
+            appController.updateObject({ ...object, stroke: value });
         });
     });
     const onStrokeThicknessChange = useCallbackRef((value: number) => {
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, fontStyle: { ...object.fontStyle, strokeThickness: value } });
+            appController.updateObject({ ...object, strokeThickness: value });
         });
     });
 
@@ -49,14 +45,14 @@ export function FontStylePropertyGroup<T extends BaseObject & { fontStyle: FontS
             <PropertyGroupName>フォント</PropertyGroupName>
             <PropertyRow>
                 <FormControl>
-                    <select defaultValue={object.fontStyle.fontSize} disabled={object.locked} onChange={onFontFamilyChange}>
+                    <select defaultValue={object.fontSize} disabled={object.locked} onChange={onFontFamilyChange}>
                         <option value="Noto Sans JP">Noto Sans JP</option>
                     </select>
                 </FormControl>
             </PropertyRow>
             <PropertyRow>
                 <FormControl>
-                    <select defaultValue={object.fontStyle.fontWeight} disabled={object.locked} onChange={onFontWeightChange}>
+                    <select defaultValue={object.fontWeight} disabled={object.locked} onChange={onFontWeightChange}>
                         <option value="100">100</option>
                         <option value="300">300</option>
                         <option value="400">400</option>
@@ -70,7 +66,7 @@ export function FontStylePropertyGroup<T extends BaseObject & { fontStyle: FontS
                 <FormControl label="色">
                     <input
                         type="color"
-                        defaultValue={convertColorFromPixiToDOM(object.fontStyle.fill)}
+                        defaultValue={convertColorFromPixiToDOM(object.fill)}
                         readOnly={object.locked}
                         onChange={onFillChange}
                     />
@@ -80,7 +76,7 @@ export function FontStylePropertyGroup<T extends BaseObject & { fontStyle: FontS
                 <FormControl label="縁取りの色">
                     <input
                         type="color"
-                        defaultValue={convertColorFromPixiToDOM(object.fontStyle.stroke)}
+                        defaultValue={convertColorFromPixiToDOM(object.stroke)}
                         readOnly={object.locked}
                         onChange={onStrokeChange}
                     />
@@ -88,11 +84,7 @@ export function FontStylePropertyGroup<T extends BaseObject & { fontStyle: FontS
             </PropertyRow>
             <PropertyRow>
                 <FormControl label="縁取りの太さ">
-                    <NumberInput
-                        defaultValue={object.fontStyle.strokeThickness}
-                        readOnly={object.locked}
-                        onChange={onStrokeThicknessChange}
-                    />
+                    <NumberInput defaultValue={object.strokeThickness} readOnly={object.locked} onChange={onStrokeThicknessChange} />
                 </FormControl>
             </PropertyRow>
         </PropertyGroup>

@@ -2,32 +2,22 @@ import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
-import { AnimatableValue } from '../../model/objects/AnimatableValue';
-import { VideoObject } from '../../model/objects/VideoObject';
+import { VideoFrame } from '../../model/frame/VideoFrame';
 import { useCallbackRef } from '../hooks/useCallbackRef';
-import { PreviewCanvasViewportInfo, usePreviewCanvasViewportInfo } from './PreviewPlayer';
 import { PreviewPlayerObjectViewProps } from './PreviewPlayerObjectView';
-import { ResizeView } from './ResizeView/ResizeView';
 
 interface PixiProps {
     texture: PIXI.Texture;
-    object: VideoObject;
-    canvasContext: PreviewCanvasViewportInfo;
-    timeInMS: number;
+    frame: VideoFrame;
 }
 
 function applyProps(base: PIXI.Sprite, props: PixiProps) {
-    const { texture, object, canvasContext, timeInMS } = props;
-    const x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, timeInMS);
-    const y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, timeInMS);
-    const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, timeInMS);
-    const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, timeInMS);
-
+    const { texture, frame } = props;
     base.texture = texture;
-    base.x = (x - canvasContext.left) * canvasContext.scale;
-    base.y = (y - canvasContext.top) * canvasContext.scale;
-    base.width = width * canvasContext.scale;
-    base.height = height * canvasContext.scale;
+    base.x = frame.x;
+    base.y = frame.y;
+    base.width = frame.width;
+    base.height = frame.height;
 }
 
 const VideoObjectView = CustomPIXIComponent(
@@ -46,45 +36,37 @@ const VideoObjectView = CustomPIXIComponent(
     'VideoObjectView'
 );
 
-function VideoObjectViewWrapper(props: PreviewPlayerObjectViewProps<VideoObject>): React.ReactElement {
-    const { object, previewController, onChange, onSelect, selected } = props;
-    const canvasContext = usePreviewCanvasViewportInfo();
+function VideoObjectViewWrapper(props: PreviewPlayerObjectViewProps<VideoFrame>): React.ReactElement {
+    const { frame, previewController } = props;
     const [texture, setTexture] = useState(PIXI.Texture.EMPTY);
 
     const onPreviewControllerSeek = useCallbackRef(() => {
-        const currentPreviewTimeInMS = previewController.currentTimeInMS;
-
         const videoResource = texture.baseTexture.resource as PIXI.resources.VideoResource;
         const videoElement = videoResource.source as HTMLVideoElement;
 
-        const expectedVideoCurrentTimeInMS = currentPreviewTimeInMS - object.startInMS;
         const videoCurrentTimeInMS = videoElement.currentTime * 1000;
 
         if (videoElement.paused) {
             if (!previewController.paused) {
                 void videoElement.play().catch(() => void 0);
             } else {
-                videoElement.currentTime = expectedVideoCurrentTimeInMS / 1000;
+                videoElement.currentTime = frame.timeInMS / 1000;
                 texture.update();
             }
         } else {
-            const lagInMS = currentPreviewTimeInMS - (videoCurrentTimeInMS + object.startInMS);
+            const lagInMS = frame.timeInMS - videoCurrentTimeInMS;
             if (Math.abs(lagInMS) > 200) {
-                videoElement.currentTime = (expectedVideoCurrentTimeInMS + lagInMS) / 1000;
+                videoElement.currentTime = (frame.timeInMS + lagInMS) / 1000;
             }
         }
     });
 
     const onPreviewControllerPlay = useCallbackRef(() => {
-        const currentPreviewTimeInMS = previewController.currentTimeInMS;
-
         const videoResource = texture.baseTexture.resource as PIXI.resources.VideoResource;
         const videoElement = videoResource.source as HTMLVideoElement;
 
-        const expectedVideoCurrentTimeInMS = currentPreviewTimeInMS - object.startInMS;
-
-        if (0 <= expectedVideoCurrentTimeInMS && expectedVideoCurrentTimeInMS <= object.endInMS) {
-            videoElement.currentTime = expectedVideoCurrentTimeInMS / 1000;
+        if (0 <= frame.timeInMS && frame.timeInMS <= frame.duration) {
+            videoElement.currentTime = frame.timeInMS / 1000;
             void videoElement.play().catch(() => void 0);
         }
     });
@@ -121,7 +103,7 @@ function VideoObjectViewWrapper(props: PreviewPlayerObjectViewProps<VideoObject>
     useEffect(() => {
         const newTexture = new PIXI.Texture(
             new PIXI.BaseTexture(
-                new PIXI.resources.VideoResource(object.srcFilePath, {
+                new PIXI.resources.VideoResource(frame.srcFilePath, {
                     autoLoad: true,
                     autoPlay: false,
                 })
@@ -133,28 +115,9 @@ function VideoObjectViewWrapper(props: PreviewPlayerObjectViewProps<VideoObject>
             setTexture(newTexture);
             onPreviewControllerSeek();
         });
-    }, [onPreviewControllerSeek, object.srcFilePath]);
+    }, [onPreviewControllerSeek, frame.srcFilePath]);
 
-    const x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, previewController.currentTimeInMS);
-    const y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, previewController.currentTimeInMS);
-    const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, previewController.currentTimeInMS);
-    const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, previewController.currentTimeInMS);
-
-    return (
-        <>
-            <VideoObjectView texture={texture} object={object} canvasContext={canvasContext} timeInMS={previewController.currentTimeInMS} />
-            <ResizeView
-                x={x}
-                y={y}
-                width={width}
-                height={height}
-                selected={selected}
-                locked={object.locked}
-                onChange={onChange}
-                onSelect={onSelect}
-            />
-        </>
-    );
+    return <VideoObjectView texture={texture} frame={frame} />;
 }
 
 export { VideoObjectViewWrapper as VideoObjectView };

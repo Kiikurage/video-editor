@@ -1,8 +1,7 @@
 import * as PIXI from 'pixi.js';
 import { CustomPIXIComponentBehaviorDefinition } from 'react-pixi-fiber';
-import { AnimatableValue } from '../../model/objects/AnimatableValue';
-import { HorizontalAlign, VerticalAlign } from '../../model/objects/FontStyle';
-import { TextObject } from '../../model/objects/TextObject';
+import { TextFrame } from '../../model/frame/TextFrame';
+import { HorizontalAlign, VerticalAlign } from '../../model/objects/TextObject';
 import { RendererProps } from './RendererProps';
 
 const Align2Anchor: Record<HorizontalAlign | VerticalAlign, number> = {
@@ -13,37 +12,36 @@ const Align2Anchor: Record<HorizontalAlign | VerticalAlign, number> = {
     right: 1,
 };
 
-function applyProps(base: PIXI.Text, props: RendererProps<TextObject>) {
-    const { object, timeInMS, canvasContext } = props;
-    const x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, timeInMS);
-    const y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, timeInMS);
-    const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, timeInMS);
-    const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, timeInMS);
+function applyProps(base: PIXI.Text, props: RendererProps<TextFrame>) {
+    const { frame } = props;
+    /**
+     * Must set content before any other props
+     */
+    base.text = frame.text;
 
     const textStyle = base.style as PIXI.TextStyle;
-    textStyle.fontFamily = object.fontStyle.fontFamily;
-    textStyle.fontSize = object.fontStyle.fontSize;
-    textStyle.fontWeight = object.fontStyle.fontWeight;
-    textStyle.fill = object.fontStyle.fill;
-    textStyle.stroke = object.fontStyle.stroke;
-    textStyle.strokeThickness = object.fontStyle.strokeThickness;
+    textStyle.fontFamily = frame.fontFamily;
+    textStyle.fontSize = frame.fontSize;
+    textStyle.fontWeight = frame.fontWeight;
+    textStyle.fill = frame.fill;
+    textStyle.stroke = frame.stroke;
+    textStyle.strokeThickness = frame.strokeThickness;
     textStyle.breakWords = true;
     textStyle.wordWrap = true;
-    textStyle.wordWrapWidth = width;
-    textStyle.align = object.fontStyle.horizontalAlign;
+    textStyle.wordWrapWidth = frame.width;
+    textStyle.align = frame.horizontalAlign;
 
-    base.x = Math.round((x - canvasContext.left + width * Align2Anchor[object.fontStyle.horizontalAlign]) * canvasContext.scale);
-    base.y = Math.round((y - canvasContext.top + height * Align2Anchor[object.fontStyle.verticalAlign]) * canvasContext.scale);
-    base.width = Math.round(width * canvasContext.scale);
-    base.height = Math.round(height * canvasContext.scale);
-    base.text = object.text;
-    base.scale.x = canvasContext.scale;
-    base.scale.y = canvasContext.scale;
-    base.anchor.x = Align2Anchor[object.fontStyle.horizontalAlign];
-    base.anchor.y = Align2Anchor[object.fontStyle.verticalAlign];
+    base.x = Math.round(frame.x + frame.width * Align2Anchor[frame.horizontalAlign]);
+    base.y = Math.round(frame.y + frame.height * Align2Anchor[frame.verticalAlign]);
+    base.width = frame.width;
+    base.height = frame.height;
+    base.scale.x = 1;
+    base.scale.y = 1;
+    base.anchor.x = Align2Anchor[frame.horizontalAlign];
+    base.anchor.y = Align2Anchor[frame.verticalAlign];
 }
 
-export const TextObjectViewRenderer: CustomPIXIComponentBehaviorDefinition<PIXI.Text, RendererProps<TextObject>> = {
+export const TextObjectViewRenderer: CustomPIXIComponentBehaviorDefinition<PIXI.Text, RendererProps<TextFrame>> = {
     customDisplayObject(props): PIXI.Text {
         const base = new PIXI.Text('');
 

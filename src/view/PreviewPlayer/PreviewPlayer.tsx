@@ -1,27 +1,15 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { ComponentType, useContext, useEffect, useRef } from 'react';
+import { useContext, useEffect, useMemo, useRef } from 'react';
 import styled from 'styled-components';
-import { AnimatableValue } from '../../model/objects/AnimatableValue';
-import { AudioObject } from '../../model/objects/AudioObject';
-import { BaseObject } from '../../model/objects/BaseObject';
-import { ImageObject } from '../../model/objects/ImageObject';
-import { ShapeObject } from '../../model/objects/ShapeObject';
-import { TextObject } from '../../model/objects/TextObject';
-import { VideoObject } from '../../model/objects/VideoObject';
 import { Project } from '../../model/Project';
 import { useAppController } from '../AppControllerProvider';
 import { CustomStage } from '../CustomStage';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { useForceUpdate } from '../hooks/useForceUpdate';
-import { AudioObjectView } from './AudioObjectView';
 import { Background } from './Background';
-import { ImageObjectView } from './ImageObjectView';
-import { PreviewPlayerObjectViewProps } from './PreviewPlayerObjectView';
-import { ResizableObject } from './ResizeView/ResizableObejct';
-import { ShapeObjectView } from './ShapeObjectView';
-import { TextObjectView } from './TextObjectView';
-import { VideoObjectView } from './VideoObjectView';
+import { PreviewPlayerControlLayer } from './PreviewPlayerControlLayer';
+import { PreviewPlayerObjectsLayer } from './PreviewPlayerObjectsLayer';
 
 const Base = styled.div`
     position: relative;
@@ -36,14 +24,6 @@ const options: PIXI.ApplicationOptions = {
     height: 300,
     transparent: true,
     antialias: true,
-};
-
-const ObjectViewMap: Record<string, ComponentType<PreviewPlayerObjectViewProps<never>>> = {
-    [VideoObject.type]: VideoObjectView,
-    [TextObject.type]: TextObjectView,
-    [ImageObject.type]: ImageObjectView,
-    [ShapeObject.type]: ShapeObjectView,
-    [AudioObject.type]: AudioObjectView,
 };
 
 export function PreviewPlayer(): React.ReactElement {
@@ -72,71 +52,24 @@ export function PreviewPlayer(): React.ReactElement {
         };
     }, [previewController, forceUpdate]);
 
-    const activeObjects = project.objects.filter(
-        (object) => object.startInMS <= previewController.currentTimeInMS && previewController.currentTimeInMS <= object.endInMS
-    );
-
-    const onObjectViewChange = useCallbackRef((object: ResizableObject, dx: number, dy: number, dw: number, dh: number) => {
-        appController.commitHistory(() => {
-            const x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, previewController.currentTimeInMS);
-            const y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, previewController.currentTimeInMS);
-            const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, previewController.currentTimeInMS);
-            const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, previewController.currentTimeInMS);
-
-            const newFrameTiming = Math.min(
-                Math.max(0, (previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
-                1
-            );
-
-            appController.updateObject({
-                ...object,
-                x: AnimatableValue.set(object.x, newFrameTiming, x + dx),
-                y: AnimatableValue.set(object.y, newFrameTiming, y + dy),
-                width: AnimatableValue.set(object.width, newFrameTiming, width + dw),
-                height: AnimatableValue.set(object.height, newFrameTiming, height + dh),
-            } as ShapeObject);
-        });
-    });
-
-    const onObjectViewSelect = useCallbackRef((ev: PIXI.InteractionEvent, object: BaseObject) => {
-        ev.stopPropagation();
-        ev.data.originalEvent.preventDefault();
-        if (ev.data.originalEvent.shiftKey) {
-            appController.addObjectToSelection(object.id);
-        } else {
-            appController.setSelectedObjects([object.id]);
-        }
-    });
-
     const onStageMouseDown = useCallbackRef(() => {
         appController.setSelectedObjects([]);
     });
 
-    function renderObjectView(object: BaseObject): React.ReactNode {
-        const Renderer = ObjectViewMap[object.type];
-
-        if (Renderer === undefined) {
-            console.warn(`Unknown object type: ${object.type}`);
-        } else {
-            return (
-                <Renderer
-                    key={object.id}
-                    object={object as never}
-                    selected={appController.selectedObjectIds.has(object.id)}
-                    previewController={previewController}
-                    onChange={(dx, dy, dw, dh) => onObjectViewChange(object as ResizableObject, dx, dy, dw, dh)}
-                    onSelect={(ev) => onObjectViewSelect(ev, object)}
-                />
-            );
-        }
-    }
+    const activeFrames = useMemo(() => {
+        const timeInMS = previewController.currentTimeInMS;
+        return appController.project.objects
+            .filter((object) => object.startInMS <= timeInMS && timeInMS < object.endInMS)
+            .map((object) => object.getFrame(timeInMS));
+    }, [appController.project.objects, previewController.currentTimeInMS]);
 
     return (
         <Base ref={setContainer} onClick={(ev) => ev.nativeEvent}>
             <CustomStage options={options} onMouseDown={onStageMouseDown}>
                 <PreviewCanvasViewportInfo.Provider value={info}>
                     <Background project={project} />
-                    {activeObjects.map(renderObjectView)}
+                    <PreviewPlayerObjectsLayer frames={activeFrames} appController={appController} />
+                    <PreviewPlayerControlLayer frames={activeFrames} appController={appController} />
                 </PreviewCanvasViewportInfo.Provider>
             </CustomStage>
         </Base>
@@ -146,7 +79,6 @@ export function PreviewPlayer(): React.ReactElement {
 function useViewportInfo(project: Project): [info: PreviewCanvasViewportInfo, setContainer: (container: HTMLElement | null) => void] {
     const forceUpdate = useForceUpdate();
 
-    const baseRef = useRef<HTMLElement | null>(null);
     const info = useRef<PreviewCanvasViewportInfo>({ scale: 0.1, top: 0, left: 0 });
 
     const PADDING = 16 * 2;
@@ -164,30 +96,29 @@ function useViewportInfo(project: Project): [info: PreviewCanvasViewportInfo, se
             const newScale = 2 ** newScaleInLogScale;
 
             info.current.scale = newScale;
-            info.current.left += ev.offsetX / oldScale - ev.offsetX / newScale;
-            info.current.top += ev.offsetY / oldScale - ev.offsetY / newScale;
+
+            const scaleDiff = (newScale - oldScale) / (newScale * oldScale);
+            info.current.left += scaleDiff * ev.offsetX;
+            info.current.top += scaleDiff * ev.offsetY;
         } else {
             info.current.left += ev.deltaX / info.current.scale;
             info.current.top += ev.deltaY / info.current.scale;
         }
 
-        if (baseRef.current) {
-            const bcr = baseRef.current.getBoundingClientRect();
-            info.current.left = Math.max(
-                -bcr.width / info.current.scale + 2 * PADDING,
-                Math.min(info.current.left, project.viewport.width - 2 * PADDING)
-            );
-            info.current.top = Math.max(
-                -bcr.height / info.current.scale + 2 * PADDING,
-                Math.min(info.current.top, project.viewport.height - 2 * PADDING)
-            );
-        }
+        const bcr = (ev.target as HTMLElement).getBoundingClientRect();
+        info.current.left = Math.max(
+            -bcr.width / info.current.scale + 2 * PADDING,
+            Math.min(info.current.left, project.viewport.width - 2 * PADDING)
+        );
+        info.current.top = Math.max(
+            -bcr.height / info.current.scale + 2 * PADDING,
+            Math.min(info.current.top, project.viewport.height - 2 * PADDING)
+        );
 
         forceUpdate();
     });
 
     const setContainer = useCallbackRef((base: HTMLElement | null) => {
-        baseRef.current = base;
         if (base) {
             base.addEventListener('wheel', onWheel, { passive: true });
             const bcr = base.getBoundingClientRect();
@@ -207,14 +138,7 @@ function useViewportInfo(project: Project): [info: PreviewCanvasViewportInfo, se
         }
     });
 
-    return [
-        {
-            left: info.current.left,
-            top: info.current.top,
-            scale: info.current.scale,
-        },
-        setContainer,
-    ];
+    return [{ ...info.current }, setContainer];
 }
 
 export interface PreviewCanvasViewportInfo {

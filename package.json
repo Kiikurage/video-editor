@@ -11,7 +11,7 @@
     "build:tsc": "tsc -p ./tsconfig.main.json",
     "build:webpack": "webpack-cli bundle",
     "test": "jest --coverage",
-    "lint": "lint-staged"
+    "lint": "eslint src/**/*.{ts,tsx}"
   },
   "author": {
     "name": "Yuichiro Kikura",
@@ -25,7 +25,7 @@
   "main": "build/main.js",
   "husky": {
     "hooks": {
-      "pre-commit": "npm run lint && npm test"
+      "pre-commit": "lint-staged && npm test"
     }
   },
   "lint-staged": {
