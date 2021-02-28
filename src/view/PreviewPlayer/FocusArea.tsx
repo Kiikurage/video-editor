@@ -23,7 +23,7 @@ function applyProps(base: PIXI.Container, props: PixiProps) {
     frame.interactive = true;
     frame.clear();
     if (selected) {
-        frame.lineStyle(6, 0x4d90fe, 0.4);
+        frame.lineStyle(6, 0x4d90fe, 0.2);
         frame.drawRect(0, 0, width, height);
     }
     frame.hitArea = new PIXI.Rectangle(0, 0, width, height);

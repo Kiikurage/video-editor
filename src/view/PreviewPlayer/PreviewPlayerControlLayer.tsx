@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
 import { useEffect, useMemo, useRef } from 'react';
-import { Container } from 'react-pixi-fiber';
+import { Container, CustomPIXIComponent } from 'react-pixi-fiber';
 import { Box } from '../../model/Box';
 import { Frame } from '../../model/frame/Frame';
 import { AnimatableValue } from '../../model/objects/AnimatableValue';
@@ -44,6 +44,13 @@ interface ResizeInfo {
     dh: number;
 }
 
+interface Line {
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+}
+
 export function PreviewPlayerControlLayer(props: ControlLayerProps): React.ReactElement {
     const { frames, appController } = props;
     const previewController = appController.previewController;
@@ -54,6 +61,7 @@ export function PreviewPlayerControlLayer(props: ControlLayerProps): React.React
     const forceUpdate = useForceUpdate();
     const dragInfoRef = useRef<DragInfo>({ startX: 0, startY: 0, lastX: 0, lastY: 0, dirX: 0, dirY: 0, status: 'end' });
     const resizeInfoRef = useRef<ResizeInfo>({ dx: 0, dy: 0, dw: 0, dh: 0 });
+    const guidelinesRef = useRef<Line[]>([]);
     const flagInteractionToRemoveObjectFromSelection = useRef<boolean>(false);
 
     const { selectedFrames, nonSelectedFrames } = useMemo(() => {
@@ -177,20 +185,34 @@ export function PreviewPlayerControlLayer(props: ControlLayerProps): React.React
         }
         if (selectionBox === null) return;
 
+        const snapPointXs: number[] = [];
+        const snapPointYs: number[] = [];
         let dragDx = (lastX - startX) / canvasScale;
         let dragDy = (lastY - startY) / canvasScale;
 
         const snapX1 = xSnapPointManager.check(selectionBox.x + dragDx, 30);
-        if (snapX1 !== null) dragDx = snapX1 - selectionBox.x;
+        if (snapX1 !== null) {
+            snapPointXs.push(snapX1);
+            dragDx = snapX1 - selectionBox.x;
+        }
 
         const snapX2 = xSnapPointManager.check(selectionBox.x + selectionBox.width + dragDx, 30);
-        if (snapX2 !== null) dragDx = snapX2 - (selectionBox.x + selectionBox.width);
+        if (snapX2 !== null) {
+            snapPointXs.push(snapX2);
+            dragDx = snapX2 - (selectionBox.x + selectionBox.width);
+        }
 
         const snapY1 = ySnapPointManager.check(selectionBox.y + dragDy, 30);
-        if (snapY1 !== null) dragDy = snapY1 - selectionBox.y;
+        if (snapY1 !== null) {
+            snapPointYs.push(snapY1);
+            dragDy = snapY1 - selectionBox.y;
+        }
 
         const snapY2 = ySnapPointManager.check(selectionBox.y + selectionBox.height + dragDy, 30);
-        if (snapY2 !== null) dragDy = snapY2 - (selectionBox.y + selectionBox.height);
+        if (snapY2 !== null) {
+            snapPointYs.push(snapY2);
+            dragDy = snapY2 - (selectionBox.y + selectionBox.height);
+        }
 
         const dw = dragDx * dirX;
         const dh = dragDy * dirY;
@@ -200,7 +222,45 @@ export function PreviewPlayerControlLayer(props: ControlLayerProps): React.React
         if (status === 'end') {
             onObjectViewChange(dx, dy, dw, dh);
             resizeInfoRef.current = { dx: 0, dy: 0, dw: 0, dh: 0 };
+            guidelinesRef.current = [];
         } else {
+            const guidelines: Line[] = [];
+            for (const snapPointX of snapPointXs) {
+                const objectIds = xSnapPointManager.getObjectsAt(snapPointX);
+                const guideLineYs = [selectionBox.y + dy, selectionBox.y + selectionBox.height + dy + dh];
+                for (const frame of nonSelectedFrames) {
+                    if (!objectIds.has(frame.id)) continue;
+                    guideLineYs.push(frame.y, frame.y + frame.height);
+                }
+                if (objectIds.has('viewport')) {
+                    guideLineYs.push(0, appController.project.viewport.height);
+                }
+                guidelines.push({
+                    x0: snapPointX,
+                    y0: Math.min(...guideLineYs),
+                    x1: snapPointX,
+                    y1: Math.max(...guideLineYs),
+                });
+            }
+            for (const snapPointY of snapPointYs) {
+                const objectIds = ySnapPointManager.getObjectsAt(snapPointY);
+                const guideLineXs = [selectionBox.x + dx, selectionBox.x + selectionBox.width + dx + dw];
+                for (const frame of nonSelectedFrames) {
+                    if (!objectIds.has(frame.id)) continue;
+                    guideLineXs.push(frame.x, frame.x + frame.width);
+                }
+                if (objectIds.has('viewport')) {
+                    guideLineXs.push(0, appController.project.viewport.width);
+                }
+                guidelines.push({
+                    x0: Math.min(...guideLineXs),
+                    y0: snapPointY,
+                    x1: Math.max(...guideLineXs),
+                    y1: snapPointY,
+                });
+            }
+
+            guidelinesRef.current = guidelines;
             resizeInfoRef.current = { dx, dy, dw, dh };
         }
         forceUpdate();
@@ -287,6 +347,41 @@ export function PreviewPlayerControlLayer(props: ControlLayerProps): React.React
                     onMouseDown={onResizerMouseDown}
                 />
             )}
+            {guidelinesRef.current.map(({ x0, y0, x1, y1 }, i) => (
+                <Guideline key={i} x0={x0 * canvasScale} y0={y0 * canvasScale} x1={x1 * canvasScale} y1={y1 * canvasScale} />
+            ))}
         </Container>
     );
 }
+
+interface PixiProps {
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+}
+
+function applyProps(base: PIXI.Graphics, props: PixiProps) {
+    const { x0, y0, x1, y1 } = props;
+
+    base.clear();
+    base.lineStyle(1, 0xff0000);
+    base.moveTo(x0, y0);
+    base.lineTo(x1, y1);
+}
+
+export const Guideline = CustomPIXIComponent(
+    {
+        customDisplayObject(props: PixiProps) {
+            const base = new PIXI.Graphics();
+
+            applyProps(base, props);
+
+            return base;
+        },
+        customApplyProps(base: PIXI.Graphics, oldProps: PixiProps, newProps: PixiProps): void {
+            applyProps(base, newProps);
+        },
+    },
+    'Guideline'
+);
