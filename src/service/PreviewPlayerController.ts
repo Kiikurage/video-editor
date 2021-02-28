@@ -1,15 +1,15 @@
 import { EventEmitter } from 'events';
-import { EventEmitterEvents } from '../model/EventEmitterEvents';
+import { TypedEventEmitter } from '../model/EventEmitterEvents';
 import { Timer } from './Timer';
 
-type PreviewControllerEvents = EventEmitterEvents<{
-    play: void;
-    pause: void;
-    seek: void;
-    tick: void;
+type PreviewPlayerControllerEventEmitter = TypedEventEmitter<{
+    play: () => void;
+    pause: () => void;
+    seek: () => void;
+    tick: () => void;
 }>;
 
-export class PreviewController extends EventEmitter implements PreviewControllerEvents {
+export class PreviewPlayerController extends (EventEmitter as PreviewPlayerControllerEventEmitter) {
     private readonly timer: Timer = new Timer();
 
     constructor() {
@@ -20,22 +20,6 @@ export class PreviewController extends EventEmitter implements PreviewController
         this.timer.on('tick', this.onTimerTick);
         this.timer.on('pause', this.onTimerPause);
     }
-
-    private onTimerPlay = () => {
-        this.emit('play');
-    };
-
-    private onTimerTick = () => {
-        this.emit('tick');
-    };
-
-    private onTimerSeek = () => {
-        this.emit('seek');
-    };
-
-    private onTimerPause = () => {
-        this.emit('pause');
-    };
 
     get paused(): boolean {
         return this.timer.paused;
@@ -72,4 +56,20 @@ export class PreviewController extends EventEmitter implements PreviewController
 
         this.timer.stop();
     }
+
+    private onTimerPlay = () => {
+        this.emit('play');
+    };
+
+    private onTimerTick = () => {
+        this.emit('tick');
+    };
+
+    private onTimerSeek = () => {
+        this.emit('seek');
+    };
+
+    private onTimerPause = () => {
+        this.emit('pause');
+    };
 }

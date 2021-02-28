@@ -7,10 +7,10 @@ import * as tmp from 'tmp';
 import { getFFMpegInfo } from '../ipc/renderer/getFFMepgInfo';
 import { getFFProbeInfo } from '../ipc/renderer/getFFProbeInfo';
 import { noop } from '../lib/util';
-import { EventEmitterEvents } from '../model/EventEmitterEvents';
+import { TypedEventEmitter } from '../model/EventEmitterEvents';
 
-type KeyframeLoaderEvents = EventEmitterEvents<{
-    load: void;
+type KeyframeLoaderEventEmitter = TypedEventEmitter<{
+    load: () => void;
 }>;
 
 export interface KeyframeLoaderRecord {
@@ -20,7 +20,7 @@ export interface KeyframeLoaderRecord {
 
 const cacheDirectoryMap = new Map<string, string>();
 
-export class KeyframeLoader extends EventEmitter implements KeyframeLoaderEvents {
+export class KeyframeLoader extends (EventEmitter as KeyframeLoaderEventEmitter) {
     readonly srcFilePath: string;
     private records: KeyframeLoaderRecord[] = [];
     private readonly tmpDir: string;

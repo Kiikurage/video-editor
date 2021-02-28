@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { Counter } from '../lib/Counter';
-import { EventEmitterEvents } from '../model/EventEmitterEvents';
+import { TypedEventEmitter } from '../model/EventEmitterEvents';
 
 export type SnackBarMessageType = 'info' | 'success' | 'error';
 
@@ -11,11 +11,11 @@ export interface SnackBarMessage {
     clearAfterInMS: number;
 }
 
-type SnackBarControllerEvents = EventEmitterEvents<{
-    change: void;
+type SnackBarControllerEventEmitter = TypedEventEmitter<{
+    change: () => void;
 }>;
 
-export class SnackBarController extends EventEmitter implements SnackBarControllerEvents {
+export class SnackBarController extends (EventEmitter as SnackBarControllerEventEmitter) {
     private static instance: SnackBarController | null = null;
     private readonly messages: SnackBarMessage[] = [];
     private readonly counter: Counter = new Counter();

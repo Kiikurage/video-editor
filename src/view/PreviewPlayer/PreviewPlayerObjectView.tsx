@@ -1,7 +1,7 @@
 import { Frame } from '../../model/frame/Frame';
-import { PreviewController } from '../../service/PreviewController';
+import { PreviewPlayerController } from '../../service/PreviewPlayerController';
 
 export interface PreviewPlayerObjectViewProps<T extends Frame> {
     frame: T;
-    previewController: PreviewController;
+    previewController: PreviewPlayerController;
 }

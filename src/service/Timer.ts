@@ -1,14 +1,14 @@
 import { EventEmitter } from 'events';
-import { EventEmitterEvents } from '../model/EventEmitterEvents';
+import { TypedEventEmitter } from '../model/EventEmitterEvents';
 
-type TimerEvents = EventEmitterEvents<{
-    play: void;
-    tick: void;
-    seek: void;
-    pause: void;
+type TimerEventEmitter = TypedEventEmitter<{
+    play: () => void;
+    tick: () => void;
+    seek: () => void;
+    pause: () => void;
 }>;
 
-export class Timer extends EventEmitter implements TimerEvents {
+export class Timer extends (EventEmitter as TimerEventEmitter) {
     public durationInMS: number = 3 * 1000;
 
     private isStarted = false;

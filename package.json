@@ -98,6 +98,7 @@
     "react-quick-pinch-zoom": "^4.0.2",
     "react-svg-loader": "^3.0.3",
     "react-test-renderer": "^16.14.0",
+    "strict-event-emitter-types": "^2.0.0",
     "styled-components": "^5.2.1",
     "tmp": "^0.2.1",
     "typescript": "^4.1.3",

@@ -8,7 +8,7 @@ import { getImageSize, getVideoSize } from '../lib/getAssetSpacialSize';
 import { isNonNull } from '../lib/isNonNull';
 import { assert } from '../lib/util';
 import { AppState } from '../model/AppState';
-import { EventEmitterEvents } from '../model/EventEmitterEvents';
+import { TypedEventEmitter } from '../model/EventEmitterEvents';
 import { HistoryManager } from '../model/HistoryManager';
 import { AnimatableValue, AnimatableValueType } from '../model/objects/AnimatableValue';
 import { AudioObject } from '../model/objects/AudioObject';
@@ -17,18 +17,18 @@ import { ImageObject } from '../model/objects/ImageObject';
 import { ObjectParser } from '../model/objects/ObjectParser';
 import { VideoObject } from '../model/objects/VideoObject';
 import { Project } from '../model/Project';
-import { PreviewController } from './PreviewController';
+import { PreviewPlayerController } from './PreviewPlayerController';
 import { SnackBarController } from './SnackBarController';
 
-type AppControllerEvents = EventEmitterEvents<{
-    'project.open': void;
-    'project.change': void;
-    'object.select': void;
+type AppControllerEventEmitter = TypedEventEmitter<{
+    'project.open': (newProject: Project) => void;
+    'project.change': () => void;
+    'object.select': () => void;
 }>;
 
-export class AppController extends EventEmitter implements AppControllerEvents {
+export class AppController extends (EventEmitter as AppControllerEventEmitter) {
     private readonly historyManager: HistoryManager<AppState>;
-    private readonly _previewController = new PreviewController();
+    private readonly _previewController = new PreviewPlayerController();
 
     constructor() {
         super();
@@ -51,7 +51,7 @@ export class AppController extends EventEmitter implements AppControllerEvents {
         return this._project;
     }
 
-    get previewController(): PreviewController {
+    get previewController(): PreviewPlayerController {
         return this._previewController;
     }
 
