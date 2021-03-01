@@ -65,12 +65,12 @@ export function PropertyPane(): React.ReactElement {
 
     const forceUpdate = useForceUpdate();
     useEffect(() => {
-        appController.on('project.change', forceUpdate);
-        appController.on('object.select', forceUpdate);
+        appController.on('change', forceUpdate);
+        appController.on('selectionchange', forceUpdate);
 
         return () => {
-            appController.off('project.change', forceUpdate);
-            appController.off('object.select', forceUpdate);
+            appController.off('change', forceUpdate);
+            appController.off('selectionchange', forceUpdate);
         };
     }, [appController, forceUpdate]);
 
@@ -105,37 +105,21 @@ export function PropertyPane(): React.ReactElement {
                         {selectedObject === null ? <div>PROJECT</div> : <div>{selectedObject.constructor.name}</div>}
                     </ObjectSummary>
 
-                    {selectedObject === null ? (
-                        <ProjectPropertyGroup appController={appController} project={project} />
-                    ) : (
-                        <BasePropertyGroup appController={appController} object={selectedObject} />
-                    )}
+                    {selectedObject === null ? <ProjectPropertyGroup project={project} /> : <BasePropertyGroup object={selectedObject} />}
 
                     {selectedObject !== null &&
                         (selectedObject instanceof ShapeObject ||
                             selectedObject instanceof VideoObject ||
                             selectedObject instanceof TextObject ||
-                            selectedObject instanceof ImageObject) && (
-                            <PositionPropertyGroup appController={appController} object={selectedObject} />
-                        )}
-                    {selectedObject !== null && selectedObject instanceof TextObject && (
-                        <FontStylePropertyGroup appController={appController} object={selectedObject} />
-                    )}
-                    {selectedObject !== null && selectedObject instanceof TextObject && (
-                        <TextPropertyGroup appController={appController} object={selectedObject} />
-                    )}
-                    {selectedObject !== null && selectedObject instanceof AudioObject && (
-                        <AudioPropertyGroup appController={appController} object={selectedObject} />
-                    )}
+                            selectedObject instanceof ImageObject) && <PositionPropertyGroup object={selectedObject} />}
+                    {selectedObject !== null && selectedObject instanceof TextObject && <FontStylePropertyGroup object={selectedObject} />}
+                    {selectedObject !== null && selectedObject instanceof TextObject && <TextPropertyGroup object={selectedObject} />}
+                    {selectedObject !== null && selectedObject instanceof AudioObject && <AudioPropertyGroup object={selectedObject} />}
                     {selectedObject !== null &&
                         (selectedObject instanceof AudioObject ||
                             selectedObject instanceof VideoObject ||
-                            selectedObject instanceof ImageObject) && (
-                            <SrcFilePropertyGroup appController={appController} object={selectedObject} />
-                        )}
-                    {selectedObject !== null && selectedObject instanceof ShapeObject && (
-                        <ShapePropertyGroup appController={appController} object={selectedObject} />
-                    )}
+                            selectedObject instanceof ImageObject) && <SrcFilePropertyGroup object={selectedObject} />}
+                    {selectedObject !== null && selectedObject instanceof ShapeObject && <ShapePropertyGroup object={selectedObject} />}
                 </Body>
 
                 {selectedObject !== null && (

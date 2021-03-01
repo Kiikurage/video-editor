@@ -42,18 +42,18 @@ export function Timeline(): React.ReactElement {
     });
 
     useEffect(() => {
-        appController.on('project.open', onProjectOpen);
-        appController.on('project.change', forceUpdate);
-        appController.on('object.select', forceUpdate);
-        appController.previewController.on('seek', forceUpdate);
-        appController.previewController.on('tick', forceUpdate);
+        appController.on('open', onProjectOpen);
+        appController.on('change', forceUpdate);
+        appController.on('selectionchange', forceUpdate);
+        appController.on('seek', forceUpdate);
+        appController.on('tick', forceUpdate);
 
         return () => {
-            appController.off('project.open', onProjectOpen);
-            appController.off('project.change', forceUpdate);
-            appController.off('object.select', forceUpdate);
-            appController.previewController.off('seek', forceUpdate);
-            appController.previewController.off('tick', forceUpdate);
+            appController.off('open', onProjectOpen);
+            appController.off('change', forceUpdate);
+            appController.off('selectionchange', forceUpdate);
+            appController.off('seek', forceUpdate);
+            appController.off('tick', forceUpdate);
         };
     }, [appController, forceUpdate, onProjectOpen]);
 
@@ -61,7 +61,7 @@ export function Timeline(): React.ReactElement {
         <Base ref={setContainer}>
             <CustomStage options={options}>
                 <TimelineCanvasViewportInfo.Provider value={info}>
-                    <TimelineContent appController={appController} objects={appController.project.objects} />
+                    <TimelineContent objects={appController.project.objects} />
                 </TimelineCanvasViewportInfo.Provider>
             </CustomStage>
         </Base>

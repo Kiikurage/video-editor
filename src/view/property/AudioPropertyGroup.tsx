@@ -3,21 +3,23 @@ import { useEffect } from 'react';
 import { assert } from '../../lib/util';
 import { AnimatableValue } from '../../model/objects/AnimatableValue';
 import { AudioObject } from '../../model/objects/AudioObject';
-import { AppController } from '../../service/AppController';
+import { useAppController } from '../AppControllerProvider';
 import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { useForceUpdate } from '../hooks/useForceUpdate';
 import { NumberInput } from '../NumberInput';
 import { PropertyGroup, PropertyGroupName } from './PropertyGroup';
 
-export function AudioPropertyGroup<T extends AudioObject>(props: { appController: AppController; object: T }): React.ReactElement {
-    const { appController, object } = props;
+export function AudioPropertyGroup<T extends AudioObject>(props: { object: T }): React.ReactElement {
+    const { object } = props;
+    const appController = useAppController();
+
     const onVolumeChange = useCallbackRef((value: number) => {
         assert(0 <= value && value <= 1, `Invalid volume value: ${value}`);
 
         appController.commitHistory(() => {
             const newFrameTiming = Math.min(
-                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                Math.max(0, (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
                 1
             );
             const newObject = {
@@ -30,20 +32,15 @@ export function AudioPropertyGroup<T extends AudioObject>(props: { appController
 
     const forceUpdate = useForceUpdate();
     useEffect(() => {
-        appController.previewController.on('tick', forceUpdate);
-        appController.previewController.on('seek', forceUpdate);
+        appController.on('tick', forceUpdate);
+        appController.on('seek', forceUpdate);
         return () => {
-            appController.previewController.off('tick', forceUpdate);
-            appController.previewController.off('seek', forceUpdate);
+            appController.off('tick', forceUpdate);
+            appController.off('seek', forceUpdate);
         };
     });
 
-    const volume = AnimatableValue.interpolate(
-        object.volume,
-        object.startInMS,
-        object.endInMS,
-        appController.previewController.currentTimeInMS
-    );
+    const volume = AnimatableValue.interpolate(object.volume, object.startInMS, object.endInMS, appController.currentTimeInMS);
 
     return (
         <PropertyGroup key={object.id}>

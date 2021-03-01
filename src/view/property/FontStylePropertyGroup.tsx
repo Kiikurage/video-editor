@@ -2,14 +2,15 @@ import * as React from 'react';
 import { convertColorFromDOMToPixi } from '../../lib/convertColorFromDOMToPixi';
 import { convertColorFromPixiToDOM } from '../../lib/convertColorFromPixiToDOM';
 import { TextObject } from '../../model/objects/TextObject';
-import { AppController } from '../../service/AppController';
+import { useAppController } from '../AppControllerProvider';
 import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { NumberInput } from '../NumberInput';
 import { PropertyGroup, PropertyGroupName, PropertyRow } from './PropertyGroup';
 
-export function FontStylePropertyGroup<T extends TextObject>(props: { appController: AppController; object: T }): React.ReactElement {
-    const { appController, object } = props;
+export function FontStylePropertyGroup<T extends TextObject>(props: { object: T }): React.ReactElement {
+    const { object } = props;
+    const appController = useAppController();
     const onFontFamilyChange = useCallbackRef((ev: React.ChangeEvent<HTMLSelectElement>) => {
         const value = ev.target.value;
         appController.commitHistory(() => {

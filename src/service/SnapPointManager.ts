@@ -5,6 +5,12 @@ export class SnapPointManager {
     private readonly valueObjectIdsMap = new Map<number, Set<string>>();
     private readonly objectIdValuesMap = new Map<string, number[]>();
 
+    clear(): void {
+        this.values.length = 0;
+        this.valueObjectIdsMap.clear();
+        this.objectIdValuesMap.clear();
+    }
+
     getObjectsAt(value: number): ReadonlySet<string> {
         return this.valueObjectIdsMap.get(value) ?? EMPTY_SET;
     }

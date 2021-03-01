@@ -1,23 +1,16 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Container, CustomPIXIComponent } from 'react-pixi-fiber';
-import { Box } from '../../model/Box';
-import { Frame } from '../../model/frame/Frame';
 import { AnimatableValue } from '../../model/objects/AnimatableValue';
 import { isResizable } from '../../model/objects/ResizableObejct';
-import { AppController } from '../../service/AppController';
 import { SnapPointManager } from '../../service/SnapPointManager';
+import { useAppController } from '../AppControllerProvider';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { useForceUpdate } from '../hooks/useForceUpdate';
 import { FocusArea } from './FocusArea';
 import { usePreviewCanvasViewportInfo } from './PreviewPlayer';
 import { Resizer } from './Resizer';
-
-interface ControlLayerProps {
-    frames: Frame[];
-    appController: AppController;
-}
 
 function useSnapPointManager(): SnapPointManager {
     const ref = useRef<SnapPointManager>(null as never);
@@ -51,9 +44,8 @@ interface Line {
     y1: number;
 }
 
-export function PreviewPlayerControlLayer(props: ControlLayerProps): React.ReactElement {
-    const { frames, appController } = props;
-    const previewController = appController.previewController;
+export function PreviewPlayerControlLayer(): React.ReactElement {
+    const appController = useAppController();
 
     const { left: canvasLeft, top: canvasTop, scale: canvasScale } = usePreviewCanvasViewportInfo();
     const xSnapPointManager = useSnapPointManager();
@@ -64,64 +56,49 @@ export function PreviewPlayerControlLayer(props: ControlLayerProps): React.React
     const guidelinesRef = useRef<Line[]>([]);
     const flagInteractionToRemoveObjectFromSelection = useRef<boolean>(false);
 
-    const { selectedFrames, nonSelectedFrames } = useMemo(() => {
-        const selectedFrames: Frame[] = [];
-        const nonSelectedFrames: Frame[] = [];
-        for (const frame of frames) {
-            if (appController.selectedObjectIds.has(frame.id)) {
-                selectedFrames.push(frame);
-            } else {
-                nonSelectedFrames.push(frame);
-            }
-        }
-
-        return { selectedFrames, nonSelectedFrames };
-    }, [appController.selectedObjectIds, frames]);
-
-    useEffect(() => {
-        if (!previewController.paused) return () => void 0;
-
-        for (const frame of nonSelectedFrames) {
-            if (frame.width === 0 || frame.height === 0) continue;
-
+    const initializeSnapPointManager = useCallbackRef(() => {
+        xSnapPointManager.clear();
+        ySnapPointManager.clear();
+        for (const frame of appController.getNonSelectedFrames()) {
             xSnapPointManager.add(frame.id, frame.x, frame.x + frame.width);
             ySnapPointManager.add(frame.id, frame.y, frame.y + frame.height);
         }
-
-        return () => {
-            for (const frame of nonSelectedFrames) {
-                xSnapPointManager.delete(frame.id);
-                ySnapPointManager.delete(frame.id);
-            }
-        };
-    }, [nonSelectedFrames, previewController.paused, xSnapPointManager, ySnapPointManager]);
-
-    useEffect(() => {
         xSnapPointManager.add('viewport', 0, appController.project.viewport.width);
         ySnapPointManager.add('viewport', 0, appController.project.viewport.height);
+    });
+    const onAppControllerSelectionChange = useCallbackRef((addedObjectIds: ReadonlySet<string>, removedObjectIds: ReadonlySet<string>) => {
+        for (const frame of appController.getNonSelectedFrames()) {
+            if (!removedObjectIds.has(frame.id)) continue;
+            xSnapPointManager.add(frame.id, frame.x, frame.x + frame.width);
+            ySnapPointManager.add(frame.id, frame.y, frame.y + frame.height);
+        }
+        for (const objectId of addedObjectIds) {
+            xSnapPointManager.delete(objectId);
+            ySnapPointManager.delete(objectId);
+        }
+    });
+    const onAppControllerChange = useCallbackRef(() => {
+        initializeSnapPointManager();
+    });
+    useEffect(() => {
+        initializeSnapPointManager();
+    }, []);
+
+    useEffect(() => {
+        appController.on('selectionchange', onAppControllerSelectionChange);
+        appController.on('change', onAppControllerChange);
 
         return () => {
-            xSnapPointManager.delete('viewport');
-            ySnapPointManager.delete('viewport');
+            appController.off('selectionchange', onAppControllerSelectionChange);
+            appController.off('change', onAppControllerChange);
         };
-    }, [appController.project.viewport.height, appController.project.viewport.width, xSnapPointManager, ySnapPointManager]);
-
-    const selectionBox = useMemo<Box | null>(() => {
-        if (selectedFrames.length === 0) return null;
-
-        const x1 = Math.min(...selectedFrames.map((frame) => frame.x));
-        const y1 = Math.min(...selectedFrames.map((frame) => frame.y));
-        const x2 = Math.max(...selectedFrames.map((frame) => frame.x + frame.width));
-        const y2 = Math.max(...selectedFrames.map((frame) => frame.y + frame.height));
-
-        return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
-    }, [selectedFrames]);
+    }, [appController, onAppControllerChange, onAppControllerSelectionChange]);
 
     const onObjectViewMouseDown = useCallbackRef((ev: PIXI.InteractionEvent, objectId: string) => {
         ev.data.originalEvent.preventDefault();
         const isObjectSelected = appController.selectedObjectIds.has(objectId);
         const isShiftKeyPressed = ev.data.originalEvent.shiftKey;
-        appController.previewController.pause();
+        appController.pause();
 
         if (isObjectSelected && isShiftKeyPressed) {
             flagInteractionToRemoveObjectFromSelection.current = true;
@@ -155,7 +132,7 @@ export function PreviewPlayerControlLayer(props: ControlLayerProps): React.React
     });
 
     const onObjectViewChange = useCallbackRef((dx: number, dy: number, dw: number, dh: number) => {
-        const timeInMS = previewController.currentTimeInMS;
+        const timeInMS = appController.currentTimeInMS;
         appController.modifySelectedObjects((obj) => {
             if (obj.locked) return null;
             if (!isResizable(obj)) return null;
@@ -165,7 +142,7 @@ export function PreviewPlayerControlLayer(props: ControlLayerProps): React.React
             if (frame.width === 0 && frame.height === 0) return null;
 
             const newFrameTiming = Math.min(
-                Math.max(0, (previewController.currentTimeInMS - obj.startInMS) / (obj.endInMS - obj.startInMS)),
+                Math.max(0, (appController.currentTimeInMS - obj.startInMS) / (obj.endInMS - obj.startInMS)),
                 1
             );
 
@@ -179,9 +156,10 @@ export function PreviewPlayerControlLayer(props: ControlLayerProps): React.React
     });
 
     const onResizing = useCallbackRef(() => {
+        const selectionBox = appController.getSelectionBox();
         const { status, dirX, dirY, lastX, lastY, startX, startY } = dragInfoRef.current;
         if (status === 'start') {
-            appController.previewController.pause();
+            appController.pause();
         }
         if (selectionBox === null) return;
 
@@ -224,6 +202,7 @@ export function PreviewPlayerControlLayer(props: ControlLayerProps): React.React
             resizeInfoRef.current = { dx: 0, dy: 0, dw: 0, dh: 0 };
             guidelinesRef.current = [];
         } else {
+            const nonSelectedFrames = appController.getNonSelectedFrames();
             const guidelines: Line[] = [];
             for (const snapPointX of snapPointXs) {
                 const objectIds = xSnapPointManager.getObjectsAt(snapPointX);
@@ -300,6 +279,9 @@ export function PreviewPlayerControlLayer(props: ControlLayerProps): React.React
         onResizing();
     });
 
+    const nonSelectedFrames = appController.getNonSelectedFrames();
+    const selectedFrames = appController.getSelectedFrames();
+    const selectionBox = appController.getSelectionBox();
     return (
         <Container
             x={-canvasLeft * canvasScale}

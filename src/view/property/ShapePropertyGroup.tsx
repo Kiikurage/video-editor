@@ -3,21 +3,23 @@ import { useEffect } from 'react';
 import { convertColorFromDOMToPixi } from '../../lib/convertColorFromDOMToPixi';
 import { convertColorFromPixiToDOM } from '../../lib/convertColorFromPixiToDOM';
 import { AnimatableValue } from '../../model/objects/AnimatableValue';
+import { ResizableObject } from '../../model/objects/ResizableObejct';
 import { ShapeObject } from '../../model/objects/ShapeObject';
-import { AppController } from '../../service/AppController';
+import { useAppController } from '../AppControllerProvider';
 import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { useForceUpdate } from '../hooks/useForceUpdate';
-import { ResizableObject } from '../../model/objects/ResizableObejct';
 import { PropertyGroup, PropertyGroupName, PropertyRow } from './PropertyGroup';
 
-export function ShapePropertyGroup<T extends ShapeObject>(props: { appController: AppController; object: T }): React.ReactElement {
-    const { appController, object } = props;
+export function ShapePropertyGroup<T extends ShapeObject>(props: { object: T }): React.ReactElement {
+    const { object } = props;
+    const appController = useAppController();
+
     const onFillChange = useCallbackRef((ev: React.ChangeEvent<HTMLInputElement>) => {
         const value = convertColorFromDOMToPixi(ev.target.value);
         appController.commitHistory(() => {
             const newFrameTiming = Math.min(
-                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                Math.max(0, (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
                 1
             );
             const newObject: ResizableObject = {
@@ -31,7 +33,7 @@ export function ShapePropertyGroup<T extends ShapeObject>(props: { appController
         const value = convertColorFromDOMToPixi(ev.target.value);
         appController.commitHistory(() => {
             const newFrameTiming = Math.min(
-                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                Math.max(0, (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
                 1
             );
             const newObject: ResizableObject = {
@@ -44,26 +46,16 @@ export function ShapePropertyGroup<T extends ShapeObject>(props: { appController
 
     const forceUpdate = useForceUpdate();
     useEffect(() => {
-        appController.previewController.on('tick', forceUpdate);
-        appController.previewController.on('seek', forceUpdate);
+        appController.on('tick', forceUpdate);
+        appController.on('seek', forceUpdate);
         return () => {
-            appController.previewController.off('tick', forceUpdate);
-            appController.previewController.off('seek', forceUpdate);
+            appController.off('tick', forceUpdate);
+            appController.off('seek', forceUpdate);
         };
     });
 
-    const fill = AnimatableValue.interpolate(
-        object.fill,
-        object.startInMS,
-        object.endInMS,
-        appController.previewController.currentTimeInMS
-    );
-    const stroke = AnimatableValue.interpolate(
-        object.stroke,
-        object.startInMS,
-        object.endInMS,
-        appController.previewController.currentTimeInMS
-    );
+    const fill = AnimatableValue.interpolate(object.fill, object.startInMS, object.endInMS, appController.currentTimeInMS);
+    const stroke = AnimatableValue.interpolate(object.stroke, object.startInMS, object.endInMS, appController.currentTimeInMS);
 
     return (
         <PropertyGroup key={object.id}>

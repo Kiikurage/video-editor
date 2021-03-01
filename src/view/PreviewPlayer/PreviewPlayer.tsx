@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useContext, useEffect, useMemo, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { Project } from '../../model/Project';
 import { useAppController } from '../AppControllerProvider';
@@ -28,48 +28,35 @@ const options: PIXI.ApplicationOptions = {
 
 export function PreviewPlayer(): React.ReactElement {
     const appController = useAppController();
-    const { previewController, project } = appController;
+    const { project } = appController;
     const [info, setContainer] = useViewportInfo(project);
     const forceUpdate = useForceUpdate();
 
     useEffect(() => {
-        appController.on('project.change', forceUpdate);
-        appController.on('object.select', forceUpdate);
+        appController.on('change', forceUpdate);
+        appController.on('selectionchange', forceUpdate);
+        appController.on('seek', forceUpdate);
+        appController.on('tick', forceUpdate);
 
         return () => {
-            appController.off('project.change', forceUpdate);
-            appController.off('object.select', forceUpdate);
+            appController.off('change', forceUpdate);
+            appController.off('selectionchange', forceUpdate);
+            appController.off('seek', forceUpdate);
+            appController.off('tick', forceUpdate);
         };
     }, [appController, forceUpdate]);
-
-    useEffect(() => {
-        previewController.on('seek', forceUpdate);
-        previewController.on('tick', forceUpdate);
-
-        return () => {
-            previewController.off('seek', forceUpdate);
-            previewController.off('tick', forceUpdate);
-        };
-    }, [previewController, forceUpdate]);
 
     const onStageMouseDown = useCallbackRef(() => {
         appController.setSelectedObjects([]);
     });
-
-    const activeFrames = useMemo(() => {
-        const timeInMS = previewController.currentTimeInMS;
-        return appController.project.objects
-            .filter((object) => object.startInMS <= timeInMS && timeInMS < object.endInMS)
-            .map((object) => object.getFrame(timeInMS));
-    }, [appController.project.objects, previewController.currentTimeInMS]);
 
     return (
         <Base ref={setContainer} onClick={(ev) => ev.nativeEvent}>
             <CustomStage options={options} onMouseDown={onStageMouseDown}>
                 <PreviewCanvasViewportInfo.Provider value={info}>
                     <Background project={project} />
-                    <PreviewPlayerObjectsLayer frames={activeFrames} appController={appController} />
-                    <PreviewPlayerControlLayer frames={activeFrames} appController={appController} />
+                    <PreviewPlayerObjectsLayer />
+                    <PreviewPlayerControlLayer />
                 </PreviewCanvasViewportInfo.Provider>
             </CustomStage>
         </Base>

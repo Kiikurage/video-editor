@@ -2,7 +2,7 @@ import * as React from 'react';
 import { ComponentType } from 'react';
 import { Container } from 'react-pixi-fiber';
 import { Frame } from '../../model/frame/Frame';
-import { AppController } from '../../service/AppController';
+import { useAppController } from '../AppControllerProvider';
 import { AudioObjectView } from './AudioObjectView';
 import { ImageObjectView } from './ImageObjectView';
 import { usePreviewCanvasViewportInfo } from './PreviewPlayer';
@@ -19,14 +19,11 @@ const ObjectViewMap: Record<string, ComponentType<PreviewPlayerObjectViewProps<n
     ['AUDIO']: AudioObjectView,
 };
 
-interface Props {
-    frames: Frame[];
-    appController: AppController;
-}
-
-export function PreviewPlayerObjectsLayer(props: Props): React.ReactElement {
-    const { frames, appController } = props;
+export function PreviewPlayerObjectsLayer(): React.ReactElement {
     const canvasContext = usePreviewCanvasViewportInfo();
+    const appController = useAppController();
+
+    const frames = appController.getFrames();
 
     return (
         <Container x={-canvasContext.left * canvasContext.scale} y={-canvasContext.top * canvasContext.scale} scale={canvasContext.scale}>
@@ -38,7 +35,7 @@ export function PreviewPlayerObjectsLayer(props: Props): React.ReactElement {
                     return null;
                 }
 
-                return <Renderer key={frame.id} frame={frame as never} previewController={appController.previewController} />;
+                return <Renderer key={frame.id} frame={frame as never} />;
             })}
         </Container>
     );

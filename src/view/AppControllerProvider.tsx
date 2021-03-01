@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { useContext, useState } from 'react';
+import { useState } from 'react';
 import { AppController } from '../service/AppController';
+import { createContext2, useContext2 } from './hooks/useContext2';
 
-const context = React.createContext<AppController>(null as never);
+const context = createContext2<AppController>();
 
 export function useAppController(): AppController {
-    return useContext(context);
+    return useContext2(context);
 }
 
 export function AppControllerProvider(props: React.PropsWithChildren<unknown>): React.ReactElement {

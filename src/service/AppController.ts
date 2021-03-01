@@ -3,12 +3,15 @@ import { clipboard } from 'electron';
 import * as FileType from 'file-type';
 import { showOpenFileDialog } from '../ipc/renderer/showOpenFileDialog';
 import { showSaveFileDialog } from '../ipc/renderer/showSaveFileDialog';
+import { emptySet } from '../lib/emptySet';
 import { encodeProject } from '../lib/ffmpeg/FFMpegCommandBuilder';
 import { getImageSize, getVideoSize } from '../lib/getAssetSpacialSize';
 import { isNonNull } from '../lib/isNonNull';
 import { assert } from '../lib/util';
 import { AppState } from '../model/AppState';
+import { Box } from '../model/Box';
 import { TypedEventEmitter } from '../model/EventEmitterEvents';
+import { Frame } from '../model/frame/Frame';
 import { HistoryManager } from '../model/HistoryManager';
 import { AnimatableValue, AnimatableValueType } from '../model/objects/AnimatableValue';
 import { AudioObject } from '../model/objects/AudioObject';
@@ -17,26 +20,31 @@ import { ImageObject } from '../model/objects/ImageObject';
 import { ObjectParser } from '../model/objects/ObjectParser';
 import { VideoObject } from '../model/objects/VideoObject';
 import { Project } from '../model/Project';
-import { PreviewPlayerController } from './PreviewPlayerController';
 import { SnackBarController } from './SnackBarController';
+import { Timer } from './Timer';
 
 type AppControllerEventEmitter = TypedEventEmitter<{
-    'project.open': (newProject: Project) => void;
-    'project.change': () => void;
-    'object.select': () => void;
+    open: (newProject: Project) => void;
+    change: () => void;
+    selectionchange: (addedObjectIds: ReadonlySet<string>, removedObjectIds: ReadonlySet<string>) => void;
+    play: () => void;
+    pause: () => void;
+    seek: () => void;
+    tick: () => void;
 }>;
 
 export class AppController extends (EventEmitter as AppControllerEventEmitter) {
     private readonly historyManager: HistoryManager<AppState>;
-    private readonly _previewController = new PreviewPlayerController();
+    private readonly timer: Timer = new Timer();
 
     constructor() {
         super();
         this.historyManager = new HistoryManager(this.getState);
 
-        this.on('project.change', () => {
-            this.previewController.durationInMS = Project.computeDurationInMS(this.project);
-        });
+        this.timer.on('play', this.onTimerPlay);
+        this.timer.on('seek', this.onTimerSeek);
+        this.timer.on('tick', this.onTimerTick);
+        this.timer.on('pause', this.onTimerPause);
     }
 
     private _selectedObjectIds: ReadonlySet<string> = new Set<string>();
@@ -51,32 +59,65 @@ export class AppController extends (EventEmitter as AppControllerEventEmitter) {
         return this._project;
     }
 
-    get previewController(): PreviewPlayerController {
-        return this._previewController;
+    get paused(): boolean {
+        return this.timer.paused;
+    }
+
+    get durationInMS(): number {
+        return this.timer.durationInMS;
+    }
+
+    set durationInMS(newValue: number) {
+        this.timer.durationInMS = newValue;
+    }
+
+    get currentTimeInMS(): number {
+        return this.timer.currentTimeInMS;
+    }
+
+    set currentTimeInMS(newValue: number) {
+        this.timer.seek(newValue);
     }
 
     get selectedObjects(): ReadonlySet<BaseObject> {
         return new Set(this.project.objects.filter((object) => this.selectedObjectIds.has(object.id)));
     }
 
-    togglePreviewPlay = (): void => {
-        if (this.previewController.paused) {
-            this.previewController.play();
-        } else {
-            this.previewController.pause();
+    play(): void {
+        if (!this.paused) return;
+
+        if (this.currentTimeInMS >= this.durationInMS) {
+            this.currentTimeInMS = 0;
         }
-    };
+
+        this.timer.start();
+    }
+
+    pause(): void {
+        if (this.paused) return;
+
+        this.timer.stop();
+    }
+
+    togglePlay(): void {
+        if (this.paused) {
+            this.play();
+        } else {
+            this.pause();
+        }
+    }
 
     setProject = (newValue: Project): void => {
         this._project = newValue;
-        this.emit('project.change');
+        this.durationInMS = Project.computeDurationInMS(newValue);
+        this.emit('change');
     };
 
     addObjectToSelection = (id: string): void => {
         if (this._selectedObjectIds.has(id)) return;
 
         this._selectedObjectIds = new Set([...this._selectedObjectIds, id]);
-        this.emit('object.select');
+        this.emit('selectionchange', new Set([id]), emptySet());
     };
 
     removeObjectFromSelection = (id: string): void => {
@@ -86,12 +127,29 @@ export class AppController extends (EventEmitter as AppControllerEventEmitter) {
         newSelectedObjectIds.delete(id);
 
         this._selectedObjectIds = newSelectedObjectIds;
-        this.emit('object.select');
+        this.emit('selectionchange', emptySet(), new Set([id]));
     };
 
-    setSelectedObjects = (ids: string[]): void => {
-        this._selectedObjectIds = new Set(ids);
-        this.emit('object.select');
+    setSelectedObjects = (newIds: string[]): void => {
+        const oldIds = this.selectedObjectIds;
+        this._selectedObjectIds = new Set(newIds);
+
+        const addedObjectIds = new Set<string>(newIds);
+        const removedObjectIds = new Set<string>(oldIds);
+
+        for (const oldId of removedObjectIds) {
+            if (addedObjectIds.has(oldId)) {
+                addedObjectIds.delete(oldId);
+                removedObjectIds.delete(oldId);
+            }
+        }
+        for (const newId of addedObjectIds) {
+            if (addedObjectIds.has(newId)) {
+                addedObjectIds.delete(newId);
+                removedObjectIds.delete(newId);
+            }
+        }
+        this.emit('selectionchange', addedObjectIds, removedObjectIds);
     };
 
     selectAll = (): void => {
@@ -162,7 +220,7 @@ export class AppController extends (EventEmitter as AppControllerEventEmitter) {
 
         const newProject = await Project.open(filePaths[0]);
         this.setProject(newProject);
-        this.emit('project.open', newProject);
+        this.emit('open', newProject);
     };
 
     saveProject = async (): Promise<void> => {
@@ -231,6 +289,46 @@ export class AppController extends (EventEmitter as AppControllerEventEmitter) {
         }
     };
 
+    getFrames(): Frame[] {
+        const timeInMS = this.currentTimeInMS;
+        return this.project.objects
+            .filter((object) => object.startInMS <= timeInMS && timeInMS < object.endInMS)
+            .map((object) => object.getFrame(timeInMS));
+    }
+
+    getSelectedFrames(): Frame[] {
+        const selectedFrames: Frame[] = [];
+        for (const frame of this.getFrames()) {
+            if (this.selectedObjectIds.has(frame.id)) {
+                selectedFrames.push(frame);
+            }
+        }
+        return selectedFrames;
+    }
+
+    getNonSelectedFrames(): Frame[] {
+        const nonSelectedFrames: Frame[] = [];
+        for (const frame of this.getFrames()) {
+            if (!this.selectedObjectIds.has(frame.id)) {
+                nonSelectedFrames.push(frame);
+            }
+        }
+        return nonSelectedFrames;
+    }
+
+    getSelectionBox(): Box | null {
+        const selectedFrames = this.getSelectedFrames();
+        if (selectedFrames.length === 0) {
+            return null;
+        } else {
+            const x1 = Math.min(...selectedFrames.map((frame) => frame.x));
+            const y1 = Math.min(...selectedFrames.map((frame) => frame.y));
+            const x2 = Math.max(...selectedFrames.map((frame) => frame.x + frame.width));
+            const y2 = Math.max(...selectedFrames.map((frame) => frame.y + frame.height));
+            return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+        }
+    }
+
     commitHistory = (fn: () => void): void => {
         this.historyManager.commit(fn);
     };
@@ -242,46 +340,39 @@ export class AppController extends (EventEmitter as AppControllerEventEmitter) {
             return;
         }
 
-        const newObjects: BaseObject[] = [];
-        const currentTimeInMS = this.previewController.currentTimeInMS;
+        let newObject: BaseObject;
         const fileCategory = fileType.mime.split('/')[0];
         switch (fileCategory) {
             case 'video': {
                 const { width, height } = await getVideoSize(filePath);
-                newObjects.push(
-                    new VideoObject({
-                        startInMS: currentTimeInMS,
-                        endInMS: currentTimeInMS + 5000,
-                        srcFilePath: filePath,
-                        width: AnimatableValue.constant(Math.round((200 * width) / height), AnimatableValueType.Numeric),
-                        height: AnimatableValue.constant(200, AnimatableValueType.Numeric),
-                    })
-                );
+                newObject = new VideoObject({
+                    startInMS: 0,
+                    endInMS: 5000,
+                    srcFilePath: filePath,
+                    width: AnimatableValue.constant(Math.round((200 * width) / height), AnimatableValueType.Numeric),
+                    height: AnimatableValue.constant(200, AnimatableValueType.Numeric),
+                });
                 break;
             }
 
             case 'image': {
                 const { width, height } = await getImageSize(filePath);
-                newObjects.push(
-                    new ImageObject({
-                        startInMS: currentTimeInMS,
-                        endInMS: currentTimeInMS + 5000,
-                        srcFilePath: filePath,
-                        width: AnimatableValue.constant(Math.round((200 * width) / height), AnimatableValueType.Numeric),
-                        height: AnimatableValue.constant(200, AnimatableValueType.Numeric),
-                    })
-                );
+                newObject = new ImageObject({
+                    startInMS: 0,
+                    endInMS: 5000,
+                    srcFilePath: filePath,
+                    width: AnimatableValue.constant(Math.round((200 * width) / height), AnimatableValueType.Numeric),
+                    height: AnimatableValue.constant(200, AnimatableValueType.Numeric),
+                });
                 break;
             }
 
             case 'audio': {
-                newObjects.push(
-                    new AudioObject({
-                        startInMS: currentTimeInMS,
-                        endInMS: currentTimeInMS + 5000,
-                        srcFilePath: filePath,
-                    })
-                );
+                newObject = new AudioObject({
+                    startInMS: 0,
+                    endInMS: 5000,
+                    srcFilePath: filePath,
+                });
                 break;
             }
 
@@ -290,9 +381,16 @@ export class AppController extends (EventEmitter as AppControllerEventEmitter) {
                 return;
         }
 
-        this.commitHistory(() => {
-            this.addObject(...newObjects);
-        });
+        if (newObject !== null) {
+            this.commitHistory(() => {
+                this.addObject(
+                    newObject.clone({
+                        startInMS: this.currentTimeInMS,
+                        endInMS: this.currentTimeInMS + 5000,
+                    })
+                );
+            });
+        }
     };
 
     modifySelectedObjects = (modifier: (object: BaseObject) => BaseObject | null, commitHistory = true): void => {
@@ -311,9 +409,25 @@ export class AppController extends (EventEmitter as AppControllerEventEmitter) {
         }
     };
 
+    private onTimerPlay = () => {
+        this.emit('play');
+    };
+
+    private onTimerTick = () => {
+        this.emit('tick');
+    };
+
+    private onTimerSeek = () => {
+        this.emit('seek');
+    };
+
+    private onTimerPause = () => {
+        this.emit('pause');
+    };
+
     private getState = (): AppState => {
         return {
-            previewTimeInMS: this.previewController.currentTimeInMS,
+            previewTimeInMS: this.currentTimeInMS,
             project: this.project,
             selectedObjectIds: this.selectedObjectIds,
         };
@@ -322,6 +436,6 @@ export class AppController extends (EventEmitter as AppControllerEventEmitter) {
     private restoreFromState(state: AppState): void {
         this.setProject(state.project);
         this._selectedObjectIds = state.selectedObjectIds;
-        this.previewController.currentTimeInMS = state.previewTimeInMS;
+        this.currentTimeInMS = state.previewTimeInMS;
     }
 }

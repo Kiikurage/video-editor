@@ -78,37 +78,38 @@ const PreviewPosition = styled.span`
 `;
 
 export function TimelinePaneToolBar(): React.ReactElement {
-    const { previewController, project } = useAppController();
+    const { project } = useAppController();
+    const appController = useAppController();
     const forceUpdate = useForceUpdate();
 
     const onPlayButtonClick = useCallbackRef((ev: React.MouseEvent) => {
         ev.stopPropagation();
         ev.preventDefault();
-        previewController.play();
+        appController.play();
     });
     const onPauseButtonClick = useCallbackRef((ev: React.MouseEvent) => {
         ev.stopPropagation();
         ev.preventDefault();
-        previewController.pause();
+        appController.pause();
     });
 
     useEffect(() => {
-        previewController.on('play', forceUpdate);
-        previewController.on('pause', forceUpdate);
-        previewController.on('tick', forceUpdate);
-        previewController.on('seek', forceUpdate);
+        appController.on('play', forceUpdate);
+        appController.on('pause', forceUpdate);
+        appController.on('tick', forceUpdate);
+        appController.on('seek', forceUpdate);
 
         return () => {
-            previewController.off('play', forceUpdate);
-            previewController.off('pause', forceUpdate);
-            previewController.off('tick', forceUpdate);
-            previewController.off('seek', forceUpdate);
+            appController.off('play', forceUpdate);
+            appController.off('pause', forceUpdate);
+            appController.off('tick', forceUpdate);
+            appController.off('seek', forceUpdate);
         };
-    }, [previewController, forceUpdate]);
+    }, [appController, forceUpdate]);
 
     return (
         <Base>
-            {previewController.paused ? (
+            {appController.paused ? (
                 <IconButton onClick={onPlayButtonClick}>
                     <PreviewStartIcon width={24} height={24} />
                 </IconButton>
@@ -117,7 +118,7 @@ export function TimelinePaneToolBar(): React.ReactElement {
                     <PreviewStopIcon width={24} height={24} />
                 </IconButton>
             )}
-            <PreviewPosition>{formatTime(previewController.currentTimeInMS, project.fps)}</PreviewPosition>
+            <PreviewPosition>{formatTime(appController.currentTimeInMS, project.fps)}</PreviewPosition>
         </Base>
     );
 }

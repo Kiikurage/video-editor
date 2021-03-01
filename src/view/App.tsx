@@ -5,9 +5,66 @@ import { AnimatableValue } from '../model/objects/AnimatableValue';
 import { isResizable } from '../model/objects/ResizableObejct';
 import { useAppController } from './AppControllerProvider';
 import { AppShell } from './AppShell';
+import { useCallbackRef } from './hooks/useCallbackRef';
 
 export function App(): React.ReactElement {
     const appController = useAppController();
+
+    const moveObjectUp = useCallbackRef(() => {
+        appController.modifySelectedObjects((object) => {
+            if (!isResizable(object)) return null;
+            const clone = object.clone();
+
+            clone.y = AnimatableValue.set(
+                object.y,
+                (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
+                AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, appController.currentTimeInMS) - 10
+            );
+            return clone;
+        });
+    });
+
+    const moveObjectDown = useCallbackRef(() => {
+        appController.modifySelectedObjects((object) => {
+            if (!isResizable(object)) return null;
+            const clone = object.clone();
+
+            clone.y = AnimatableValue.set(
+                object.y,
+                (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
+                AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, appController.currentTimeInMS) + 10
+            );
+            return clone;
+        });
+    });
+
+    const moveObjectLeft = useCallbackRef(() => {
+        appController.modifySelectedObjects((object) => {
+            if (!isResizable(object)) return null;
+            const clone = object.clone();
+
+            clone.x = AnimatableValue.set(
+                object.x,
+                (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
+                AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, appController.currentTimeInMS) - 10
+            );
+            return clone;
+        });
+    });
+
+    const moveObjectRight = useCallbackRef(() => {
+        appController.modifySelectedObjects((object) => {
+            if (!isResizable(object)) return null;
+            const clone = object.clone();
+
+            clone.x = AnimatableValue.set(
+                object.x,
+                (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
+                AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, appController.currentTimeInMS) + 10
+            );
+            return clone;
+        });
+    });
 
     useEffect(() => {
         Mousetrap.bind('command+o', appController.openProject)
@@ -15,7 +72,7 @@ export function App(): React.ReactElement {
             .bind('command+shift+s', appController.saveAsNewProject)
             .bind('space', (ev) => {
                 ev.preventDefault();
-                appController.togglePreviewPlay();
+                appController.togglePlay();
             })
             .bind('backspace', () => {
                 appController.commitHistory(() => {
@@ -34,79 +91,11 @@ export function App(): React.ReactElement {
             .bind('command+x', appController.cut)
             .bind('command+v', appController.paste)
             .bind('command+shift+z', appController.redo)
-            .bind('up', () => {
-                appController.modifySelectedObjects((object) => {
-                    if (!isResizable(object)) return null;
-                    const clone = object.clone();
-
-                    clone.y = AnimatableValue.set(
-                        object.y,
-                        (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
-                        AnimatableValue.interpolate(
-                            object.y,
-                            object.startInMS,
-                            object.endInMS,
-                            appController.previewController.currentTimeInMS
-                        ) - 10
-                    );
-                    return clone;
-                });
-            })
-            .bind('down', () => {
-                appController.modifySelectedObjects((object) => {
-                    if (!isResizable(object)) return null;
-                    const clone = object.clone();
-
-                    clone.y = AnimatableValue.set(
-                        object.y,
-                        (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
-                        AnimatableValue.interpolate(
-                            object.y,
-                            object.startInMS,
-                            object.endInMS,
-                            appController.previewController.currentTimeInMS
-                        ) + 10
-                    );
-                    return clone;
-                });
-            })
-            .bind('left', () => {
-                appController.modifySelectedObjects((object) => {
-                    if (!isResizable(object)) return null;
-                    const clone = object.clone();
-
-                    clone.x = AnimatableValue.set(
-                        object.x,
-                        (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
-                        AnimatableValue.interpolate(
-                            object.x,
-                            object.startInMS,
-                            object.endInMS,
-                            appController.previewController.currentTimeInMS
-                        ) - 10
-                    );
-                    return clone;
-                });
-            })
-            .bind('right', () => {
-                appController.modifySelectedObjects((object) => {
-                    if (!isResizable(object)) return null;
-                    const clone = object.clone();
-
-                    clone.x = AnimatableValue.set(
-                        object.x,
-                        (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS),
-                        AnimatableValue.interpolate(
-                            object.x,
-                            object.startInMS,
-                            object.endInMS,
-                            appController.previewController.currentTimeInMS
-                        ) + 10
-                    );
-                    return clone;
-                });
-            });
-    }, [appController]);
+            .bind('up', moveObjectUp)
+            .bind('down', moveObjectDown)
+            .bind('left', moveObjectLeft)
+            .bind('right', moveObjectRight);
+    }, [appController, moveObjectDown, moveObjectLeft, moveObjectRight, moveObjectUp]);
 
     return <AppShell />;
 }

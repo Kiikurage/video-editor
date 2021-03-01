@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { CustomPIXIComponent } from 'react-pixi-fiber';
 import { VideoFrame } from '../../model/frame/VideoFrame';
+import { useAppController } from '../AppControllerProvider';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { PreviewPlayerObjectViewProps } from './PreviewPlayerObjectView';
 
@@ -37,7 +38,8 @@ const VideoObjectView = CustomPIXIComponent(
 );
 
 function VideoObjectViewWrapper(props: PreviewPlayerObjectViewProps<VideoFrame>): React.ReactElement {
-    const { frame, previewController } = props;
+    const { frame } = props;
+    const appController = useAppController(); // 多分動かない. Pixi-Fiber内なのでcontextが伝わらない
     const [texture, setTexture] = useState(PIXI.Texture.EMPTY);
 
     const onPreviewControllerSeek = useCallbackRef(() => {
@@ -47,7 +49,7 @@ function VideoObjectViewWrapper(props: PreviewPlayerObjectViewProps<VideoFrame>)
         const videoCurrentTimeInMS = videoElement.currentTime * 1000;
 
         if (videoElement.paused) {
-            if (!previewController.paused) {
+            if (!appController.paused) {
                 void videoElement.play().catch(() => void 0);
             } else {
                 videoElement.currentTime = frame.timeInMS / 1000;
@@ -79,16 +81,16 @@ function VideoObjectViewWrapper(props: PreviewPlayerObjectViewProps<VideoFrame>)
     });
 
     useEffect(() => {
-        previewController.on('play', onPreviewControllerPlay);
-        previewController.on('pause', onPreviewControllerPause);
-        previewController.on('seek', onPreviewControllerSeek);
+        appController.on('play', onPreviewControllerPlay);
+        appController.on('pause', onPreviewControllerPause);
+        appController.on('seek', onPreviewControllerSeek);
 
         return () => {
-            previewController.off('play', onPreviewControllerPlay);
-            previewController.off('pause', onPreviewControllerPause);
-            previewController.off('seek', onPreviewControllerSeek);
+            appController.off('play', onPreviewControllerPlay);
+            appController.off('pause', onPreviewControllerPause);
+            appController.off('seek', onPreviewControllerSeek);
         };
-    }, [onPreviewControllerPause, onPreviewControllerPlay, onPreviewControllerSeek, previewController]);
+    }, [onPreviewControllerPause, onPreviewControllerPlay, onPreviewControllerSeek, appController]);
 
     useEffect(() => {
         return () => {

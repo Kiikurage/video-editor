@@ -62,7 +62,7 @@ export function AppToolbar(): React.ReactElement {
     const appController = useAppController();
 
     const onAddNewText = useCallbackRef(() => {
-        const currentTimeInMS = appController.previewController.currentTimeInMS;
+        const currentTimeInMS = appController.currentTimeInMS;
         appController.commitHistory(() => {
             appController.addObject(new TextObject({ startInMS: currentTimeInMS, endInMS: currentTimeInMS + 5000 }));
         });
@@ -77,7 +77,7 @@ export function AppToolbar(): React.ReactElement {
     });
 
     const onAddNewShape = useCallbackRef((shapeType: string) => {
-        const currentTimeInMS = appController.previewController.currentTimeInMS;
+        const currentTimeInMS = appController.currentTimeInMS;
         appController.commitHistory(() => {
             appController.addObject(
                 new ShapeObject({

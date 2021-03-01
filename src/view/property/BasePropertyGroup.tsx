@@ -2,14 +2,15 @@ import * as React from 'react';
 import LockedIcon from '../../icons/lock-24px.svg';
 import UnlockedIcon from '../../icons/lock_open-24px.svg';
 import { BaseObject } from '../../model/objects/BaseObject';
-import { AppController } from '../../service/AppController';
+import { useAppController } from '../AppControllerProvider';
 import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { TimePositionInput } from '../TimePositionInput';
 import { PropertyColumn, PropertyGroup, PropertyGroupName, PropertyRow } from './PropertyGroup';
 
-export function BasePropertyGroup<T extends BaseObject>(props: { appController: AppController; object: T }): React.ReactElement {
-    const { appController, object } = props;
+export function BasePropertyGroup<T extends BaseObject>(props: { object: T }): React.ReactElement {
+    const { object } = props;
+    const appController = useAppController();
 
     const onToggleLockButtonClick = useCallbackRef(() => {
         appController.commitHistory(() => {
@@ -21,13 +22,11 @@ export function BasePropertyGroup<T extends BaseObject>(props: { appController: 
     });
 
     const onStartInMSChange = useCallbackRef((timeInMS: number) => {
-        console.log(timeInMS);
         appController.commitHistory(() => {
             appController.updateObject({ ...object, startInMS: timeInMS });
         });
     });
     const onEndInMSChange = useCallbackRef((timeInMS: number) => {
-        console.log(timeInMS);
         appController.commitHistory(() => {
             appController.updateObject({ ...object, endInMS: timeInMS });
         });

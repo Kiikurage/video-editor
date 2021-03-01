@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useEffect } from 'react';
 import { AnimatableValue, NumericAnimatableValue } from '../../model/objects/AnimatableValue';
 import { BaseObject } from '../../model/objects/BaseObject';
-import { AppController } from '../../service/AppController';
+import { useAppController } from '../AppControllerProvider';
 import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { useForceUpdate } from '../hooks/useForceUpdate';
@@ -16,12 +16,14 @@ export function PositionPropertyGroup<
         width: NumericAnimatableValue;
         height: NumericAnimatableValue;
     }
->(props: { appController: AppController; object: T }): React.ReactElement {
-    const { appController, object } = props;
+>(props: { object: T }): React.ReactElement {
+    const { object } = props;
+    const appController = useAppController();
+
     const onXChange = useCallbackRef((value: number) => {
         appController.commitHistory(() => {
             const newFrameTiming = Math.min(
-                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                Math.max(0, (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
                 1
             );
             const newObject = {
@@ -34,7 +36,7 @@ export function PositionPropertyGroup<
     const onYChange = useCallbackRef((value: number) => {
         appController.commitHistory(() => {
             const newFrameTiming = Math.min(
-                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                Math.max(0, (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
                 1
             );
             const newObject = {
@@ -47,7 +49,7 @@ export function PositionPropertyGroup<
     const onWidthChange = useCallbackRef((value: number) => {
         appController.commitHistory(() => {
             const newFrameTiming = Math.min(
-                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                Math.max(0, (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
                 1
             );
             const newObject = {
@@ -60,7 +62,7 @@ export function PositionPropertyGroup<
     const onHeightChange = useCallbackRef((value: number) => {
         appController.commitHistory(() => {
             const newFrameTiming = Math.min(
-                Math.max(0, (appController.previewController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
+                Math.max(0, (appController.currentTimeInMS - object.startInMS) / (object.endInMS - object.startInMS)),
                 1
             );
             const newObject = {
@@ -72,28 +74,18 @@ export function PositionPropertyGroup<
     });
     const forceUpdate = useForceUpdate();
     useEffect(() => {
-        appController.previewController.on('tick', forceUpdate);
-        appController.previewController.on('seek', forceUpdate);
+        appController.on('tick', forceUpdate);
+        appController.on('seek', forceUpdate);
         return () => {
-            appController.previewController.off('tick', forceUpdate);
-            appController.previewController.off('seek', forceUpdate);
+            appController.off('tick', forceUpdate);
+            appController.off('seek', forceUpdate);
         };
     });
 
-    const width = AnimatableValue.interpolate(
-        object.width,
-        object.startInMS,
-        object.endInMS,
-        appController.previewController.currentTimeInMS
-    );
-    const height = AnimatableValue.interpolate(
-        object.height,
-        object.startInMS,
-        object.endInMS,
-        appController.previewController.currentTimeInMS
-    );
-    const x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, appController.previewController.currentTimeInMS);
-    const y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, appController.previewController.currentTimeInMS);
+    const width = AnimatableValue.interpolate(object.width, object.startInMS, object.endInMS, appController.currentTimeInMS);
+    const height = AnimatableValue.interpolate(object.height, object.startInMS, object.endInMS, appController.currentTimeInMS);
+    const x = AnimatableValue.interpolate(object.x, object.startInMS, object.endInMS, appController.currentTimeInMS);
+    const y = AnimatableValue.interpolate(object.y, object.startInMS, object.endInMS, appController.currentTimeInMS);
 
     return (
         <PropertyGroup>

@@ -2,11 +2,13 @@ import PIXISound from 'pixi-sound';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { AudioFrame } from '../../model/frame/AudioFrame';
+import { useAppController } from '../AppControllerProvider';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { PreviewPlayerObjectViewProps } from './PreviewPlayerObjectView';
 
 export function AudioObjectView(props: PreviewPlayerObjectViewProps<AudioFrame>): React.ReactElement {
-    const { frame, previewController } = props;
+    const { frame } = props;
+    const appController = useAppController();
 
     const [sound, setSound] = useState<PIXISound.Sound | null>(null);
     useEffect(() => {
@@ -31,7 +33,7 @@ export function AudioObjectView(props: PreviewPlayerObjectViewProps<AudioFrame>)
 
     const onPreviewSeek = useCallbackRef(() => {
         if (!sound) return;
-        if (previewController.paused) return;
+        if (appController.paused) return;
 
         if (frame.timeInMS < 0 || frame.timeInMS >= frame.duration) {
             sound.stop();
@@ -43,7 +45,7 @@ export function AudioObjectView(props: PreviewPlayerObjectViewProps<AudioFrame>)
 
     const onPreviewTick = useCallbackRef(() => {
         if (!sound) return;
-        if (previewController.paused) return;
+        if (appController.paused) return;
 
         if (frame.timeInMS < 0 || frame.timeInMS >= frame.duration) {
             if (sound.isPlaying) {
@@ -61,18 +63,18 @@ export function AudioObjectView(props: PreviewPlayerObjectViewProps<AudioFrame>)
     });
 
     useEffect(() => {
-        previewController.on('play', onPreviewPlay);
-        previewController.on('seek', onPreviewSeek);
-        previewController.on('tick', onPreviewTick);
-        previewController.on('pause', onPreviewPause);
+        appController.on('play', onPreviewPlay);
+        appController.on('seek', onPreviewSeek);
+        appController.on('tick', onPreviewTick);
+        appController.on('pause', onPreviewPause);
 
         return () => {
-            previewController.off('play', onPreviewPlay);
-            previewController.off('seek', onPreviewSeek);
-            previewController.off('tick', onPreviewTick);
-            previewController.off('pause', onPreviewPause);
+            appController.off('play', onPreviewPlay);
+            appController.off('seek', onPreviewSeek);
+            appController.off('tick', onPreviewTick);
+            appController.off('pause', onPreviewPause);
         };
-    }, [previewController, onPreviewPlay, onPreviewSeek, onPreviewPause, onPreviewTick]);
+    }, [appController, onPreviewPlay, onPreviewSeek, onPreviewPause, onPreviewTick]);
 
     return <></>;
 }

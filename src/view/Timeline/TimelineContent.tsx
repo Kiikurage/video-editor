@@ -10,7 +10,7 @@ import { ImageObject } from '../../model/objects/ImageObject';
 import { ShapeObject } from '../../model/objects/ShapeObject';
 import { TextObject } from '../../model/objects/TextObject';
 import { VideoObject } from '../../model/objects/VideoObject';
-import { AppController } from '../../service/AppController';
+import { useAppController } from '../AppControllerProvider';
 import { useCanvasSize } from '../CustomStage';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { ChildrenContainer } from './ChildrenContainer';
@@ -35,6 +35,7 @@ interface TimelineNodeLayoutData {
     rect: Box;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const TimelineObjectViewComponentMap = new Map<Constructor<BaseObject>, React.ComponentType<TimelineObjectViewProps<any>>>([
     [TextObject, TimelineTextObjectView],
     [ImageObject, TimelineImageObjectView],
@@ -44,24 +45,24 @@ const TimelineObjectViewComponentMap = new Map<Constructor<BaseObject>, React.Co
 ]);
 
 interface Props {
-    appController: AppController;
     objects: BaseObject[];
 }
 
 export function TimelineContent(props: Props): React.ReactElement {
-    const { objects, appController } = props;
+    const { objects } = props;
+    const appController = useAppController();
     const { pixelPerMS, leftInMS: canvasScrollLeftInMS, top: canvasScrollTop } = useTimelineCanvasViewportInfo();
     const { width: canvasWidth, height: canvasHeight } = useCanvasSize();
 
     const onTimelineBaseClick = useCallbackRef((ev: PIXI.InteractionEvent) => {
         ev.stopPropagation();
-        appController.previewController.currentTimeInMS = Math.max(0, ev.data.global.x / pixelPerMS + canvasScrollLeftInMS);
+        appController.currentTimeInMS = Math.max(0, ev.data.global.x / pixelPerMS + canvasScrollLeftInMS);
         appController.setSelectedObjects([]);
     });
 
     const onTimelineObjectClick = useCallbackRef((ev: PIXI.InteractionEvent, object: BaseObject) => {
         ev.stopPropagation();
-        appController.previewController.currentTimeInMS = ev.data.global.x / pixelPerMS + canvasScrollLeftInMS;
+        appController.currentTimeInMS = ev.data.global.x / pixelPerMS + canvasScrollLeftInMS;
 
         if (ev.data.originalEvent.shiftKey) {
             appController.addObjectToSelection(object.id);
@@ -83,7 +84,7 @@ export function TimelineContent(props: Props): React.ReactElement {
 
     const onTimelineObjectKeyframeClick = useCallbackRef((ev: PIXI.InteractionEvent, object: BaseObject, keyframeTiming: number) => {
         ev.stopPropagation();
-        appController.previewController.currentTimeInMS = object.startInMS + (object.endInMS - object.startInMS) * keyframeTiming;
+        appController.currentTimeInMS = object.startInMS + (object.endInMS - object.startInMS) * keyframeTiming;
 
         if (ev.data.originalEvent.shiftKey) {
             appController.addObjectToSelection(object.id);
@@ -157,10 +158,7 @@ export function TimelineContent(props: Props): React.ReactElement {
             <ChildrenContainer x={0} y={20} width={canvasWidth} height={canvasHeight - 20}>
                 {objectViews}
 
-                <CurrentTimeIndicator
-                    x={(appController.previewController.currentTimeInMS - canvasScrollLeftInMS) * pixelPerMS}
-                    height={canvasHeight}
-                />
+                <CurrentTimeIndicator x={(appController.currentTimeInMS - canvasScrollLeftInMS) * pixelPerMS} height={canvasHeight} />
             </ChildrenContainer>
         </>
     );

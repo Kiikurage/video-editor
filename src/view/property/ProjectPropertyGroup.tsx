@@ -1,14 +1,15 @@
 import * as React from 'react';
 import { Project } from '../../model/Project';
-import { AppController } from '../../service/AppController';
+import { useAppController } from '../AppControllerProvider';
 import { ColorInput } from '../ColorInput';
 import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { NumberInput } from '../NumberInput';
 import { PropertyGroup, PropertyGroupName, PropertyRow } from './PropertyGroup';
 
-export function ProjectPropertyGroup(props: { appController: AppController; project: Project }): React.ReactElement {
-    const { appController, project } = props;
+export function ProjectPropertyGroup(props: { project: Project }): React.ReactElement {
+    const { project } = props;
+    const appController = useAppController();
 
     const onProjectFPSChange = useCallbackRef((value: number) => {
         appController.setProject({ ...project, fps: value, isSaved: false });

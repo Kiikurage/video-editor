@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 import { TextObject } from '../../model/objects/TextObject';
-import { AppController } from '../../service/AppController';
+import { useAppController } from '../AppControllerProvider';
 import { FormControl } from '../FormControl';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { PropertyGroup, PropertyGroupName, PropertyRow } from './PropertyGroup';
@@ -10,8 +10,10 @@ const Textarea = styled.textarea`
     resize: none;
 `;
 
-export function TextPropertyGroup<T extends TextObject>(props: { appController: AppController; object: T }): React.ReactElement {
-    const { appController, object } = props;
+export function TextPropertyGroup<T extends TextObject>(props: { object: T }): React.ReactElement {
+    const { object } = props;
+    const appController = useAppController();
+
     const onTextChange = useCallbackRef((ev: React.ChangeEvent<HTMLTextAreaElement>) => {
         const value = ev.target.value;
         appController.commitHistory(() => {
