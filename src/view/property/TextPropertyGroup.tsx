@@ -17,7 +17,7 @@ export function TextPropertyGroup<T extends TextObject>(props: { object: T }): R
     const onTextChange = useCallbackRef((ev: React.ChangeEvent<HTMLTextAreaElement>) => {
         const value = ev.target.value;
         appController.commitHistory(() => {
-            appController.updateObject({ ...object, text: value });
+            appController.updateObject(object.clone({ text: value }));
         });
     });
 

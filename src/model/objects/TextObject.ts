@@ -40,7 +40,7 @@ export class TextObject extends BaseObject {
         super(data);
         this.text = data.text ?? 'テキスト';
         this.fontFamily = data.fontFamily ?? 'Noto Sans JP';
-        this.fontSize = data.fontSize ?? 40;
+        this.fontSize = data.fontSize ?? 60;
         this.fontWeight = data.fontWeight ?? '500';
         this.fill = data.fill ?? 0x000000;
         this.stroke = data.stroke ?? 0xffffff;
@@ -49,8 +49,8 @@ export class TextObject extends BaseObject {
         this.verticalAlign = data.verticalAlign ?? 'top';
         this.x = data.x ?? AnimatableValue.constant(100, AnimatableValueType.Numeric);
         this.y = data.y ?? AnimatableValue.constant(100, AnimatableValueType.Numeric);
-        this.width = data.width ?? AnimatableValue.constant(200, AnimatableValueType.Numeric);
-        this.height = data.height ?? AnimatableValue.constant(200, AnimatableValueType.Numeric);
+        this.width = data.width ?? AnimatableValue.constant(500, AnimatableValueType.Numeric);
+        this.height = data.height ?? AnimatableValue.constant(300, AnimatableValueType.Numeric);
     }
 
     clone(props: Partial<Props> = {}): TextObject {
