@@ -40,7 +40,7 @@ export class TextObject extends BaseObject {
         super(data);
         this.text = data.text ?? 'テキスト';
         this.fontFamily = data.fontFamily ?? 'Noto Sans JP';
-        this.fontSize = data.fontSize ?? 60;
+        this.fontSize = data.fontSize ?? 40;
         this.fontWeight = data.fontWeight ?? '500';
         this.fill = data.fill ?? 0x000000;
         this.stroke = data.stroke ?? 0xffffff;

@@ -144,7 +144,7 @@ export class AppController extends (EventEmitter as AppControllerEventEmitter) {
             }
         }
         for (const newId of addedObjectIds) {
-            if (addedObjectIds.has(newId)) {
+            if (removedObjectIds.has(newId)) {
                 addedObjectIds.delete(newId);
                 removedObjectIds.delete(newId);
             }

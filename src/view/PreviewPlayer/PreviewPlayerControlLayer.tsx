@@ -1,10 +1,11 @@
 import * as PIXI from 'pixi.js';
 import * as React from 'react';
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { Container, CustomPIXIComponent } from 'react-pixi-fiber';
 import { AnimatableValue } from '../../model/objects/AnimatableValue';
 import { isResizable } from '../../model/objects/ResizableObejct';
-import { SnapPointManager } from '../../service/SnapPointManager';
+import { AppController } from '../../service/AppController';
+import { SnapPoint2DService } from '../../service/SnapPoint2DService';
 import { useAppController } from '../AppControllerProvider';
 import { useCallbackRef } from '../hooks/useCallbackRef';
 import { useForceUpdate } from '../hooks/useForceUpdate';
@@ -12,10 +13,10 @@ import { FocusArea } from './FocusArea';
 import { usePreviewCanvasViewportInfo } from './PreviewPlayer';
 import { Resizer } from './Resizer';
 
-function useSnapPointManager(): SnapPointManager {
-    const ref = useRef<SnapPointManager>(null as never);
+function useSnapPointService(appController: AppController): SnapPoint2DService {
+    const ref = useRef<SnapPoint2DService>(null as never);
     if (ref.current === null) {
-        ref.current = new SnapPointManager();
+        ref.current = new SnapPoint2DService(appController);
     }
     return ref.current;
 }
@@ -48,51 +49,12 @@ export function PreviewPlayerControlLayer(): React.ReactElement {
     const appController = useAppController();
 
     const { left: canvasLeft, top: canvasTop, scale: canvasScale } = usePreviewCanvasViewportInfo();
-    const xSnapPointManager = useSnapPointManager();
-    const ySnapPointManager = useSnapPointManager();
+    const snapPointService = useSnapPointService(appController);
     const forceUpdate = useForceUpdate();
     const dragInfoRef = useRef<DragInfo>({ startX: 0, startY: 0, lastX: 0, lastY: 0, dirX: 0, dirY: 0, status: 'end' });
     const resizeInfoRef = useRef<ResizeInfo>({ dx: 0, dy: 0, dw: 0, dh: 0 });
     const guidelinesRef = useRef<Line[]>([]);
     const flagInteractionToRemoveObjectFromSelection = useRef<boolean>(false);
-
-    const initializeSnapPointManager = useCallbackRef(() => {
-        xSnapPointManager.clear();
-        ySnapPointManager.clear();
-        for (const frame of appController.getNonSelectedFrames()) {
-            xSnapPointManager.add(frame.id, frame.x, frame.x + frame.width);
-            ySnapPointManager.add(frame.id, frame.y, frame.y + frame.height);
-        }
-        xSnapPointManager.add('viewport', 0, appController.project.viewport.width);
-        ySnapPointManager.add('viewport', 0, appController.project.viewport.height);
-    });
-    const onAppControllerSelectionChange = useCallbackRef((addedObjectIds: ReadonlySet<string>, removedObjectIds: ReadonlySet<string>) => {
-        for (const frame of appController.getNonSelectedFrames()) {
-            if (!removedObjectIds.has(frame.id)) continue;
-            xSnapPointManager.add(frame.id, frame.x, frame.x + frame.width);
-            ySnapPointManager.add(frame.id, frame.y, frame.y + frame.height);
-        }
-        for (const objectId of addedObjectIds) {
-            xSnapPointManager.delete(objectId);
-            ySnapPointManager.delete(objectId);
-        }
-    });
-    const onAppControllerChange = useCallbackRef(() => {
-        initializeSnapPointManager();
-    });
-    useEffect(() => {
-        initializeSnapPointManager();
-    }, []);
-
-    useEffect(() => {
-        appController.on('selectionchange', onAppControllerSelectionChange);
-        appController.on('change', onAppControllerChange);
-
-        return () => {
-            appController.off('selectionchange', onAppControllerSelectionChange);
-            appController.off('change', onAppControllerChange);
-        };
-    }, [appController, onAppControllerChange, onAppControllerSelectionChange]);
 
     const onObjectViewMouseDown = useCallbackRef((ev: PIXI.InteractionEvent, objectId: string) => {
         ev.data.originalEvent.preventDefault();
@@ -168,25 +130,25 @@ export function PreviewPlayerControlLayer(): React.ReactElement {
         let dragDx = (lastX - startX) / canvasScale;
         let dragDy = (lastY - startY) / canvasScale;
 
-        const snapX1 = xSnapPointManager.check(selectionBox.x + dragDx, 30);
+        const snapX1 = snapPointService.checkX(selectionBox.x + dragDx, 10 / canvasScale);
         if (snapX1 !== null) {
             snapPointXs.push(snapX1);
             dragDx = snapX1 - selectionBox.x;
         }
 
-        const snapX2 = xSnapPointManager.check(selectionBox.x + selectionBox.width + dragDx, 30);
+        const snapX2 = snapPointService.checkX(selectionBox.x + selectionBox.width + dragDx, 10 / canvasScale);
         if (snapX2 !== null) {
             snapPointXs.push(snapX2);
             dragDx = snapX2 - (selectionBox.x + selectionBox.width);
         }
 
-        const snapY1 = ySnapPointManager.check(selectionBox.y + dragDy, 30);
+        const snapY1 = snapPointService.checkY(selectionBox.y + dragDy, 10 / canvasScale);
         if (snapY1 !== null) {
             snapPointYs.push(snapY1);
             dragDy = snapY1 - selectionBox.y;
         }
 
-        const snapY2 = ySnapPointManager.check(selectionBox.y + selectionBox.height + dragDy, 30);
+        const snapY2 = snapPointService.checkY(selectionBox.y + selectionBox.height + dragDy, 10 / canvasScale);
         if (snapY2 !== null) {
             snapPointYs.push(snapY2);
             dragDy = snapY2 - (selectionBox.y + selectionBox.height);
@@ -205,7 +167,7 @@ export function PreviewPlayerControlLayer(): React.ReactElement {
             const nonSelectedFrames = appController.getNonSelectedFrames();
             const guidelines: Line[] = [];
             for (const snapPointX of snapPointXs) {
-                const objectIds = xSnapPointManager.getObjectsAt(snapPointX);
+                const objectIds = snapPointService.getObjectsAtX(snapPointX);
                 const guideLineYs = [selectionBox.y + dy, selectionBox.y + selectionBox.height + dy + dh];
                 for (const frame of nonSelectedFrames) {
                     if (!objectIds.has(frame.id)) continue;
@@ -222,7 +184,7 @@ export function PreviewPlayerControlLayer(): React.ReactElement {
                 });
             }
             for (const snapPointY of snapPointYs) {
-                const objectIds = ySnapPointManager.getObjectsAt(snapPointY);
+                const objectIds = snapPointService.getObjectsAtY(snapPointY);
                 const guideLineXs = [selectionBox.x + dx, selectionBox.x + selectionBox.width + dx + dw];
                 for (const frame of nonSelectedFrames) {
                     if (!objectIds.has(frame.id)) continue;

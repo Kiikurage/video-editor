@@ -1,6 +1,6 @@
-const EMPTY_SET: ReadonlySet<string> = new Set();
+import { emptySet } from '../lib/emptySet';
 
-export class SnapPointManager {
+export class SnapPoint1DService {
     private readonly values: number[] = [];
     private readonly valueObjectIdsMap = new Map<number, Set<string>>();
     private readonly objectIdValuesMap = new Map<string, number[]>();
@@ -12,7 +12,7 @@ export class SnapPointManager {
     }
 
     getObjectsAt(value: number): ReadonlySet<string> {
-        return this.valueObjectIdsMap.get(value) ?? EMPTY_SET;
+        return this.valueObjectIdsMap.get(value) ?? emptySet();
     }
 
     add(objectId: string, ...values: number[]): void {
